@@ -599,7 +599,6 @@ export function ScheduleSheet({
     <CardListSheetPanel
       title={title}
       subtitle={subtitle}
-      sheetSize="half"
       onClose={() => onOpenChange(false)}
       footer={submitButton}
       testId="schedule-sheet-panel"

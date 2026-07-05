@@ -242,7 +242,6 @@ export function SkillsPageWorkspace({
           testId="skill-detail-sheet"
           title={activeSkill.name}
           subtitle={`${activeSkill.key} · ${sourceLabel(activeSkill.source)}`}
-          sheetSize="inspector"
           onClose={() => setActiveId(null)}
           footer={
             activeSkill.source === "custom" ? (

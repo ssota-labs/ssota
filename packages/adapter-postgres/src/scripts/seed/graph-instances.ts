@@ -162,6 +162,7 @@ export async function seedGraphInstances(
   await seedRoadmapPlanningDocs(db, teamspaceId, maps);
 
   const hypothesisId = await seedResearchDocs(db, teamspaceId, maps);
+  await seedMarketResearchHub(db, teamspaceId, maps, hypothesisId);
 
   const initiativeCatalogId = nodeKeyToId.get("initiative");
   const bundleExisting = initiativeCatalogId
@@ -753,6 +754,388 @@ async function seedResearchDocs(
   }
 
   return hypothesisId;
+}
+
+const MARKET_HUB_SEED_PREFIX = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}market_hub:`;
+
+async function findMarketResearchBySeedSuffix(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+  seedSuffix: string,
+) {
+  const catalogId = maps.nodeKeyToId.get("market_research");
+  if (!catalogId) return undefined;
+
+  const seedKey = `${RESEARCH_DOC_SEED_PREFIX}${seedSuffix}`;
+  const [row] = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, catalogId),
+        sql`${schema.nodes.properties}->>'seed' = ${seedKey}`,
+      ),
+    )
+    .limit(1);
+  return row?.id;
+}
+
+async function upsertSeededNode(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  catalogId: string,
+  seedKey: string,
+  title: string,
+  properties: Record<string, unknown>,
+) {
+  const [existing] = await db
+    .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, catalogId),
+        sql`${schema.nodes.properties}->>'seed' = ${seedKey}`,
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(schema.nodes)
+      .set({
+        title,
+        properties: { ...(existing.properties as Record<string, unknown>), ...properties, seed: seedKey },
+      })
+      .where(eq(schema.nodes.id, existing.id));
+    return existing.id;
+  }
+
+  const [inserted] = await db
+    .insert(schema.nodes)
+    .values({
+      teamspaceId,
+      nodeCatalogId: catalogId,
+      title,
+      properties: { ...properties, seed: seedKey },
+      schemaVersion: 1,
+    })
+    .returning({ id: schema.nodes.id });
+  return inserted?.id;
+}
+
+async function ensureEdge(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  edgeCatalogId: string,
+  sourceNodeId: string,
+  targetNodeId: string,
+  seedKey: string,
+) {
+  const [existing] = await db
+    .select({ id: schema.edges.id })
+    .from(schema.edges)
+    .where(
+      and(
+        eq(schema.edges.teamspaceId, teamspaceId),
+        eq(schema.edges.edgeCatalogId, edgeCatalogId),
+        eq(schema.edges.sourceNodeId, sourceNodeId),
+        eq(schema.edges.targetNodeId, targetNodeId),
+      ),
+    )
+    .limit(1);
+  if (existing) return;
+
+  await db.insert(schema.edges).values({
+    teamspaceId,
+    edgeCatalogId,
+    sourceNodeId,
+    targetNodeId,
+    properties: { seed: seedKey },
+  });
+}
+
+async function seedMarketResearchHub(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+  hypothesisId: string | undefined,
+) {
+  const competitorCatalogId = maps.nodeKeyToId.get("competitor");
+  const segmentCatalogId = maps.nodeKeyToId.get("market_segment");
+  const sourceCatalogId = maps.nodeKeyToId.get("raw_source");
+  const partOfId = maps.edgeKeyToId.get("part_of");
+  const referencesId = maps.edgeKeyToId.get("references");
+  const definesId = maps.edgeKeyToId.get("defines");
+  const informsId = maps.edgeKeyToId.get("informs");
+  if (
+    !competitorCatalogId ||
+    !segmentCatalogId ||
+    !sourceCatalogId ||
+    !partOfId ||
+    !referencesId ||
+    !definesId
+  ) {
+    return;
+  }
+
+  const studyId = await findMarketResearchBySeedSuffix(
+    db,
+    teamspaceId,
+    maps,
+    "competitive-landscape",
+  );
+  if (!studyId) return;
+
+  const swotBlock = (heading: string, body: string) => [
+    { type: "heading", props: { level: 3 }, content: heading },
+    { type: "paragraph", content: body },
+  ];
+
+  const notionId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    competitorCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}competitor:notion`,
+    "Notion",
+    {
+      lifecycleStatus: "active",
+      category: "docs",
+      positioning: "All-in-one workspace",
+      website_url: "https://notion.so",
+      pricing_tier: "freemium",
+      last_reviewed_at: "2026-01-10",
+      summary: "Flexible docs; weak typed graph enforcement",
+      content: [
+        ...swotBlock("Strengths", "Brand, templates, flexible blocks."),
+        ...swotBlock("Weaknesses", "No graph-native workflow or end-user app deployment."),
+      ],
+    },
+  );
+
+  const linearId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    competitorCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}competitor:linear`,
+    "Linear",
+    {
+      lifecycleStatus: "active",
+      category: "issue tracking",
+      positioning: "Fast issue tracking for product teams",
+      website_url: "https://linear.app",
+      pricing_tier: "paid",
+      last_reviewed_at: "2026-01-12",
+      summary: "Strong execution UX; limited research doc model",
+      content: [
+        ...swotBlock("Strengths", "Speed, keyboard UX, cycles."),
+        ...swotBlock("Weaknesses", "Research and strategy docs are second-class."),
+      ],
+    },
+  );
+
+  const cursorId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    competitorCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}competitor:cursor`,
+    "Cursor",
+    {
+      lifecycleStatus: "active",
+      category: "AI IDE",
+      positioning: "AI-native developer environment",
+      website_url: "https://cursor.com",
+      pricing_tier: "freemium",
+      last_reviewed_at: "2026-01-14",
+      summary: "Agentic coding; not a product workspace",
+      content: [
+        ...swotBlock("Strengths", "Deep code context, agent loops."),
+        ...swotBlock("Weaknesses", "No shared product graph or end-user console."),
+      ],
+    },
+  );
+
+  const segmentId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    segmentCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}segment:product-eng-5-50`,
+    "Product eng teams 5–50",
+    {
+      lifecycleStatus: "draft",
+      segment_type: "ICP",
+      tam: "$12B",
+      sam: "$2.4B",
+      som: "$120M",
+      unit: "USD",
+      geography: "Global",
+      persona: "VP Eng / Head of Product",
+      confidence: "medium",
+      conducted_at: "2026-02-01",
+      summary: "Teams dogfooding their own delivery workflow",
+      content: [
+        {
+          type: "paragraph",
+          content:
+            "Initial wedge: small product engineering orgs that build internal tools and want graph-native research → delivery traceability.",
+        },
+      ],
+    },
+  );
+
+  const youtubeSourceId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    sourceCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}source:youtube`,
+    "Dev workflow tools landscape (YouTube)",
+    {
+      lifecycleStatus: "active",
+      url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      platform: "youtube",
+      publisher: "YouTube",
+      captured_at: "2026-01-08",
+      summary: "Analyst overview of Notion vs Linear vs AI IDEs",
+      content: [
+        {
+          type: "paragraph",
+          content: "Key points from video: teams want one workspace for research notes and shipping.",
+        },
+      ],
+    },
+  );
+
+  const xSourceId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    sourceCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}source:x-thread`,
+    "Founder thread on builder consoles",
+    {
+      lifecycleStatus: "active",
+      url: "https://x.com/ssotalabs/status/1234567890",
+      platform: "x",
+      author: "@ssotalabs",
+      captured_at: "2026-01-09",
+      summary: "Thread on graph-native product ops",
+      content: [
+        {
+          type: "paragraph",
+          content: "Thread summary: end-user app deployment from the same graph is the differentiator.",
+        },
+      ],
+    },
+  );
+
+  const articleSourceId = await upsertSeededNode(
+    db,
+    teamspaceId,
+    sourceCatalogId,
+    `${MARKET_HUB_SEED_PREFIX}source:article`,
+    "Desk research — dev tool market map",
+    {
+      lifecycleStatus: "draft",
+      url: "https://example.com/dev-tool-market-map",
+      platform: "article",
+      publisher: "Industry report",
+      captured_at: "2026-01-07",
+      summary: "Third-party market map PDF notes",
+      content: [
+        {
+          type: "paragraph",
+          content: "Desk research notes: consolidation trend toward AI-augmented workflow hubs.",
+        },
+      ],
+    },
+  );
+
+  if (youtubeSourceId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      partOfId,
+      youtubeSourceId,
+      studyId,
+      `${MARKET_HUB_SEED_PREFIX}edge:youtube-part_of-study`,
+    );
+  }
+  if (xSourceId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      partOfId,
+      xSourceId,
+      studyId,
+      `${MARKET_HUB_SEED_PREFIX}edge:x-part_of-study`,
+    );
+  }
+  if (articleSourceId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      partOfId,
+      articleSourceId,
+      studyId,
+      `${MARKET_HUB_SEED_PREFIX}edge:article-part_of-study`,
+    );
+  }
+
+  for (const competitorId of [notionId, linearId, cursorId]) {
+    if (!competitorId) continue;
+    await ensureEdge(
+      db,
+      teamspaceId,
+      referencesId,
+      studyId,
+      competitorId,
+      `${MARKET_HUB_SEED_PREFIX}edge:study-references-${competitorId}`,
+    );
+  }
+
+  if (segmentId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      definesId,
+      studyId,
+      segmentId,
+      `${MARKET_HUB_SEED_PREFIX}edge:study-defines-segment`,
+    );
+  }
+
+  if (notionId && youtubeSourceId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      referencesId,
+      youtubeSourceId,
+      notionId,
+      `${MARKET_HUB_SEED_PREFIX}edge:youtube-references-notion`,
+    );
+  }
+
+  if (hypothesisId && informsId) {
+    if (segmentId) {
+      await ensureEdge(
+        db,
+        teamspaceId,
+        informsId,
+        segmentId,
+        hypothesisId,
+        `${MARKET_HUB_SEED_PREFIX}edge:segment-informs-hypothesis`,
+      );
+    }
+    await ensureEdge(
+      db,
+      teamspaceId,
+      informsId,
+      studyId,
+      hypothesisId,
+      `${MARKET_HUB_SEED_PREFIX}edge:study-informs-hypothesis`,
+    );
+  }
 }
 
 type MetricSnapshotSeed = {

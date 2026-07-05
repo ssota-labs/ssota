@@ -88,7 +88,7 @@
 |------|------------------|-----------|---|------|
 | `executive/roadmap` | `Stack` → `Section×2` → `DocumentSheetList×2` (product + planning) | `Stack` → **위:** `Section` → `DocumentEditor` (singleton `product_roadmap`) / **아래:** `Section` → `DocumentSheetList` (query `roadmap`) | product는 1노드인데 SheetList 부적합 | ⏳ |
 | `executive/goals` | `Stack` → OKR `ExpandableTable` + KPI `DataTable`/`ChartLine` | 동일 | — | ✅ |
-| `research/market` | `Section` → `DocumentSheetList` | 동일 (+ `Toolbar`는 후순위) | — | ✅ |
+| `research/market` | `Tabs` → Studies `DocumentCardListSheet` / Competitors `DataTable` / Segments `Stack`+`DataTable`+`DocumentEditor` / Sources `MediaEmbed`+`DocumentEditor` | `Tabs` 4-panel hub + `competitor`/`market_segment`/`raw_source` L1 | hub + structured entities | ⏳ |
 | `research/user` | `Section` → `DocumentSheetList` | 동일 | — | ✅ |
 | `research/hypotheses` | `Section` → `DocumentSheetList` | 동일 | — | ✅ |
 | `manager/initiatives` | `Section` → `Form` + `NodeTable` (`rowHref` 드릴인) | 동일 | — | ✅ |
@@ -209,7 +209,7 @@ executive                          PageHeader
 executive/roadmap                  Stack → Section→DocumentEditor(product_roadmap) + Section→DocumentSheetList(roadmap)  [Δ]
 executive/goals                    Stack → ExpandableTable(OKR) + Section→DataTable/ChartLine(KPI)
 research                           PageHeader
-research/market                    Section → DocumentSheetList
+research/market                    Tabs → Studies(DocumentCardListSheet) + Competitors(DataTable) + Segments(Stack+DataTable+DocumentEditor) + Sources(MediaEmbed)  [Δ]
 research/user                      Section → DocumentSheetList
 research/hypotheses                Section → DocumentSheetList
 manager                            PageHeader

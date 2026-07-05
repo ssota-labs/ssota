@@ -132,4 +132,15 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByRole("heading", { name: "Design" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Prototype" })).toBeVisible();
   });
+
+  test("research media embed demo renders YouTube iframe and X link card", async ({
+    page,
+  }) => {
+    await page.goto("/labs/page-runtime?demo=research-media-embed");
+    await expect(page.getByTestId("dynamic-page-renderer")).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(page.getByTestId("media-embed-youtube")).toBeVisible();
+    await expect(page.getByTestId("media-embed-x")).toBeVisible();
+    await expect(page.getByTestId("media-embed-open-link")).toBeVisible();
+  });
 });

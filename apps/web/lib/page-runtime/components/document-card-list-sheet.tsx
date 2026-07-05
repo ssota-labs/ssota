@@ -15,10 +15,7 @@ import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { useAction } from "../context";
 import type { RenderNode } from "../types";
 import { DocumentStatusBadge } from "./document-status-badge";
-import {
-  DocumentCardListSheetPanel,
-  type DocumentCardListSheetSize,
-} from "./document-card-list-sheet-panel";
+import { DocumentCardListSheetPanel } from "./document-card-list-sheet-panel";
 import { readNodeField } from "./roadmap-doc-card";
 import {
   applyDocumentCardListSheetFilters,
@@ -43,7 +40,6 @@ export type DocumentCardListSheetProps = {
   statusField?: string;
   editable?: boolean;
   action?: string;
-  sheetSize?: DocumentCardListSheetSize;
   filters?: unknown;
 };
 
@@ -57,7 +53,6 @@ export function DocumentCardListSheetEl({
   statusField = "lifecycleStatus",
   editable = false,
   action,
-  sheetSize = "viewport",
   filters: rawFilters,
 }: DocumentCardListSheetProps) {
   const onAction = useAction();
@@ -109,7 +104,6 @@ export function DocumentCardListSheetEl({
           status: readNodeField(node, statusField),
           field,
           editable,
-          sheetSize,
           onSave,
         });
         return;
@@ -117,16 +111,7 @@ export function DocumentCardListSheetEl({
 
       setLocalActiveId(node.id);
     },
-    [
-      action,
-      documentSheet,
-      editable,
-      field,
-      onAction,
-      sheetSize,
-      statusField,
-      subtitleField,
-    ],
+    [action, documentSheet, editable, field, onAction, statusField, subtitleField],
   );
 
   const onActiveIdChange = useCallback(
@@ -195,6 +180,7 @@ export function DocumentCardListSheetEl({
     <CardListSheet.Root
       activeId={activeId}
       onActiveIdChange={onActiveIdChange}
+      dismissOnOutsideClick
       testId="document-sheet-list"
     >
       {filterBar && inSection ? (
@@ -259,7 +245,6 @@ export function DocumentCardListSheetEl({
           status={readNodeField(activeNode, statusField)}
           field={field}
           editable={editable}
-          sheetSize={sheetSize}
           onClose={close}
           onSave={(blocks) => {
             if (onAction && action) {

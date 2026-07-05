@@ -67,11 +67,13 @@ import {
 } from "@/components/ui/table"
 import { AdvancedDataTableColumnHeader } from "@/components/ui/advanced-data-table-column-header"
 import { AdvancedDataTablePagination } from "@/components/ui/advanced-data-table-pagination"
+import { Badge } from "@/components/ui/badge"
 import {
   AdvancedDataTableSort,
   type SortableColumn,
 } from "@/components/ui/advanced-data-table-sort"
 import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter"
+import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 
 // Column metadata the table reads for labels / alignment. Domain props (type,
 // options, colors, editable) are closed over by the consumer's cell renderers,
@@ -122,6 +124,8 @@ type AdvancedDataTableProps<TData> = {
   enablePinning?: boolean
   enableMultiSort?: boolean
   enableGlobalFilter?: boolean
+  /** Show a toolbar Columns visibility menu (default true). */
+  enableColumnVisibility?: boolean
   /** Spreadsheet cell selection + keyboard nav + Cmd/Ctrl+C CSV copy. */
   enableCellSelection?: boolean
   /** Single-cell click focus ring only (no multi-select, no keyboard nav, no CSV). */
@@ -135,6 +139,8 @@ type AdvancedDataTableProps<TData> = {
   enablePagination?: boolean
   /** Max height (px) of the scroll viewport; the sticky header pins to its top. */
   maxBodyHeight?: number
+  /** When true, the table body grows to fill the parent flex column (no max-height cap). */
+  fillHeight?: boolean
   /** Commit a double-click cell edit (grid mode, `meta.editable` columns). */
   onCellEdit?: (rowId: string, columnId: string, value: string) => void
   /**
@@ -198,7 +204,7 @@ function SortableHeader<TData>({
     <TableHead
       ref={setNodeRef}
       colSpan={header.colSpan}
-      className={cn("relative bg-muted whitespace-nowrap")}
+      className={cn("relative border-r border-border bg-muted whitespace-nowrap")}
       style={{
         width: header.getSize(),
         transform: CSS.Transform.toString(transform),
@@ -221,8 +227,14 @@ function SortableHeader<TData>({
       )}
       {enableColumnResizing && column.getCanResize() ? (
         <div
-          onMouseDown={header.getResizeHandler()}
-          onTouchStart={header.getResizeHandler()}
+          onMouseDown={(event) => {
+            event.stopPropagation()
+            header.getResizeHandler()(event)
+          }}
+          onTouchStart={(event) => {
+            event.stopPropagation()
+            header.getResizeHandler()(event)
+          }}
           onClick={(e) => e.stopPropagation()}
           className={cn(
             "absolute top-0 right-0 h-full w-1 cursor-col-resize touch-none select-none bg-transparent hover:bg-primary/40",
@@ -342,6 +354,24 @@ function PopoverCellEditor({
   )
 }
 
+function SelectOptionChip({ value, color }: { value: string; color?: string }) {
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+        style={{ backgroundColor: color }}
+      >
+        {value}
+      </span>
+    )
+  }
+  return (
+    <Badge variant="secondary" className="rounded px-1.5 font-normal">
+      {value}
+    </Badge>
+  )
+}
+
 function SelectCellEditor({
   initial,
   options,
@@ -356,8 +386,8 @@ function SelectCellEditor({
   onCancel: () => void
 }) {
   return (
-    <PopoverCellEditor onCancel={onCancel} className="w-44" style={{ padding: "0.25rem" }}>
-      <div className="flex flex-col">
+    <PopoverCellEditor onCancel={onCancel} className="w-44" style={{ padding: "0.375rem" }}>
+      <div className="flex flex-col gap-1">
         {options.map((option) => (
           <button
             key={option}
@@ -365,20 +395,11 @@ function SelectCellEditor({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCommit(option)}
             className={cn(
-              "flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent",
+              "flex items-center rounded px-2 py-1.5 text-left text-sm hover:bg-accent",
               option === initial && "bg-accent",
             )}
           >
-            {colors?.[option] ? (
-              <span
-                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
-                style={{ backgroundColor: colors[option] }}
-              >
-                {option}
-              </span>
-            ) : (
-              option
-            )}
+            <SelectOptionChip value={option} color={colors?.[option]} />
           </button>
         ))}
       </div>
@@ -460,10 +481,12 @@ export function AdvancedDataTable<TData>({
   enablePinning = true,
   enableMultiSort = true,
   enableGlobalFilter = true,
+  enableColumnVisibility = true,
   enableCellSelection = false,
   enableCellFocus = false,
   enablePagination = true,
   maxBodyHeight = 480,
+  fillHeight = false,
   onCellEdit,
   getRowCanExpand,
   renderExpanded,
@@ -579,6 +602,9 @@ export function AdvancedDataTable<TData>({
     [table, columnOrder, columnVisibility],
   )
 
+  const showColumnVisibility =
+    enableColumnVisibility && table.getAllLeafColumns().some((c) => c.getCanHide())
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   )
@@ -670,17 +696,22 @@ export function AdvancedDataTable<TData>({
     <TableRow data-index={rIndex}>
       {row.getVisibleCells().map((cell, c) => {
         const col = cell.column
-        const pinned = col.getIsPinned()
         const align = col.columnDef.meta?.align
         const editable = !!col.columnDef.meta?.editable && !!onCellEdit
         const isEditing =
           editing?.rowId === row.id && editing?.colId === col.id
+        const isSelected =
+          enableCellSelection && selection.isSelected(rIndex, c)
+        const isFocused =
+          enableCellFocus &&
+          focusedCell?.rowId === row.id &&
+          focusedCell?.colId === col.id
         return (
           <TableCell
             key={cell.id}
             className={cn(
-              "relative py-1 whitespace-nowrap",
-              pinned && "bg-background",
+              "relative border-r border-border py-1 whitespace-nowrap",
+              isSelected || isFocused ? "bg-primary/15" : "bg-background",
               align === "right" && "text-right",
               align === "center" && "text-center",
               // Grid modes: click is a cell action, so suppress text drag-select
@@ -688,15 +719,9 @@ export function AdvancedDataTable<TData>({
               (enableCellSelection || enableCellFocus) && "select-none",
               enableCellSelection && "cursor-cell",
               enableCellSelection &&
-                selection.isSelected(rIndex, c) &&
-                "bg-primary/15",
-              enableCellSelection &&
                 selection.isFocus(rIndex, c) &&
                 "ring-1 ring-inset ring-primary",
-              enableCellFocus &&
-                focusedCell?.rowId === row.id &&
-                focusedCell?.colId === col.id &&
-                "bg-primary/15 ring-1 ring-inset ring-primary",
+              isFocused && "ring-1 ring-inset ring-primary",
             )}
             style={{ width: col.getSize(), ...pinStyles(col, 1) }}
             onMouseDown={
@@ -731,10 +756,11 @@ export function AdvancedDataTable<TData>({
           </TableCell>
         )
       })}
+      <TableCell aria-hidden className="p-0" />
     </TableRow>
       {renderExpanded && row.getIsExpanded() ? (
         <TableRow data-expanded-for={row.id} className="hover:bg-transparent">
-          <TableCell colSpan={leafCols.length} className="bg-muted/30 p-0">
+          <TableCell colSpan={leafCols.length + 1} className="bg-muted/30 p-0">
             {renderExpanded(row)}
           </TableCell>
         </TableRow>
@@ -746,10 +772,16 @@ export function AdvancedDataTable<TData>({
     enableGlobalFilter ||
     facetedFilters.length > 0 ||
     enableMultiSort ||
+    showColumnVisibility ||
     !!toolbarEnd
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div
+      className={cn(
+        fillHeight ? "flex min-h-0 flex-1 flex-col gap-2" : "space-y-2",
+        className,
+      )}
+    >
       {showToolbar ? (
         <div className="flex flex-wrap items-center gap-2">
           {enableGlobalFilter ? (
@@ -780,21 +812,32 @@ export function AdvancedDataTable<TData>({
           {enableMultiSort ? (
             <AdvancedDataTableSort table={table} columns={sortableColumns} />
           ) : null}
-          {toolbarEnd ? (
-            <div className="ml-auto flex items-center gap-2">{toolbarEnd}</div>
-          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            {showColumnVisibility ? (
+              <DataTableViewOptions table={table} />
+            ) : null}
+            {toolbarEnd}
+          </div>
         </div>
       ) : null}
 
       {/* One scroll container directly wraps the <table> (no nested overflow
           div), so the sticky <thead> sticks to the top while the body scrolls. */}
-      <div className="overflow-hidden rounded-md border">
+      <div
+        className={cn(
+          "overflow-hidden rounded-md border",
+          fillHeight && "flex min-h-0 flex-1 flex-col",
+        )}
+      >
         <div
           ref={scrollRef}
           tabIndex={enableCellSelection ? 0 : undefined}
           onKeyDown={enableCellSelection ? selection.onKeyDown : undefined}
-          className="relative overflow-auto outline-none"
-          style={{ maxHeight: maxBodyHeight }}
+          className={cn(
+            "relative overflow-auto outline-none",
+            fillHeight && "min-h-0 flex-1",
+          )}
+          style={fillHeight ? undefined : { maxHeight: maxBodyHeight }}
         >
           <DndContext
             id={dndId}
@@ -805,12 +848,18 @@ export function AdvancedDataTable<TData>({
           >
             <table
               data-slot="table"
-              className="cn-table"
-              style={{ width: table.getTotalSize() }}
+              className="cn-table table-fixed border-collapse"
+              style={{ width: "100%", minWidth: table.getTotalSize() }}
             >
+              <colgroup>
+                {leafCols.map((col) => (
+                  <col key={col.id} style={{ width: col.getSize() }} />
+                ))}
+                <col />
+              </colgroup>
               <TableHeader className="sticky top-0 z-20 bg-muted">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} className="bg-muted hover:bg-muted">
                     <SortableContext
                       items={headerGroup.headers.map((h) => h.column.id)}
                       strategy={horizontalListSortingStrategy}
@@ -825,6 +874,10 @@ export function AdvancedDataTable<TData>({
                         />
                       ))}
                     </SortableContext>
+                    <TableHead
+                      aria-hidden
+                      className="bg-muted p-0"
+                    />
                   </TableRow>
                 ))}
               </TableHeader>
@@ -832,7 +885,7 @@ export function AdvancedDataTable<TData>({
                 {rows.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={leafCols.length}
+                      colSpan={leafCols.length + 1}
                       className="h-20 text-center text-muted-foreground"
                     >
                       No rows

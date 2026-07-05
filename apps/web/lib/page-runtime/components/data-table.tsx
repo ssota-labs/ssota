@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TableViewState } from "@ssota/contracts";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -82,8 +83,10 @@ function DataTableEl({
   columns,
   title,
   rowHref,
+  selectionParam,
   setAction,
   addAction,
+  addLabel = "New row",
   deleteAction,
 }: {
   elementId: string;
@@ -91,13 +94,30 @@ function DataTableEl({
   columns: DataTableColumn[];
   title?: string;
   rowHref?: string;
+  selectionParam?: string;
   setAction?: string;
   addAction?: string;
+  addLabel?: string;
   deleteAction?: string;
 }) {
   const onAction = useAction();
   const basePath = useBasePath();
   const viewStateCtx = usePageViewState();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedRowId = selectionParam
+    ? searchParams.get(selectionParam)
+    : null;
+
+  const selectRow = React.useCallback(
+    (id: string) => {
+      if (!selectionParam) return;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(selectionParam, id);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams, selectionParam],
+  );
 
   // Notion-style editing: cells render read-only, double-click opens an
   // absolute-overlay editor (text/number/date → input, select → popover).
@@ -161,14 +181,16 @@ function DataTableEl({
       const type = col.type ?? "text";
       const editable = col.editable !== false && !!setAction;
       const isFaceted = type === "select" || type === "badge";
-      // Text/number/date/select are double-click-editable via the absolute
-      // overlay editor (text/number/date → input; select → popover of chips).
+      const badgeSelect =
+        type === "badge" && (col.options?.length ?? 0) > 0;
+      // Text/number/date/select (+ badge w/ options) are double-click-editable.
       const overlayEditable =
         editable &&
         (type === "text" ||
           type === "number" ||
           type === "date" ||
-          type === "select");
+          type === "select" ||
+          badgeSelect);
       return {
         id: col.key,
         accessorFn: (row) => readCell(row, col.key),
@@ -179,15 +201,17 @@ function DataTableEl({
           align: type === "number" ? "right" : undefined,
           editable: overlayEditable,
           editType:
-            type === "select"
+            type === "select" || badgeSelect
               ? "select"
               : type === "number"
                 ? "number"
                 : type === "date"
                   ? "date"
                   : "text",
-          editOptions: type === "select" ? col.options : undefined,
-          editColors: type === "select" ? col.colors : undefined,
+          editOptions:
+            type === "select" || badgeSelect ? col.options : undefined,
+          editColors:
+            type === "select" || badgeSelect ? col.colors : undefined,
         },
         filterFn: isFaceted
           ? (row, columnId, filterValue: string[]) =>
@@ -210,13 +234,28 @@ function DataTableEl({
             );
           }
           if (isFaceted) {
-            // Read-only chip; select columns are edited via the double-click
-            // overlay popover (badge columns are display-only).
+            // Badge/select chips; badge+options opens select editor on double-click.
             return (
               <Chip
                 value={raw == null ? "" : String(raw)}
                 color={col.colors?.[String(raw ?? "")]}
               />
+            );
+          }
+          if (col.key === "title" && selectionParam) {
+            return (
+              <button
+                type="button"
+                data-card-list-sheet-row=""
+                onClick={() => selectRow(node.id)}
+                className={`text-left font-medium hover:underline ${
+                  selectedRowId === node.id
+                    ? "text-primary"
+                    : "text-foreground"
+                }`}
+              >
+                {node.title}
+              </button>
             );
           }
           if (col.key === "title" && rowHref) {
@@ -278,7 +317,18 @@ function DataTableEl({
       });
     }
     return defs;
-  }, [columns, setAction, deleteAction, rowHref, basePath, commitCell, deleteRow]);
+  }, [
+    columns,
+    setAction,
+    deleteAction,
+    rowHref,
+    selectionParam,
+    selectedRowId,
+    basePath,
+    commitCell,
+    deleteRow,
+    selectRow,
+  ]);
 
   const facetedFilters = React.useMemo<FacetedFilterDef[]>(
     () =>
@@ -314,6 +364,7 @@ function DataTableEl({
         defaultViewState={viewStateCtx?.initial[elementId]}
         onViewStateChange={viewStateCtx ? save : undefined}
         enablePagination={false}
+        fillHeight
         enableCellFocus
         onCellEdit={onCellEdit}
         footer={
@@ -324,7 +375,7 @@ function DataTableEl({
               className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-sm text-muted-foreground hover:bg-muted/40"
             >
               <PlusIcon className="size-3.5" />
-              New row
+              {addLabel}
             </button>
           ) : null
         }
@@ -343,8 +394,12 @@ export const dataTableComponents: Record<string, CatalogComponent> = {
       columns={Array.isArray(props.columns) ? (props.columns as DataTableColumn[]) : []}
       title={props.title ? String(props.title) : undefined}
       rowHref={typeof props.rowHref === "string" ? props.rowHref : undefined}
+      selectionParam={
+        typeof props.selectionParam === "string" ? props.selectionParam : undefined
+      }
       setAction={typeof props.setAction === "string" ? props.setAction : undefined}
       addAction={typeof props.addAction === "string" ? props.addAction : undefined}
+      addLabel={typeof props.addLabel === "string" ? props.addLabel : undefined}
       deleteAction={
         typeof props.deleteAction === "string" ? props.deleteAction : undefined
       }

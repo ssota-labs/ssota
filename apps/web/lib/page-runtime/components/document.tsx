@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useAction } from "../context";
 import { boundNode, boundNodes } from "../bindings";
 import { DocumentCardListSheetEl } from "./document-card-list-sheet";
+import { NodeDetailSheetEl } from "./node-detail-sheet";
 import type { CatalogComponent } from "../types";
 
 // BlockNote is browser-only; load lazily (no SSR).
@@ -19,10 +20,12 @@ const DocumentEditorEl = dynamic(
 /** DocumentEditor bound to an action; sends the BlockNote doc as `{ doc }`. */
 function BoundDocumentEditor({
   actionKey,
+  nodeId,
   content,
   compact,
 }: {
   actionKey?: string;
+  nodeId?: string;
   content: unknown;
   compact?: boolean;
 }) {
@@ -32,7 +35,9 @@ function BoundDocumentEditor({
       content={content}
       compact={compact}
       onSave={(blocks) => {
-        if (onAction && actionKey) void onAction(actionKey, { doc: blocks });
+        if (onAction && actionKey) {
+          void onAction(actionKey, { nodeId, doc: blocks });
+        }
       }}
     />
   );
@@ -54,14 +59,18 @@ export const documentComponents: Record<string, CatalogComponent> = {
       <DocumentViewEl content={docContent(bindingData, props)} />
     </div>
   ),
-  DocumentEditor: ({ props, bindingData }) => (
-    <div className="min-h-0 flex-1 overflow-auto">
-      <BoundDocumentEditor
-        actionKey={typeof props.action === "string" ? props.action : undefined}
-        content={docContent(bindingData, props)}
-      />
-    </div>
-  ),
+  DocumentEditor: ({ props, bindingData }) => {
+    const node = boundNode(bindingData, props);
+    return (
+      <div className="min-h-0 flex-1 overflow-auto">
+        <BoundDocumentEditor
+          actionKey={typeof props.action === "string" ? props.action : undefined}
+          nodeId={node?.id}
+          content={docContent(bindingData, props)}
+        />
+      </div>
+    );
+  },
   DocumentCardListSheet: ({ props, bindingData }) => (
     <div className="flex min-h-0 flex-1 flex-col">
       <DocumentCardListSheetEl
@@ -86,18 +95,27 @@ export const documentComponents: Record<string, CatalogComponent> = {
       }
       editable={props.editable === true}
       action={typeof props.action === "string" ? props.action : undefined}
-      sheetSize={
-        props.sheetSize === "default" ||
-        props.sheetSize === "half" ||
-        props.sheetSize === "inspector" ||
-        props.sheetSize === "wide" ||
-        props.sheetSize === "full" ||
-        props.sheetSize === "viewport"
-          ? props.sheetSize
-          : "viewport"
-      }
       filters={props.filters}
       />
+    </div>
+  ),
+  NodeDetailSheet: ({ props, children, bindingData }) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <NodeDetailSheetEl
+        bindingData={bindingData}
+        binding={typeof props.binding === "string" ? props.binding : ""}
+        selectionParam={
+          typeof props.selectionParam === "string" ? props.selectionParam : ""
+        }
+        subtitleField={
+          typeof props.subtitleField === "string" ? props.subtitleField : undefined
+        }
+        platformField={
+          typeof props.platformField === "string" ? props.platformField : undefined
+        }
+      >
+        {children}
+      </NodeDetailSheetEl>
     </div>
   ),
 };

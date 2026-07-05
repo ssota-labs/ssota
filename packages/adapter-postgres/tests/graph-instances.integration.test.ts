@@ -98,6 +98,26 @@ describe("graph instances integration", () => {
     expect(rows.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("seed includes market research hub competitors", async () => {
+    const rows = await db!
+      .select({ title: schema.nodes.title, catalogKey: schema.nodeCatalog.key })
+      .from(schema.nodes)
+      .innerJoin(
+        schema.nodeCatalog,
+        eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+      )
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodeCatalog.key, "competitor"),
+        ),
+      );
+    const titles = rows.map((row) => row.title);
+    expect(titles).toEqual(
+      expect.arrayContaining(["Notion", "Linear", "Cursor"]),
+    );
+  });
+
   it("seed includes initiative bundle with paired_with edge", async () => {
     const initiatives = await db!
       .select({ id: schema.nodes.id })

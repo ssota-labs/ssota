@@ -13,6 +13,7 @@ import {
 } from "@ssota/ui/components/ui/resizable";
 import { cn } from "@ssota/ui/lib/utils";
 import type { CatalogComponent } from "../types";
+import { ResizablePanelContext } from "./section";
 import { SectionEl } from "./section";
 import { TabsEl, type TabItemDef } from "./layout-tabs";
 import { ToolbarEl, type ToolbarActionDef } from "./layout-toolbar";
@@ -95,6 +96,21 @@ function stackGapClass(gap: unknown): string {
   return "gap-4";
 }
 
+/** Inner gutter between Resizable panels — outer edges stay flush. */
+function resizablePanelGutterClass(
+  orientation: "horizontal" | "vertical",
+  index: number,
+  total: number,
+): string | undefined {
+  if (total <= 1) return undefined;
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+  if (orientation === "vertical") {
+    return cn(!isFirst && "pt-4 md:pt-6", !isLast && "pb-4 md:pb-6");
+  }
+  return cn(!isFirst && "pl-4 md:pl-6", !isLast && "pr-4 md:pr-6");
+}
+
 /** Structural / static display components. */
 export const layoutComponents: Record<string, CatalogComponent> = {
   /** Page titles live in sidebar / sibling nav — no duplicate header bar. */
@@ -142,9 +158,20 @@ export const layoutComponents: Record<string, CatalogComponent> = {
               minSize={minSizes?.[index]}
               className="min-h-0"
             >
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {panel}
-              </div>
+              <ResizablePanelContext value={true}>
+                <div
+                  className={cn(
+                    "flex min-h-0 flex-1 flex-col overflow-hidden",
+                    resizablePanelGutterClass(
+                      orientation,
+                      index,
+                      panels.length,
+                    ),
+                  )}
+                >
+                  {panel}
+                </div>
+              </ResizablePanelContext>
             </ResizablePanel>
           </Fragment>
         ))}

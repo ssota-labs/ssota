@@ -36,6 +36,13 @@ export const hypothesisStatusSchema = z.enum([
   "parked",
 ]);
 
+export const rawSourcePlatformSchema = z.enum([
+  "youtube",
+  "x",
+  "article",
+  "other",
+]);
+
 export const graphTaskStatusSchema = z.enum([
   "open",
   "in_progress",
@@ -62,6 +69,9 @@ export const NODE_TYPES = [
   "key_result",
   "kpi",
   "market_research",
+  "competitor",
+  "market_segment",
+  "raw_source",
   "user_research",
   "hypothesis",
   "initiative",
@@ -171,6 +181,38 @@ const NODE_PROPERTY_SCHEMAS: Record<
   market_research: propertiesWithKnownKeys({
     source: z.string().optional(),
     conducted_at: z.string().optional(),
+    summary: z.string().optional(),
+  }),
+  competitor: propertiesWithKnownKeys({
+    category: z.string().optional(),
+    positioning: z.string().optional(),
+    website_url: z.string().optional(),
+    strengths: z.array(z.string()).optional(),
+    weaknesses: z.array(z.string()).optional(),
+    pricing_tier: z.string().optional(),
+    last_reviewed_at: z.string().optional(),
+    summary: z.string().optional(),
+  }),
+  market_segment: propertiesWithKnownKeys({
+    segment_type: z.string().optional(),
+    tam: z.string().optional(),
+    sam: z.string().optional(),
+    som: z.string().optional(),
+    unit: z.string().optional(),
+    geography: z.string().optional(),
+    persona: z.string().optional(),
+    assumptions: z.string().optional(),
+    confidence: z.string().optional(),
+    conducted_at: z.string().optional(),
+    summary: z.string().optional(),
+  }),
+  raw_source: propertiesWithKnownKeys({
+    url: z.string().min(1),
+    platform: rawSourcePlatformSchema.optional(),
+    publisher: z.string().optional(),
+    author: z.string().optional(),
+    captured_at: z.string().optional(),
+    summary: z.string().optional(),
   }),
   user_research: propertiesWithKnownKeys({
     method: z.string().optional(),
@@ -308,6 +350,27 @@ const NODE_CATALOG_META: Record<
     keywords: ["시장조사", "리서치", "market research", "경쟁사", "competitor", "industry"],
     mutability: "living",
     contentRequired: true,
+  },
+  competitor: {
+    label: "경쟁사",
+    description: "시장 경쟁사 프로필과 포지셔닝.",
+    keywords: ["경쟁사", "competitor", "rival", "포지셔닝", "positioning"],
+    mutability: "living",
+    contentRequired: false,
+  },
+  market_segment: {
+    label: "시장 세그먼트",
+    description: "TAM/SAM/SOM과 타깃 세그먼트 정의.",
+    keywords: ["세그먼트", "segment", "TAM", "SAM", "SOM", "market segment"],
+    mutability: "living",
+    contentRequired: false,
+  },
+  raw_source: {
+    label: "원본 출처",
+    description: "YouTube·X·기사 등 외부 리서치 원본 URL.",
+    keywords: ["출처", "source", "YouTube", "X", "Twitter", "article", "raw source"],
+    mutability: "living",
+    contentRequired: false,
   },
   user_research: {
     label: "유저 리서치",

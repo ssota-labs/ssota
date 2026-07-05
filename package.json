@@ -30,6 +30,7 @@
     "db:migration:list": "pnpm exec supabase migration list --local",
     "db:reset": "pnpm exec supabase db reset --local",
     "db:seed": "pnpm --filter @ssota/adapter-postgres db:seed",
+    "db:sync-page-specs": "pnpm exec tsx scripts/sync-page-specs.ts",
     "db:seed:demo-connections": "pnpm exec tsx scripts/seed-demo-connections.ts",
     "design-lab": "pnpm --filter design-lab dev",
     "design-lab:build": "pnpm --filter design-lab build",

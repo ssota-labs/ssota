@@ -71,14 +71,15 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Section",
     category: "layout",
     description:
-      "Titled section container with default padding (p-4 md:p-6). Wrap lists, editors, and tables; put the heading in Section props, not on child components.",
+      "Titled section container. Default padding (p-4 md:p-6) outside Resizable; inside Resizable panels padding defaults to none unless props.padding is set.",
     children: true,
     props: {
       title: { type: "string", description: "Section heading." },
       subtitle: { type: "string", description: "Optional secondary line." },
       padding: {
         type: "string",
-        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+        description:
+          '"default" (p-4 md:p-6) or "none". Default "default" outside Resizable; inside Resizable panels default is "none" unless set.',
       },
     },
     example: { type: "Section", props: { title: "Overview" }, children: [] },
@@ -110,7 +111,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Resizable",
     category: "layout",
     description:
-      "Draggable split panels (horizontal or vertical). Each child is one panel. Fills the page main area.",
+      "Draggable split panels (horizontal or vertical). Each child is one panel. Inner gutter padding (pr/pl or pb/pt) between panels; outer edges stay flush.",
     children: true,
     props: {
       orientation: {
@@ -288,13 +289,22 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       binding: binding("A multi-node binding (e.g. a `query`)."),
       columns: {
         type: "{ key, header, type?, editable?, width?, options?, colors? }[]",
-        description: "Column schema; `type` = text|select|number|checkbox|date|badge.",
+        description:
+          "Column schema; `type` = text|select|number|checkbox|date|badge. `badge` with `options` is chip display + select editor on double-click.",
         required: true,
       },
       title: { type: "string", description: "Optional table title." },
-      rowHref: { type: "string", description: "Optional row link template." },
+      rowHref: { type: "string", description: "Optional row link path segment." },
+      selectionParam: {
+        type: "string",
+        description: "URL query param to set when the title cell is clicked (url_selection).",
+      },
       setAction: action("Dispatched with { nodeId, field, value } on cell edit."),
       addAction: action("Dispatched when the user adds a row."),
+      addLabel: {
+        type: "string",
+        description: 'Footer add-row button label. Default "New row".',
+      },
       deleteAction: action("Dispatched with { nodeId } when a row is deleted."),
     },
     example: {
@@ -653,10 +663,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       statusField: { type: "string", description: 'Status badge property (default "lifecycleStatus").' },
       editable: { type: "boolean", description: "Enable in-sheet editing." },
       action: action("Dispatched on save with { nodeId, doc }."),
-      sheetSize: {
-        type: "string",
-        description: '"default"|"half"|"inspector"|"wide"|"full"|"viewport" (default viewport).',
-      },
       filters: {
         type: '{ type:"toggle", field, value, label, defaultHidden? }[] | { type:"select", field, label }[]',
         description:
@@ -671,6 +677,37 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         editable: true,
         action: "saveDoc",
       },
+    },
+  },
+  NodeDetailSheet: {
+    key: "NodeDetailSheet",
+    category: "document",
+    description:
+      "CardListSheet detail for a url_selection binding: first child is main content (e.g. DataTable); remaining children render in the docked sheet when the selection param is set.",
+    children: true,
+    props: {
+      binding: binding("A url_selection binding (selected node)."),
+      selectionParam: {
+        type: "string",
+        description: "URL query param cleared when the sheet closes.",
+        required: true,
+      },
+      subtitleField: {
+        type: "string",
+        description: 'Sheet subtitle property (default "summary").',
+      },
+      platformField: {
+        type: "string",
+        description: 'Header badge property for research sources (default "platform").',
+      },
+    },
+    example: {
+      type: "NodeDetailSheet",
+      props: {
+        binding: "selectedSource",
+        selectionParam: "source",
+      },
+      children: ["sourcesTable", "sourceSheetBody"],
     },
   },
   Spreadsheet: {
@@ -742,10 +779,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       editable: {
         type: "boolean",
         description: "Make the click-through sheet an editor (default false).",
-      },
-      sheetSize: {
-        type: "string",
-        description: "Sheet width: default|half|inspector|wide|full (default default).",
       },
       panel: {
         type: "object",
@@ -990,6 +1023,32 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "FigmaEmbed",
       props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
+  },
+  MediaEmbed: {
+    key: "MediaEmbed",
+    category: "widget",
+    description:
+      "Embeds or previews an external media URL from a bound node. YouTube renders an iframe; X and articles render a rich link card with optional summary.",
+    children: false,
+    props: {
+      binding: binding(
+        "A single-node binding (typically url_selection) whose property field holds the media URL.",
+      ),
+      urlField: {
+        type: "string",
+        description: 'Node property field holding the media URL (default "url").',
+      },
+      platformField: {
+        type: "string",
+        description:
+          'Node property field for platform hint (default "platform"); falls back to URL parsing.',
+      },
+      height: { type: "number", description: "Embed height in px for YouTube (default 360)." },
+    },
+    example: {
+      type: "MediaEmbed",
+      props: { binding: "selectedSource", urlField: "url", platformField: "platform", height: 360 },
     },
   },
 };

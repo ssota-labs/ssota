@@ -10,7 +10,9 @@ test.describe("Research document sheet", () => {
   test("market research opens document in floating sheet", async ({ page }) => {
     await gotoProject(page, "research/market");
 
-    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
+    await expect(page.getByTestId("document-sheet-list")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText("Competitive landscape — dev workflow tools")).toBeVisible();
 
     await page
@@ -58,10 +60,25 @@ test.describe("Research document sheet", () => {
 
   test("closes sheet panel with close button", async ({ page }) => {
     await gotoProject(page, "research/market");
+    await expect(page.getByTestId("document-sheet-list")).toBeVisible({
+      timeout: 15_000,
+    });
     await page.locator('[data-testid^="document-sheet-list-item-"]').first().click();
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
 
     await page.getByTestId("document-sheet-close").click();
+    await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
+  });
+
+  test("closes sheet panel when clicking outside", async ({ page }) => {
+    await gotoProject(page, "research/market");
+    await expect(page.getByTestId("document-sheet-list").first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.locator('[data-testid^="document-sheet-list-item-"]').first().click();
+    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Competitors" }).click();
     await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
   });
 });

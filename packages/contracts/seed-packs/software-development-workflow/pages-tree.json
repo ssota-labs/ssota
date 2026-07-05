@@ -326,36 +326,177 @@
     "title": "Market research",
     "icon": "research_market",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
-          "type": "Section",
+        "tabs": {
+          "type": "Tabs",
           "props": {
-            "title": "Market research",
-            "subtitle": "Market sizing, competitors, and trend notes"
-          },
-          "children": ["list"]
+            "defaultValue": "studies",
+            "items": [
+              { "value": "studies", "label": "Studies", "panel": "studiesPanel" },
+              { "value": "competitors", "label": "Competitors", "panel": "competitorsPanel" },
+              { "value": "segments", "label": "Segments", "panel": "segmentsPanel" },
+              { "value": "sources", "label": "Sources", "panel": "sourcesPanel" }
+            ]
+          }
         },
-        "list": {
+        "studiesPanel": {
           "type": "DocumentCardListSheet",
           "props": {
-            "binding": "rows",
+            "binding": "studies",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
             "editable": true,
             "action": "saveDoc"
           }
+        },
+        "competitorsPanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "competitors",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Name", "type": "text", "editable": true, "width": 200 },
+              { "key": "category", "header": "Category", "type": "text", "editable": true, "width": 120 },
+              { "key": "positioning", "header": "Positioning", "type": "text", "editable": true, "width": 220 },
+              { "key": "website_url", "header": "Website", "type": "text", "editable": true, "width": 180 },
+              { "key": "last_reviewed_at", "header": "Reviewed", "type": "date", "editable": true, "width": 120 }
+            ]
+          }
+        },
+        "segmentsPanel": {
+          "type": "Stack",
+          "props": { "gap": "md", "padding": "none" },
+          "children": ["segmentsTable", "segmentDetailCol"]
+        },
+        "segmentsTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "segments",
+            "setAction": "setCell",
+            "selectionParam": "segment",
+            "columns": [
+              { "key": "title", "header": "Segment", "type": "text", "editable": true, "width": 220 },
+              { "key": "segment_type", "header": "Type", "type": "text", "editable": true, "width": 120 },
+              { "key": "tam", "header": "TAM", "type": "text", "editable": true, "width": 100 },
+              { "key": "sam", "header": "SAM", "type": "text", "editable": true, "width": 100 },
+              { "key": "som", "header": "SOM", "type": "text", "editable": true, "width": 100 },
+              { "key": "geography", "header": "Geography", "type": "text", "editable": true, "width": 120 },
+              {
+                "key": "confidence",
+                "header": "Confidence",
+                "type": "badge",
+                "editable": true,
+                "options": ["low", "medium", "high"]
+              }
+            ]
+          }
+        },
+        "segmentDetailCol": {
+          "type": "Section",
+          "children": ["segmentEditor"]
+        },
+        "segmentEditor": {
+          "type": "DocumentEditor",
+          "props": {
+            "binding": "selectedSegment",
+            "field": "content",
+            "action": "saveDoc"
+          }
+        },
+        "sourcesPanel": {
+          "type": "NodeDetailSheet",
+          "props": {
+            "binding": "selectedSource",
+            "selectionParam": "source",
+            "subtitleField": "summary",
+            "platformField": "platform"
+          },
+          "children": ["sourcesTable", "sourceSheetBody"]
+        },
+        "sourcesTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "sources",
+            "setAction": "setCell",
+            "addAction": "addSource",
+            "addLabel": "Add source",
+            "selectionParam": "source",
+            "columns": [
+              { "key": "title", "header": "Title", "type": "text", "editable": true, "width": 200 },
+              {
+                "key": "platform",
+                "header": "Platform",
+                "type": "badge",
+                "options": ["youtube", "x", "article", "other"]
+              },
+              { "key": "url", "header": "URL", "type": "text", "editable": true, "width": 240 },
+              { "key": "publisher", "header": "Publisher", "type": "text", "editable": true, "width": 140 },
+              { "key": "captured_at", "header": "Captured", "type": "date", "editable": true, "width": 120 }
+            ]
+          }
+        },
+        "sourceSheetBody": {
+          "type": "Stack",
+          "props": { "gap": "md", "padding": "none" },
+          "children": ["sourceEmbed", "sourceEditor"]
+        },
+        "sourceEmbed": {
+          "type": "MediaEmbed",
+          "props": {
+            "binding": "selectedSource",
+            "urlField": "url",
+            "platformField": "platform",
+            "height": 360
+          }
+        },
+        "sourceEditor": {
+          "type": "DocumentEditor",
+          "props": {
+            "binding": "selectedSource",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "market_research" } },
+    "bindings": {
+      "studies": { "kind": "query", "catalogKey": "market_research" },
+      "competitors": { "kind": "query", "catalogKey": "competitor" },
+      "segments": { "kind": "query", "catalogKey": "market_segment" },
+      "sources": { "kind": "query", "catalogKey": "raw_source" },
+      "selectedSegment": {
+        "kind": "url_selection",
+        "param": "segment",
+        "catalogKey": "market_segment"
+      },
+      "selectedSource": {
+        "kind": "url_selection",
+        "param": "source",
+        "catalogKey": "raw_source"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
         "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
+      },
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      },
+      "addSource": {
+        "kind": "create_node",
+        "catalogKey": "raw_source",
+        "title": "Untitled source",
+        "properties": {
+          "url": "https://"
+        }
       }
     }
   },

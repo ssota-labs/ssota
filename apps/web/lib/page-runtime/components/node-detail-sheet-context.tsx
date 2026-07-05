@@ -10,35 +10,34 @@ import {
   type ReactNode,
 } from "react";
 import type { RenderNode } from "../types";
-import { DocumentCardListSheetPanel } from "./document-card-list-sheet-panel";
+import { NodeDetailSheetPanel } from "./node-detail-sheet-panel";
 
-export type DocumentSheetOpenOptions = {
+export type NodeDetailSheetOpenOptions = {
   node: RenderNode;
   subtitle?: string;
-  status?: string;
-  field: string;
-  editable: boolean;
-  onSave?: (blocks: unknown[]) => void;
+  platform?: string;
+  sheetBody: ReactNode;
+  onClose: () => void;
 };
 
-type DocumentSheetContextValue = {
+type NodeDetailSheetContextValue = {
   activeNodeId: string | null;
-  openSheet: (options: DocumentSheetOpenOptions) => void;
+  openSheet: (options: NodeDetailSheetOpenOptions) => void;
   closeSheet: () => void;
 };
 
-const DocumentSheetContext = createContext<DocumentSheetContextValue | null>(
+const NodeDetailSheetContext = createContext<NodeDetailSheetContextValue | null>(
   null,
 );
 
-export function useDocumentSheet() {
-  return useContext(DocumentSheetContext);
+export function useNodeDetailSheet() {
+  return useContext(NodeDetailSheetContext);
 }
 
-export function DocumentSheetProvider({ children }: { children: ReactNode }) {
-  const [sheet, setSheet] = useState<DocumentSheetOpenOptions | null>(null);
+export function NodeDetailSheetProvider({ children }: { children: ReactNode }) {
+  const [sheet, setSheet] = useState<NodeDetailSheetOpenOptions | null>(null);
 
-  const openSheet = useCallback((options: DocumentSheetOpenOptions) => {
+  const openSheet = useCallback((options: NodeDetailSheetOpenOptions) => {
     setSheet(options);
   }, []);
 
@@ -49,11 +48,11 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!sheet) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeSheet();
+      if (event.key === "Escape") sheet.onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [sheet, closeSheet]);
+  }, [sheet]);
 
   useEffect(() => {
     if (!sheet) return;
@@ -63,7 +62,7 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
       if (!(target instanceof Node)) return;
 
       const panel = document.querySelector(
-        '[data-testid="document-sheet-panel"]',
+        '[data-testid="node-detail-sheet-panel"]',
       );
       if (panel?.contains(target)) return;
 
@@ -74,12 +73,12 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      closeSheet();
+      sheet.onClose();
     };
 
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [sheet, closeSheet]);
+  }, [sheet]);
 
   const value = useMemo(
     () => ({
@@ -91,19 +90,18 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <DocumentSheetContext.Provider value={value}>
+    <NodeDetailSheetContext.Provider value={value}>
       {children}
       {sheet ? (
-        <DocumentCardListSheetPanel
+        <NodeDetailSheetPanel
           node={sheet.node}
           subtitle={sheet.subtitle}
-          status={sheet.status}
-          field={sheet.field}
-          editable={sheet.editable}
-          onClose={closeSheet}
-          onSave={sheet.onSave}
-        />
+          platform={sheet.platform}
+          onClose={sheet.onClose}
+        >
+          {sheet.sheetBody}
+        </NodeDetailSheetPanel>
       ) : null}
-    </DocumentSheetContext.Provider>
+    </NodeDetailSheetContext.Provider>
   );
 }
