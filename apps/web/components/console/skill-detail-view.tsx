@@ -120,7 +120,7 @@ export function SkillMdBodyEditor({
 
   return (
     <div
-      className="min-h-48 max-h-[min(24rem,45vh)] overflow-y-auto rounded-md border border-input"
+      className="min-h-48 max-h-[min(24rem,45vh)] overflow-y-auto rounded-md border border-input px-3"
       data-testid={testId}
     >
       <SsotaBlockNoteEditor
