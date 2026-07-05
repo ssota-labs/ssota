@@ -185,6 +185,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/workers/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Workers browse console — dedicated React workspace (agents/connections와 동일 패턴); json-render 전환은 후속"
+  },
+  {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/workflow/map/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
