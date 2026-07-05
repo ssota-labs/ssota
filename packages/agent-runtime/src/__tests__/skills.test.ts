@@ -46,6 +46,12 @@ function createMockPort(overrides: Partial<SkillPort> = {}): SkillPort {
     async registerSkill() {
       throw new Error("not implemented");
     },
+    async discoverGithubSkills() {
+      return { skills: [], skippedCount: 0 };
+    },
+    async importSkills() {
+      return [];
+    },
     async updateCustomSkill() {
       throw new Error("not implemented");
     },
