@@ -556,7 +556,6 @@ function CreateSkillSheet({
   onOpenChange: (open: boolean) => void;
   onCreated: (skill: Skill) => void;
 }) {
-  const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
@@ -564,7 +563,6 @@ function CreateSkillSheet({
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
-    setKey("");
     setName("");
     setDescription("");
     setBody("");
@@ -584,7 +582,6 @@ function CreateSkillSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamspaceId,
-          key: key.trim(),
           name: name.trim(),
           description: description.trim(),
           source: "custom",
@@ -607,8 +604,8 @@ function CreateSkillSheet({
   return (
     <CardListSheetPanel
       testId="skill-create-dialog"
-      title="Add custom skill"
-      subtitle="Write SKILL.md content inline. The skill is saved to your library."
+      title="Write custom skill"
+      subtitle="Title and description are used for the agent manifest. The library key is assigned automatically."
       onClose={close}
       footer={
         <div className="flex justify-end gap-2">
@@ -618,7 +615,7 @@ function CreateSkillSheet({
           <Button
             type="button"
             size="sm"
-            disabled={isPending || !key.trim() || !name.trim()}
+            disabled={isPending || !name.trim()}
             onClick={submit}
             data-testid="skill-create-submit"
           >
@@ -629,23 +626,13 @@ function CreateSkillSheet({
     >
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label htmlFor="skill-key">Key</Label>
-          <Input
-            id="skill-key"
-            placeholder="my-team-skill"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            data-testid="skill-create-key"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="skill-name">Name</Label>
+          <Label htmlFor="skill-name">Title</Label>
           <Input
             id="skill-name"
             placeholder="My Team Skill"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            data-testid="skill-create-name"
+            data-testid="skill-create-title"
           />
         </div>
         <div className="space-y-1.5">
