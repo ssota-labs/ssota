@@ -1,5 +1,8 @@
 import type {
   AgentDefinitionSkillLink,
+  DiscoveredSkill,
+  ImportSkillItem,
+  ImportSkillResult,
   MarketSkillResult,
   OrganizationSkill,
   RegisterSkillInput,
@@ -45,6 +48,14 @@ export interface SkillWritePort {
     organizationId: string,
     input: RegisterSkillInput,
   ): Promise<Skill>;
+  discoverGithubSkills(
+    organizationId: string,
+    repo: string,
+  ): Promise<{ skills: DiscoveredSkill[]; skippedCount: number }>;
+  importSkills(
+    organizationId: string,
+    items: ImportSkillItem[],
+  ): Promise<ImportSkillResult[]>;
   updateCustomSkill(
     organizationId: string,
     skillId: string,
