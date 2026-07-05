@@ -10,6 +10,7 @@ vi.mock("@/app/[orgSlug]/[teamspaceSlug]/connections/actions", () => ({
 
 import {
   invalidateToolkitToolSettingsCache,
+  patchToolkitToolSettingsDisabledCache,
   prefetchToolkitToolSettings,
 } from "./use-toolkit-tool-settings";
 
@@ -58,6 +59,25 @@ describe("use-toolkit-tool-settings cache", () => {
     await vi.waitFor(() =>
       expect(loadToolkitToolSettingsAction).toHaveBeenCalledTimes(1),
     );
+
+    prefetchToolkitToolSettings("team-1", "notion");
+    expect(loadToolkitToolSettingsAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("patches disabled slugs without dropping cached tools", async () => {
+    loadToolkitToolSettingsAction.mockResolvedValue({
+      tools: [{ slug: "NOTION_SEARCH", name: "Search" }],
+      disabled: [],
+    });
+
+    prefetchToolkitToolSettings("team-1", "notion");
+    await vi.waitFor(() =>
+      expect(loadToolkitToolSettingsAction).toHaveBeenCalledTimes(1),
+    );
+
+    patchToolkitToolSettingsDisabledCache("team-1", "notion", [
+      "NOTION_SEARCH",
+    ]);
 
     prefetchToolkitToolSettings("team-1", "notion");
     expect(loadToolkitToolSettingsAction).toHaveBeenCalledTimes(1);

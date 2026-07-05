@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState } from "react";
 import { GearIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
 import { setToolkitDisabledAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 import {
-  invalidateToolkitToolSettingsCache,
+  patchToolkitToolSettingsDisabledCache,
   prefetchToolkitToolSettings,
   useToolkitToolSettings,
 } from "@/lib/hooks/use-toolkit-tool-settings";
@@ -41,22 +41,59 @@ function ConnectorToolkitToolPermissionsPopoverContent({
     teamspaceId,
     toolkit,
   );
-  const [isPending, startTransition] = useTransition();
-  const disabledSet = new Set(disabled);
+  const [optimisticDisabled, setOptimisticDisabled] = useState<string[] | null>(
+    null,
+  );
+  const [pendingSlugs, setPendingSlugs] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+
+  const disabledSlugs = optimisticDisabled ?? disabled;
+  const disabledSet = new Set(disabledSlugs);
+
+  useEffect(() => {
+    if (pendingSlugs.size > 0 || optimisticDisabled === null) return;
+    const serverKey = [...disabled].sort().join("\0");
+    const optimisticKey = [...optimisticDisabled].sort().join("\0");
+    if (serverKey === optimisticKey) {
+      setOptimisticDisabled(null);
+    }
+  }, [disabled, optimisticDisabled, pendingSlugs]);
 
   function toggle(slug: string, enabled: boolean) {
-    const next = new Set(disabledSet);
-    if (enabled) next.delete(slug);
-    else next.add(slug);
-    startTransition(async () => {
-      await setToolkitDisabledAction({
-        teamspaceId,
-        toolkit,
-        disabled: [...next],
-        revalidate: returnTo,
-      });
-      invalidateToolkitToolSettingsCache(teamspaceId, toolkit);
-    });
+    const previousDisabled = optimisticDisabled ?? disabled;
+    const nextSet = new Set(previousDisabled);
+    if (enabled) nextSet.delete(slug);
+    else nextSet.add(slug);
+    const next = [...nextSet];
+
+    setOptimisticDisabled(next);
+    setPendingSlugs((current) => new Set(current).add(slug));
+
+    void (async () => {
+      try {
+        await setToolkitDisabledAction({
+          teamspaceId,
+          toolkit,
+          disabled: next,
+          revalidate: returnTo,
+        });
+        patchToolkitToolSettingsDisabledCache(teamspaceId, toolkit, next);
+      } catch {
+        setOptimisticDisabled((current) => {
+          const reverted = new Set(current ?? disabled);
+          if (enabled) reverted.add(slug);
+          else reverted.delete(slug);
+          return [...reverted];
+        });
+      } finally {
+        setPendingSlugs((current) => {
+          const nextPending = new Set(current);
+          nextPending.delete(slug);
+          return nextPending;
+        });
+      }
+    })();
   }
 
   return (
@@ -81,6 +118,7 @@ function ConnectorToolkitToolPermissionsPopoverContent({
         <ul className="max-h-[min(50vh,20rem)] space-y-1 overflow-y-auto">
           {tools.map((tool) => {
             const enabled = !disabledSet.has(tool.slug);
+            const isSaving = pendingSlugs.has(tool.slug);
             return (
               <li
                 key={tool.slug}
@@ -92,9 +130,10 @@ function ConnectorToolkitToolPermissionsPopoverContent({
                 </span>
                 <Switch
                   checked={enabled}
-                  disabled={isPending}
+                  disabled={isSaving}
                   onCheckedChange={(checked) => toggle(tool.slug, checked)}
                   aria-label={`Enable ${tool.name}`}
+                  data-testid={`connection-tool-permission-switch-${tool.slug}`}
                 />
               </li>
             );

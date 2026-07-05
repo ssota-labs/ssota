@@ -80,6 +80,18 @@ export function invalidateToolkitToolSettingsCache(
   cache.delete(toolkitSettingsCacheKey(teamspaceId, toolkit));
 }
 
+/** Keep cached tools while updating disabled slugs after a successful save. */
+export function patchToolkitToolSettingsDisabledCache(
+  teamspaceId: string,
+  toolkit: string,
+  disabled: string[],
+): void {
+  const key = toolkitSettingsCacheKey(teamspaceId, toolkit);
+  const entry = cache.get(key);
+  if (!entry) return;
+  cache.set(key, { ...entry, disabled, fetchedAt: Date.now() });
+}
+
 export function useToolkitToolSettings(
   teamspaceId: string,
   toolkit: string,

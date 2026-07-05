@@ -352,6 +352,7 @@ test.describe("Agents", () => {
     const connectionsSwitch = connectionsToolRow.getByRole("switch");
     if ((await connectionsSwitch.getAttribute("aria-checked")) === "true") {
       await connectionsSwitch.click();
+      await expect(connectionsSwitch).toHaveAttribute("aria-checked", "false");
     }
 
     await page.keyboard.press("Escape");
