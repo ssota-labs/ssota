@@ -344,7 +344,7 @@ export function ChannelsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Channels"
-          description="Connect Slack or Discord so agents can receive inbound messages and @mentions."
+          description="Connect Slack or Discord so agents can receive messages and @mentions."
         />
         <BrowseWorkspace.Grid>
           {channels.map((channel) => (
