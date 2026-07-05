@@ -1,6 +1,7 @@
 import type {
   AgentDefinitionSkillLink,
   MarketSkillResult,
+  OrganizationSkill,
   RegisterSkillInput,
   Skill,
   SkillFile,
@@ -10,8 +11,12 @@ import type {
 } from "@ssota/contracts";
 
 export interface SkillReadPort {
-  /** Org catalog + platform builtins (organizationId null). */
+  /** Org catalog + platform builtins (organizationId null). Runtime / legacy listing. */
   listForOrganization(organizationId: string): Promise<SkillIndex[]>;
+  /** Org library — saved skills only (no platform builtins). */
+  listLibrarySkills(organizationId: string): Promise<SkillIndex[]>;
+  /** Community catalog entries not yet saved to the org library. */
+  listExploreSkills(organizationId: string): Promise<SkillIndex[]>;
   listForAgentDefinition(agentDefinitionId: string): Promise<SkillIndex[]>;
   getByKey(organizationId: string, key: string): Promise<Skill | null>;
   getById(skillId: string): Promise<Skill | null>;
@@ -22,6 +27,7 @@ export interface SkillReadPort {
   ): Promise<SkillFile | null>;
   listSkillFiles(organizationId: string, skillId: string): Promise<SkillFile[]>;
   listAgentSkillLinks(agentDefinitionId: string): Promise<AgentDefinitionSkillLink[]>;
+  listOrganizationSkills(organizationId: string): Promise<OrganizationSkill[]>;
 }
 
 export interface SkillWritePort {
@@ -39,6 +45,11 @@ export interface SkillWritePort {
     teamspaceId: string,
     agentDefinitionId: string,
     skillIds: string[],
+  ): Promise<void>;
+  addSkillToOrganization(organizationId: string, skillId: string): Promise<void>;
+  removeSkillFromOrganization(
+    organizationId: string,
+    skillId: string,
   ): Promise<void>;
   upsertSnapshot(snapshot: Omit<SkillSnapshot, "fetchedAt">): Promise<SkillSnapshot>;
 }
