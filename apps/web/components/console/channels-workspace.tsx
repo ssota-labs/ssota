@@ -194,10 +194,7 @@ function InboundChannelSettingsPanel({
               inbound OAuth can start.
             </p>
           ) : (
-            <AgentSettingCard.Root
-              testId={`channel-workspaces-${channel.platform}`}
-              className="border-0 rounded-none"
-            >
+            <AgentSettingCard.Root testId={`channel-workspaces-${channel.platform}`}>
               <AgentSettingCard.Header
                 title="Workspaces"
                 description={`Connected ${channel.label} workspaces for inbound @mentions.`}

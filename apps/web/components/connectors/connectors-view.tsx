@@ -302,10 +302,7 @@ function ConnectorScopeCard({
 
   return (
     <div className="space-y-4">
-      <AgentSettingCard.Root
-        testId={`connection-scope-${scope}`}
-        className="border-0 rounded-none"
-      >
+      <AgentSettingCard.Root testId={`connection-scope-${scope}`}>
         <AgentSettingCard.Header
           title={meta.title}
           description={meta.subtitle}
