@@ -305,7 +305,7 @@ export function SkillsPageWorkspace({
                       data-testid="skills-add-custom"
                     >
                       <FileTextIcon className="size-4" aria-hidden />
-                      Custom (SKILL.md)
+                      Custom
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
