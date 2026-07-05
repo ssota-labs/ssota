@@ -8,7 +8,10 @@ import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-work
 import type { Db } from "../db/client.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
 import { resolveOrganizationIdForTeamspace } from "../teamspace-org-scope.js";
-import { seedAgentDefinitions } from "./agent-definition-port.js";
+import {
+  seedAgentDefinitions,
+  seedMainAgentDefinition,
+} from "./agent-definition-port.js";
 import { seedTeamspaceMainConfig } from "./teamspace-main-config-port.js";
 import { seedPages } from "./page-port.js";
 
@@ -46,6 +49,7 @@ export async function applyTemplate(
   });
   const seeds = bundle.agentDefinitions ?? bundle.workflowInstructions ?? [];
   await seedTeamspaceMainConfig(db, teamspaceId);
+  await seedMainAgentDefinition(db, teamspaceId);
   await seedAgentDefinitions(db, teamspaceId, seeds);
   await seedPages(db, teamspaceId, bundle.pages);
 }

@@ -24,6 +24,8 @@ BEGIN
   ) THEN
     UPDATE skills SET source = 'custom' WHERE source::text = 'skills_sh';
 
+    ALTER TABLE skills ALTER COLUMN source DROP DEFAULT;
+
     ALTER TYPE skill_source RENAME TO skill_source_old;
     CREATE TYPE skill_source AS ENUM ('builtin', 'custom');
     ALTER TABLE skills
@@ -34,6 +36,7 @@ BEGIN
           ELSE source::text::skill_source
         END
       );
+    ALTER TABLE skills ALTER COLUMN source SET DEFAULT 'custom'::skill_source;
     DROP TYPE skill_source_old;
   END IF;
 END $$;
