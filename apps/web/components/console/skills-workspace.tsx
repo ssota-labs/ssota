@@ -294,7 +294,7 @@ export function SkillsPageWorkspace({
                       </Button>
                     }
                   />
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="min-w-52">
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
