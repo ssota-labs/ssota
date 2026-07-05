@@ -5,14 +5,6 @@ import { BooksIcon, CompassIcon, FileTextIcon, FolderOpenIcon, GithubLogoIcon, P
 import type { Skill, SkillFile, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ssota/ui/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -37,6 +29,7 @@ type SkillDetail = {
 };
 
 type SkillsTab = "explore" | "library";
+type AddSkillSheetMode = "custom" | "github" | "folder";
 
 type SkillsPageWorkspaceProps = {
   teamspaceId: string;
@@ -75,9 +68,7 @@ export function SkillsPageWorkspace({
   const [exploreSkills, setExploreSkills] = useState<SkillIndex[]>([]);
   const [query, setQuery] = useState("");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [githubOpen, setGithubOpen] = useState(false);
-  const [folderOpen, setFolderOpen] = useState(false);
+  const [addSheet, setAddSheet] = useState<AddSkillSheetMode | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [isPending, startListTransition] = useTransition();
@@ -234,7 +225,10 @@ export function SkillsPageWorkspace({
     >
       <CardListSheet.Root
         activeId={activeId}
-        onActiveIdChange={setActiveId}
+        onActiveIdChange={(id) => {
+          setActiveId(id);
+          if (id) setAddSheet(null);
+        }}
         className="relative min-h-0 flex-1 overflow-hidden"
       >
         <div className="h-full overflow-y-auto">
@@ -301,7 +295,9 @@ export function SkillsPageWorkspace({
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
-                        setCreateOpen(true);
+                        setActiveId(null);
+                        setDetail(null);
+                        setAddSheet("custom");
                       }}
                       data-testid="skills-add-custom"
                     >
@@ -311,7 +307,9 @@ export function SkillsPageWorkspace({
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
-                        setGithubOpen(true);
+                        setActiveId(null);
+                        setDetail(null);
+                        setAddSheet("github");
                       }}
                       data-testid="skills-add-github"
                     >
@@ -321,7 +319,9 @@ export function SkillsPageWorkspace({
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
-                        setFolderOpen(true);
+                        setActiveId(null);
+                        setDetail(null);
+                        setAddSheet("folder");
                       }}
                       data-testid="skills-add-folder"
                     >
@@ -370,7 +370,7 @@ export function SkillsPageWorkspace({
           </BrowseWorkspace.Frame>
         </div>
 
-        {activeSkill ? (
+        {activeSkill && !addSheet ? (
           <CardListSheetPanel
             testId="skill-detail-sheet"
             title={activeSkill.name}
@@ -450,38 +450,47 @@ export function SkillsPageWorkspace({
             </div>
           </CardListSheetPanel>
         ) : null}
+
+        <CreateSkillSheet
+          open={addSheet === "custom"}
+          teamspaceId={teamspaceId}
+          onOpenChange={(open) => {
+            if (!open) setAddSheet(null);
+          }}
+          onCreated={(skill) => {
+            mergeLibraryIndex(skill);
+            setAddSheet(null);
+            setActiveId(skill.id);
+            setTab("library");
+          }}
+        />
+
+        <GithubSkillSheet
+          open={addSheet === "github"}
+          teamspaceId={teamspaceId}
+          onOpenChange={(open) => {
+            if (!open) setAddSheet(null);
+          }}
+          onCreated={(skill) => {
+            mergeLibraryIndex(skill);
+            setAddSheet(null);
+            setActiveId(skill.id);
+          }}
+        />
+
+        <FolderUploadSheet
+          open={addSheet === "folder"}
+          teamspaceId={teamspaceId}
+          onOpenChange={(open) => {
+            if (!open) setAddSheet(null);
+          }}
+          onCreated={(skill) => {
+            mergeLibraryIndex(skill);
+            setAddSheet(null);
+            setActiveId(skill.id);
+          }}
+        />
       </CardListSheet.Root>
-
-      <CreateSkillDialog
-        open={createOpen}
-        teamspaceId={teamspaceId}
-        onOpenChange={setCreateOpen}
-        onCreated={(skill) => {
-          mergeLibraryIndex(skill);
-          setActiveId(skill.id);
-          setTab("library");
-        }}
-      />
-
-      <GithubSkillDialog
-        open={githubOpen}
-        teamspaceId={teamspaceId}
-        onOpenChange={setGithubOpen}
-        onCreated={(skill) => {
-          mergeLibraryIndex(skill);
-          setActiveId(skill.id);
-        }}
-      />
-
-      <FolderUploadDialog
-        open={folderOpen}
-        teamspaceId={teamspaceId}
-        onOpenChange={setFolderOpen}
-        onCreated={(skill) => {
-          mergeLibraryIndex(skill);
-          setActiveId(skill.id);
-        }}
-      />
     </div>
   );
 }
@@ -533,7 +542,7 @@ function SkillIndexList({
   );
 }
 
-function CreateSkillDialog({
+function CreateSkillSheet({
   open,
   teamspaceId,
   onOpenChange,
@@ -557,6 +566,11 @@ function CreateSkillDialog({
     setDescription("");
     setBody("");
     setError(null);
+  };
+
+  const close = () => {
+    reset();
+    onOpenChange(false);
   };
 
   const submit = () => {
@@ -585,86 +599,80 @@ function CreateSkillDialog({
     });
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className="sm:max-w-lg" data-testid="skill-create-dialog">
-        <DialogHeader>
-          <DialogTitle>Add custom skill</DialogTitle>
-          <DialogDescription>
-            Write SKILL.md content inline. The skill is saved to your library.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-key">Key</Label>
-            <Input
-              id="skill-key"
-              placeholder="my-team-skill"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              data-testid="skill-create-key"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-name">Name</Label>
-            <Input
-              id="skill-name"
-              placeholder="My Team Skill"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              data-testid="skill-create-name"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-description">Description</Label>
-            <Input
-              id="skill-description"
-              placeholder="Short summary for the agent manifest"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              data-testid="skill-create-description"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-body">SKILL.md body</Label>
-            <Textarea
-              id="skill-body"
-              placeholder="Instructions the agent reads via read_skill…"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={8}
-              data-testid="skill-create-body"
-            />
-          </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+    <CardListSheetPanel
+      testId="skill-create-dialog"
+      title="Add custom skill"
+      subtitle="Write SKILL.md content inline. The skill is saved to your library."
+      onClose={close}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={close}>
             Cancel
           </Button>
           <Button
             type="button"
+            size="sm"
             disabled={isPending || !key.trim() || !name.trim()}
             onClick={submit}
             data-testid="skill-create-submit"
           >
             Add to library
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="skill-key">Key</Label>
+          <Input
+            id="skill-key"
+            placeholder="my-team-skill"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            data-testid="skill-create-key"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="skill-name">Name</Label>
+          <Input
+            id="skill-name"
+            placeholder="My Team Skill"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-testid="skill-create-name"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="skill-description">Description</Label>
+          <Input
+            id="skill-description"
+            placeholder="Short summary for the agent manifest"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            data-testid="skill-create-description"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="skill-body">SKILL.md body</Label>
+          <Textarea
+            id="skill-body"
+            placeholder="Instructions the agent reads via read_skill…"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={8}
+            data-testid="skill-create-body"
+          />
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </div>
+    </CardListSheetPanel>
   );
 }
 
-function GithubSkillDialog({
+function GithubSkillSheet({
   open,
   teamspaceId,
   onOpenChange,
@@ -692,6 +700,11 @@ function GithubSkillDialog({
     setSkillPath("SKILL.md");
     setRef("main");
     setError(null);
+  };
+
+  const close = () => {
+    reset();
+    onOpenChange(false);
   };
 
   const submit = () => {
@@ -728,100 +741,94 @@ function GithubSkillDialog({
     });
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className="sm:max-w-lg" data-testid="skill-github-dialog">
-        <DialogHeader>
-          <DialogTitle>Import from GitHub</DialogTitle>
-          <DialogDescription>
-            Fetch SKILL.md (and references) from a public repository path.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="github-key">Key</Label>
-            <Input
-              id="github-key"
-              placeholder="my-github-skill"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              data-testid="skill-github-key"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="github-name">Name</Label>
-            <Input
-              id="github-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              data-testid="skill-github-name"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="github-description">Description</Label>
-            <Input
-              id="github-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="github-repo">Repository</Label>
-            <Input
-              id="github-repo"
-              placeholder="owner/repo"
-              value={repo}
-              onChange={(e) => setRepo(e.target.value)}
-              data-testid="skill-github-repo"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="github-path">Skill path</Label>
-            <Input
-              id="github-path"
-              placeholder=".agents/skills/my-skill/SKILL.md"
-              value={skillPath}
-              onChange={(e) => setSkillPath(e.target.value)}
-              data-testid="skill-github-path"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="github-ref">Git ref</Label>
-            <Input
-              id="github-ref"
-              value={ref}
-              onChange={(e) => setRef(e.target.value)}
-            />
-          </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+    <CardListSheetPanel
+      testId="skill-github-dialog"
+      title="Import from GitHub"
+      subtitle="Fetch SKILL.md (and references) from a public repository path."
+      onClose={close}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={close}>
             Cancel
           </Button>
           <Button
             type="button"
+            size="sm"
             disabled={isPending || !key.trim() || !name.trim() || !repo.trim()}
             onClick={submit}
             data-testid="skill-github-submit"
           >
             Import to library
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="github-key">Key</Label>
+          <Input
+            id="github-key"
+            placeholder="my-github-skill"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            data-testid="skill-github-key"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="github-name">Name</Label>
+          <Input
+            id="github-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-testid="skill-github-name"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="github-description">Description</Label>
+          <Input
+            id="github-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="github-repo">Repository</Label>
+          <Input
+            id="github-repo"
+            placeholder="owner/repo"
+            value={repo}
+            onChange={(e) => setRepo(e.target.value)}
+            data-testid="skill-github-repo"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="github-path">Skill path</Label>
+          <Input
+            id="github-path"
+            placeholder=".agents/skills/my-skill/SKILL.md"
+            value={skillPath}
+            onChange={(e) => setSkillPath(e.target.value)}
+            data-testid="skill-github-path"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="github-ref">Git ref</Label>
+          <Input
+            id="github-ref"
+            value={ref}
+            onChange={(e) => setRef(e.target.value)}
+          />
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </div>
+    </CardListSheetPanel>
   );
 }
 
-function FolderUploadDialog({
+function FolderUploadSheet({
   open,
   teamspaceId,
   onOpenChange,
@@ -845,6 +852,11 @@ function FolderUploadDialog({
     setDescription("");
     setFiles([]);
     setError(null);
+  };
+
+  const close = () => {
+    reset();
+    onOpenChange(false);
   };
 
   const onFolderPick = async (fileList: FileList | null) => {
@@ -897,83 +909,77 @@ function FolderUploadDialog({
     });
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className="sm:max-w-lg" data-testid="skill-folder-dialog">
-        <DialogHeader>
-          <DialogTitle>Upload skill folder</DialogTitle>
-          <DialogDescription>
-            Select a folder containing SKILL.md and optional reference files.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="folder-pick">Folder</Label>
-            <Input
-              id="folder-pick"
-              type="file"
-              multiple
-              // @ts-expect-error webkitdirectory is supported in Chromium
-              webkitdirectory=""
-              onChange={(e) => void onFolderPick(e.target.files)}
-              data-testid="skill-folder-input"
-            />
-            {files.length > 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {files.length} file(s) selected
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="folder-key">Key</Label>
-            <Input
-              id="folder-key"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              data-testid="skill-folder-key"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="folder-name">Name</Label>
-            <Input
-              id="folder-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="folder-description">Description</Label>
-            <Input
-              id="folder-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+    <CardListSheetPanel
+      testId="skill-folder-dialog"
+      title="Upload skill folder"
+      subtitle="Select a folder containing SKILL.md and optional reference files."
+      onClose={close}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={close}>
             Cancel
           </Button>
           <Button
             type="button"
+            size="sm"
             disabled={isPending || !key.trim() || !name.trim() || files.length === 0}
             onClick={submit}
             data-testid="skill-folder-submit"
           >
             Upload to library
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="folder-pick">Folder</Label>
+          <Input
+            id="folder-pick"
+            type="file"
+            multiple
+            // @ts-expect-error webkitdirectory is supported in Chromium
+            webkitdirectory=""
+            onChange={(e) => void onFolderPick(e.target.files)}
+            data-testid="skill-folder-input"
+          />
+          {files.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {files.length} file(s) selected
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="folder-key">Key</Label>
+          <Input
+            id="folder-key"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            data-testid="skill-folder-key"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="folder-name">Name</Label>
+          <Input
+            id="folder-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="folder-description">Description</Label>
+          <Input
+            id="folder-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </div>
+    </CardListSheetPanel>
   );
 }
 
