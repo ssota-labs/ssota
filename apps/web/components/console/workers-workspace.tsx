@@ -17,6 +17,7 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { TooltipProvider } from "@ssota/ui/components/ui/tooltip";
+import { Skeleton } from "@ssota/ui/components/ui/skeleton";
 import {
   Artifact,
   ArtifactAction,
@@ -27,7 +28,7 @@ import {
 } from "@/components/ai-elements/artifact";
 import { CardListSheet, CardListSheetInlineTitle, CardListSheetPanel } from "@/components/card-list-sheet";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
-import { WorkerScriptEditor } from "@/components/console/worker-script-editor";
+import { WorkerScriptEditor, WorkerScriptEditorSkeleton } from "@/components/console/worker-script-editor";
 import {
   createWorkerAction,
   deleteWorkerAction,
@@ -471,39 +472,46 @@ export function WorkersWorkspace({
             <Artifact data-testid="worker-script-artifact">
               <ArtifactHeader>
                 <ArtifactTitle>TypeScript script</ArtifactTitle>
-                <TooltipProvider delay={0}>
-                  <ArtifactActions>
-                    {scriptDirty ? (
-                      <ArtifactAction
-                        tooltip="Save script"
-                        icon={<FloppyDiskIcon className="size-4" />}
-                        disabled={isPending || !editScript.trim()}
-                        onClick={handleSaveScript}
-                        data-testid="worker-save-script"
-                      />
-                    ) : null}
-                    {activeWorker.kind === "tool" ? (
-                      <ArtifactAction
-                        tooltip="Dry run"
-                        icon={<PlayIcon className="size-4" />}
-                        disabled={isPending}
-                        onClick={() => handleDryRun(activeWorker.id)}
-                        data-testid="worker-dry-run"
-                      />
-                    ) : null}
-                  </ArtifactActions>
-                </TooltipProvider>
+                {isLoadingDetail ? (
+                  activeWorker.kind === "tool" ? (
+                    <ArtifactActions>
+                      <Skeleton className="size-8 shrink-0 rounded-sm" />
+                    </ArtifactActions>
+                  ) : null
+                ) : (
+                  <TooltipProvider delay={0}>
+                    <ArtifactActions>
+                      {scriptDirty ? (
+                        <ArtifactAction
+                          tooltip="Save script"
+                          icon={<FloppyDiskIcon className="size-4" />}
+                          disabled={isPending || !editScript.trim()}
+                          onClick={handleSaveScript}
+                          data-testid="worker-save-script"
+                        />
+                      ) : null}
+                      {activeWorker.kind === "tool" ? (
+                        <ArtifactAction
+                          tooltip="Dry run"
+                          icon={<PlayIcon className="size-4" />}
+                          disabled={isPending}
+                          onClick={() => handleDryRun(activeWorker.id)}
+                          data-testid="worker-dry-run"
+                        />
+                      ) : null}
+                    </ArtifactActions>
+                  </TooltipProvider>
+                )}
               </ArtifactHeader>
               <ArtifactContent className="p-0">
                 {isLoadingDetail ? (
-                  <p className="px-4 py-3 text-xs text-muted-foreground">Loading script…</p>
+                  <WorkerScriptEditorSkeleton className="rounded-none border-0 shadow-none" />
                 ) : (
                   <WorkerScriptEditor
                     id={`worker-script-${activeWorker.id}`}
                     testId="worker-edit-script"
                     value={editScript}
                     onChange={setEditScript}
-                    minHeight="16rem"
                     className="rounded-none border-0 bg-transparent shadow-none"
                   />
                 )}

@@ -7,7 +7,10 @@ import { indentWithTab } from "@codemirror/commands";
 import { EditorView, keymap } from "@codemirror/view";
 import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { useTheme } from "next-themes";
+import { Skeleton } from "@ssota/ui/components/ui/skeleton";
 import { cn } from "@ssota/ui/lib/utils";
+
+export const WORKER_SCRIPT_EDITOR_MIN_HEIGHT = "16rem";
 
 type WorkerScriptEditorProps = {
   value: string;
@@ -19,12 +22,43 @@ type WorkerScriptEditorProps = {
   className?: string;
 };
 
+export function WorkerScriptEditorSkeleton({
+  minHeight = WORKER_SCRIPT_EDITOR_MIN_HEIGHT,
+  className,
+  testId = "worker-edit-script-skeleton",
+}: {
+  minHeight?: string;
+  className?: string;
+  testId?: string;
+}) {
+  return (
+    <div
+      data-testid={testId}
+      className={cn("flex overflow-hidden bg-muted/20", className)}
+      style={{ minHeight }}
+      aria-hidden
+    >
+      <div className="flex w-10 shrink-0 flex-col gap-2 border-r border-border px-2 py-3">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="h-3 w-3 rounded-sm" />
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-4 py-3">
+        <Skeleton className="h-3 w-[88%] max-w-md rounded-sm" />
+        <Skeleton className="h-3 w-[72%] max-w-sm rounded-sm" />
+        <Skeleton className="h-3 w-[56%] max-w-xs rounded-sm" />
+        <Skeleton className="h-3 w-[40%] max-w-[10rem] rounded-sm" />
+      </div>
+    </div>
+  );
+}
+
 export function WorkerScriptEditor({
   value,
   onChange,
   id,
   testId,
-  minHeight = "14rem",
+  minHeight = WORKER_SCRIPT_EDITOR_MIN_HEIGHT,
   readOnly = false,
   className,
 }: WorkerScriptEditorProps) {
