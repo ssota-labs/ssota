@@ -3,7 +3,10 @@ import { resetMainAgentConnectorBindingSeed } from "../helpers/agent-main-config
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+
 const PROJECT_AGENT_CARD = "main-agent-card";
+const TASK_AGENT_CARD = `agent-item-${BUILTIN_AGENT_IDS.implementFeature}`;
 
 test.describe("Agents", () => {
   test.beforeAll(async () => {
@@ -58,7 +61,7 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-advanced-card")).toBeVisible();
   });
 
-  test("triggers card shows default chat/task and add trigger button", async ({ page }) => {
+  test("triggers card shows default chat and add trigger button", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
@@ -67,7 +70,7 @@ test.describe("Agents", () => {
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
     await expect(triggersCard.getByTestId("agent-trigger-chat").getByRole("switch")).toHaveCount(0);
-    await expect(triggersCard.getByTestId("agent-trigger-task").getByRole("switch")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-task")).toHaveCount(0);
     await expect(triggersCard.getByTestId("agent-trigger-chatbot")).not.toBeVisible();
     await expect(
       triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
@@ -235,7 +238,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId(TASK_AGENT_CARD).click();
 
     const sheet = page.getByTestId("agent-settings-sheet");
     const saveButton = page.getByTestId("agent-settings-save");
@@ -261,7 +264,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId(TASK_AGENT_CARD).click();
     await page
       .getByTestId("agent-trigger-task")
       .getByRole("switch")

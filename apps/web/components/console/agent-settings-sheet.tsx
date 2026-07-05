@@ -185,7 +185,9 @@ type AgentSettingsSheetProps = {
 };
 
 /** Default triggers always shown on the card (not added via sidebar). */
-const DEFAULT_CARD_TRIGGERS: AgentTrigger[] = ["chat", "task"];
+function defaultCardTriggers(settingsTarget: "main" | "agent"): AgentTrigger[] {
+  return settingsTarget === "main" ? ["chat"] : ["chat", "task"];
+}
 
 function buildDraft(
   definition: AgentDefinition,
@@ -193,11 +195,14 @@ function buildDraft(
   boundSkillIds: string[],
   schedules: AgentScheduleSummary[],
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] },
+  settingsTarget: "main" | "agent",
 ): AgentSettingsDraft {
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
-  const allowedTriggers = definition.runPolicy.allowedTriggers ?? [];
+  const allowedTriggers = (definition.runPolicy.allowedTriggers ?? []).filter(
+    (trigger) => settingsTarget !== "main" || trigger !== "task",
+  );
   const connectorBindings = migrateConnectorBindings(
     definition.runPolicy.enabledConnectorProviders ?? [],
     connections,
@@ -207,7 +212,7 @@ function buildDraft(
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
     allowedTriggers: [
-      ...new Set([...allowedTriggers, ...DEFAULT_CARD_TRIGGERS]),
+      ...new Set([...allowedTriggers, ...defaultCardTriggers(settingsTarget)]),
     ],
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
@@ -251,6 +256,7 @@ export function AgentSettingsSheet({
       initialBoundSkillIds,
       schedules,
       connections,
+      settingsTarget,
     ),
   );
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
@@ -276,9 +282,10 @@ export function AgentSettingsSheet({
         initialBoundSkillIds,
         schedules,
         connections,
+        settingsTarget,
       ),
     );
-  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections]);
+  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections, settingsTarget]);
 
   useEffect(() => {
     for (const binding of draft.connectorBindings) {
@@ -298,13 +305,20 @@ export function AgentSettingsSheet({
         initialBoundSkillIds,
         schedules,
         connections,
+        settingsTarget,
       ),
-    [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections],
+    [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections, settingsTarget],
   );
 
   const isDirty = useMemo(
-    () => isAgentSettingsDraftDirty(draft, savedDraft, agentSchedules),
-    [draft, savedDraft, agentSchedules],
+    () =>
+      isAgentSettingsDraftDirty(
+        draft,
+        savedDraft,
+        agentSchedules,
+        settingsTarget,
+      ),
+    [draft, savedDraft, agentSchedules, settingsTarget],
   );
 
   const requestClose = useCallback(
@@ -472,7 +486,11 @@ export function AgentSettingsSheet({
   const handleSave = () => {
     startTransition(async () => {
       const bundles = resolveToolBundlesForSave(draft);
-      const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
+      const allowedTriggers = resolveAllowedTriggersForSave(
+        draft,
+        agentSchedules,
+        settingsTarget,
+      );
       const connectorBindings = resolveConnectorBindingsForSave(draft);
       const runPolicy = {
         ...definition.runPolicy,
@@ -584,18 +602,20 @@ export function AgentSettingsSheet({
                 icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
                 title={chatLabel}
               />
-              <AgentSettingCard.Item
-                testId="agent-trigger-task"
-                icon={<AtIcon className="size-3.5 text-muted-foreground" />}
-                title={TRIGGER_LABELS.task}
-                trailing={
-                  <Switch
-                    checked={draft.allowedTriggers.includes("task")}
-                    onCheckedChange={(checked) => toggleTrigger("task", checked)}
-                    aria-label={TRIGGER_LABELS.task}
-                  />
-                }
-              />
+              {settingsTarget !== "main" ? (
+                <AgentSettingCard.Item
+                  testId="agent-trigger-task"
+                  icon={<AtIcon className="size-3.5 text-muted-foreground" />}
+                  title={TRIGGER_LABELS.task}
+                  trailing={
+                    <Switch
+                      checked={draft.allowedTriggers.includes("task")}
+                      onCheckedChange={(checked) => toggleTrigger("task", checked)}
+                      aria-label={TRIGGER_LABELS.task}
+                    />
+                  }
+                />
+              ) : null}
               {draft.connectionTriggers.map((trigger) => (
                 <AgentSettingCard.Item
                   key={trigger.id}
