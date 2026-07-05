@@ -12,7 +12,6 @@ import {
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
-import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ListRowSkeleton } from "@/components/console/route-loaders";
@@ -21,6 +20,7 @@ import {
   SkillDetailCard,
   SkillDetailCardSkeleton,
   SkillMarkdownView,
+  SkillMdBodyEditor,
 } from "@/components/console/skill-detail-view";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
 
@@ -664,13 +664,11 @@ function CreateSkillSheet({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="skill-body">SKILL.md body</Label>
-          <Textarea
-            id="skill-body"
-            placeholder="Instructions the agent reads via read_skill…"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={8}
-            data-testid="skill-create-body"
+          <SkillMdBodyEditor
+            markdown={body}
+            onMarkdownChange={setBody}
+            editorKey="skill-create"
+            testId="skill-create-body"
           />
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -1048,11 +1046,11 @@ function EditCustomSkillForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="skill-edit-body">SKILL.md body</Label>
-        <Textarea
-          id="skill-edit-body"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={8}
+        <SkillMdBodyEditor
+          markdown={body}
+          onMarkdownChange={setBody}
+          editorKey={`${skillId}:${initialBody}`}
+          testId="skill-edit-body"
         />
       </div>
       <Button type="button" size="sm" disabled={isPending} onClick={save}>

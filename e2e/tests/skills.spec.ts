@@ -63,9 +63,12 @@ test.describe("Skills", () => {
     await dialog
       .getByTestId("skill-create-description")
       .fill("Playwright created skill");
-    await dialog
+    const bodyEditor = dialog
       .getByTestId("skill-create-body")
-      .fill("# E2E skill\n\nFollow these steps in tests.");
+      .locator(".bn-editor");
+    await expect(bodyEditor).toBeVisible({ timeout: 15_000 });
+    await bodyEditor.click();
+    await page.keyboard.type("Follow these steps in tests.", { delay: 20 });
 
     await dialog.getByTestId("skill-create-submit").click();
 
