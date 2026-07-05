@@ -5,7 +5,7 @@ import { gotoProject } from "../helpers/console";
 const SCREENSHOT_DIR = "/opt/cursor/artifacts/screenshots";
 
 test.describe("workers-ui", () => {
-  test("workers page shows browse grid and create dialog", async ({ page }) => {
+  test("workers page shows browse grid and create sheet", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workers");
 
@@ -14,7 +14,7 @@ test.describe("workers-ui", () => {
     await expect(page.getByRole("heading", { name: "Workers", exact: true })).toBeVisible();
 
     await page.getByTestId("workers-create-button").click();
-    await expect(page.getByTestId("workers-create-dialog")).toBeVisible();
+    await expect(page.getByTestId("workers-create-sheet")).toBeVisible();
     await expect(page.getByTestId("worker-create-kind")).toBeVisible();
 
     await page.screenshot({

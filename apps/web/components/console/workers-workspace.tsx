@@ -11,14 +11,6 @@ import {
 import type { WorkerIndex, WorkerKind } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ssota/ui/components/ui/dialog";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
@@ -36,6 +28,12 @@ import {
   deleteWorkerAction,
   dryRunWorkerAction,
 } from "@/app/[orgSlug]/[teamspaceSlug]/workers/actions";
+
+const CREATE_WORKER_SHEET_ID = "__create-worker__";
+
+function isCreateWorkerSheetId(activeId: string | null): boolean {
+  return activeId === CREATE_WORKER_SHEET_ID;
+}
 
 const DEFAULT_SCRIPT = `export default async function handler(input, sdk) {
   sdk.log("worker run", input);
@@ -79,7 +77,6 @@ export function WorkersWorkspace({
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<WorkerKind | "all">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [dryRunResult, setDryRunResult] = useState<string | null>(null);
 
@@ -91,6 +88,7 @@ export function WorkersWorkspace({
   const [createCron, setCreateCron] = useState("0 * * * *");
 
   const activeWorker = workers.find((w) => w.id === activeId) ?? null;
+  const isCreating = isCreateWorkerSheetId(activeId);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -106,6 +104,18 @@ export function WorkersWorkspace({
       })
       .toSorted((a, b) => a.name.localeCompare(b.name));
   }, [workers, query, kindFilter]);
+
+  function openCreateSheet() {
+    resetCreateForm();
+    setActiveId(CREATE_WORKER_SHEET_ID);
+  }
+
+  function closeCreateSheet() {
+    if (isCreating) {
+      setActiveId(null);
+      resetCreateForm();
+    }
+  }
 
   function resetCreateForm() {
     setCreateKind("tool");
@@ -154,7 +164,6 @@ export function WorkersWorkspace({
           a.name.localeCompare(b.name),
         );
       });
-      setCreateOpen(false);
       resetCreateForm();
       setActiveId(worker.id);
     });
@@ -180,10 +189,17 @@ export function WorkersWorkspace({
     });
   }
 
+  function handleActiveIdChange(nextId: string | null) {
+    if (isCreateWorkerSheetId(activeId) && !isCreateWorkerSheetId(nextId)) {
+      resetCreateForm();
+    }
+    setActiveId(nextId);
+  }
+
   return (
     <CardListSheet.Root
       activeId={activeId}
-      onActiveIdChange={setActiveId}
+      onActiveIdChange={handleActiveIdChange}
       dismissOnOutsideClick
       className="absolute inset-0 flex flex-col"
       testId="workers-workspace"
@@ -195,7 +211,7 @@ export function WorkersWorkspace({
           actions={
             <Button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={openCreateSheet}
               data-testid="workers-create-button"
             >
               <PlusIcon className="size-4" aria-hidden />
@@ -258,7 +274,7 @@ export function WorkersWorkspace({
         )}
       </BrowseWorkspace.Frame>
 
-      {activeWorker ? (
+      {activeWorker && !isCreating ? (
         <CardListSheetPanel
           title={activeWorker.name}
           subtitle={activeWorker.key}
@@ -327,16 +343,33 @@ export function WorkersWorkspace({
         </CardListSheetPanel>
       ) : null}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg" data-testid="workers-create-dialog">
-          <DialogHeader>
-            <DialogTitle>Create worker</DialogTitle>
-            <DialogDescription>
+      {isCreating ? (
+        <CardListSheetPanel
+          title="Create worker"
+          subtitle="Tool, sync, or webhook"
+          onClose={closeCreateSheet}
+          testId="workers-create-sheet"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeCreateSheet}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isPending || !createKey.trim() || !createName.trim()}
+                onClick={handleCreate}
+                data-testid="worker-create-submit"
+              >
+                Create
+              </Button>
+            </div>
+          }
+        >
+          <div className="grid gap-4" data-testid="workers-create-form">
+            <p className="text-sm text-muted-foreground">
               Tool workers run on demand from agents. Sync workers run on a cron schedule.
               Webhook workers accept HTTP POST payloads.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
+            </p>
             <div className="grid gap-2">
               <Label htmlFor="worker-kind">Kind</Label>
               <Select
@@ -400,34 +433,14 @@ export function WorkersWorkspace({
                 id="worker-script"
                 value={createScript}
                 onChange={(e) => setCreateScript(e.target.value)}
-                rows={8}
+                rows={12}
                 className="font-mono text-xs"
                 data-testid="worker-create-script"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setCreateOpen(false);
-                resetCreateForm();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={isPending || !createKey.trim() || !createName.trim()}
-              onClick={handleCreate}
-              data-testid="worker-create-submit"
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </CardListSheetPanel>
+      ) : null}
     </CardListSheet.Root>
   );
 }
