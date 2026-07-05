@@ -14,12 +14,15 @@ import type {
   SkillSnapshot,
   UpdateSkillInput,
 } from "@ssota/contracts";
+import type { LibrarySkillRef } from "../skill/library-match.js";
 
 export interface SkillReadPort {
   /** Org catalog + platform builtins (organizationId null). Runtime / legacy listing. */
   listForOrganization(organizationId: string): Promise<SkillIndex[]>;
   /** Org library — saved skills only (no platform builtins). */
   listLibrarySkills(organizationId: string): Promise<SkillIndex[]>;
+  /** Provenance fields for client-side folder import library matching. */
+  listLibraryImportRefs(organizationId: string): Promise<LibrarySkillRef[]>;
   /** Community catalog entries not yet saved to the org library. */
   listExploreSkills(organizationId: string): Promise<SkillIndex[]>;
   listForAgentDefinition(agentDefinitionId: string): Promise<SkillIndex[]>;

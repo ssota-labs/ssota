@@ -194,6 +194,26 @@ export function createSkillPort(
       return rows.map((row) => mapIndex(row.skill));
     },
 
+    async listLibraryImportRefs(orgId) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .innerJoin(
+          schema.organizationSkills,
+          eq(schema.organizationSkills.skillId, schema.skills.id),
+        )
+        .where(eq(schema.organizationSkills.organizationId, orgId));
+
+      return libraryRefsFromSkills(
+        rows.map((row) => ({
+          id: row.skills.id,
+          key: row.skills.key,
+          contentHash: row.skills.contentHash,
+          metadata: row.skills.metadata as Record<string, unknown>,
+        })),
+      );
+    },
+
     async listExploreSkills(orgId) {
       const libraryRows = await db
         .select({ skillId: schema.organizationSkills.skillId })
@@ -547,23 +567,7 @@ export function createSkillPort(
     },
 
     async discoverGithubSkills(orgId, repo) {
-      const rows = await db
-        .select()
-        .from(schema.skills)
-        .innerJoin(
-          schema.organizationSkills,
-          eq(schema.organizationSkills.skillId, schema.skills.id),
-        )
-        .where(eq(schema.organizationSkills.organizationId, orgId));
-
-      const library = libraryRefsFromSkills(
-        rows.map((row) => ({
-          id: row.skills.id,
-          key: row.skills.key,
-          contentHash: row.skills.contentHash,
-          metadata: row.skills.metadata as Record<string, unknown>,
-        })),
-      );
+      const library = await this.listLibraryImportRefs(orgId);
 
       const { skills, skippedCount } = await discoverGithubSkills(repo, library, {
         githubToken,

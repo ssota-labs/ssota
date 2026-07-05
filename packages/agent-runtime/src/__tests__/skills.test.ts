@@ -13,6 +13,9 @@ function createMockPort(overrides: Partial<SkillPort> = {}): SkillPort {
     async listLibrarySkills() {
       return [];
     },
+    async listLibraryImportRefs() {
+      return [];
+    },
     async listExploreSkills() {
       return [];
     },
