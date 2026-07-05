@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   ArrowClockwiseIcon,
   BuildingsIcon,
@@ -12,17 +12,18 @@ import {
 import type { Icon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
-import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { ConnectorToolPermissionsControl } from "@/components/connectors/connector-tool-permissions-control";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
-import {
-  disconnectConnectionAction,
-  loadToolkitToolSettingsAction,
-  setToolkitDisabledAction,
-} from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
+import { disconnectConnectionAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,
@@ -328,29 +329,55 @@ function ConnectorScopeCard({
                     title={label}
                     trailing={
                       <div className="flex items-center gap-1">
-                        <a
-                          href={href}
-                          className={buttonVariants({
-                            variant: "ghost",
-                            size: "icon-sm",
-                            className: "text-muted-foreground",
-                          })}
-                          data-testid={`reconnect-${connector.provider}`}
-                          aria-label={`Reconnect ${label}`}
-                        >
-                          <ArrowClockwiseIcon className="size-4" />
-                        </a>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={isPending}
-                          className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                          onClick={() => disconnect(conn.id)}
-                        >
-                          <LinkBreakIcon className="size-4" />
-                          Disconnect
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <a
+                                href={href}
+                                className={buttonVariants({
+                                  variant: "ghost",
+                                  size: "icon-sm",
+                                  className: "text-muted-foreground",
+                                })}
+                                data-testid={`reconnect-${connector.provider}`}
+                                aria-label={`Reconnect ${label}`}
+                              />
+                            }
+                          >
+                            <ArrowClockwiseIcon className="size-4" aria-hidden />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={5}>
+                            Reconnect
+                          </TooltipContent>
+                        </Tooltip>
+                        <ConnectorToolPermissionsControl
+                          toolkit={connector.provider}
+                          providerLabel={connector.label}
+                          scope={scope}
+                          teamspaceId={teamspaceId}
+                          returnTo={returnTo}
+                          connectionId={conn.id}
+                        />
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={isPending}
+                                className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                aria-label={`Disconnect ${label}`}
+                                onClick={() => disconnect(conn.id)}
+                              />
+                            }
+                          >
+                            <LinkBreakIcon className="size-4" aria-hidden />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={5}>
+                            Disconnect
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     }
                   />
@@ -374,109 +401,6 @@ function ConnectorScopeCard({
           </a>
         </AgentSettingCard.Footer>
       </AgentSettingCard.Root>
-
-      {scope === "user" && connected ? (
-        <ToolAccessSection
-          toolkit={connector.provider}
-          teamspaceId={teamspaceId}
-          returnTo={returnTo}
-        />
-      ) : null}
     </div>
-  );
-}
-
-interface ToolRow {
-  slug: string;
-  name: string;
-}
-
-/**
- * Per-toolkit tool restrictions. Lazily loads the toolkit's available tools and
- * the entity's disabled set; toggling a tool off persists it
- * (connector_tool_settings) and excludes it from the agent's next session.
- */
-function ToolAccessSection({
-  toolkit,
-  teamspaceId,
-  returnTo,
-}: {
-  toolkit: string;
-  teamspaceId: string;
-  returnTo: string;
-}) {
-  const [tools, setTools] = useState<ToolRow[] | null>(null);
-  const [disabled, setDisabled] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    loadToolkitToolSettingsAction({ teamspaceId, toolkit })
-      .then((res) => {
-        if (!active) return;
-        setTools(res.tools.map((t) => ({ slug: t.slug, name: t.name })));
-        setDisabled(new Set(res.disabled));
-      })
-      .catch(() => {
-        if (active) setTools([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [teamspaceId, toolkit]);
-
-  function toggle(slug: string, enabled: boolean) {
-    const next = new Set(disabled);
-    if (enabled) next.delete(slug);
-    else next.add(slug);
-    setDisabled(next);
-    startTransition(async () => {
-      await setToolkitDisabledAction({
-        teamspaceId,
-        toolkit,
-        disabled: [...next],
-        revalidate: returnTo,
-      });
-    });
-  }
-
-  return (
-    <AgentSettingCard.Root testId={`connection-tool-access-${toolkit}`}>
-      <AgentSettingCard.Header
-        title="Tool access"
-        description="Turn off tools the agent should not use for this connector."
-      />
-      <AgentSettingCard.Body>
-        {loading ? (
-          <p className="text-muted-foreground px-1 py-2 text-xs">Loading tools…</p>
-        ) : !tools || tools.length === 0 ? (
-          <AgentSettingCard.Empty>No tools available.</AgentSettingCard.Empty>
-        ) : (
-          <AgentSettingCard.Items>
-            {tools.map((tool) => {
-              const enabled = !disabled.has(tool.slug);
-              return (
-                <AgentSettingCard.Item
-                  key={tool.slug}
-                  title={tool.name}
-                  trailing={
-                    <Switch
-                      checked={enabled}
-                      onCheckedChange={(checked) => toggle(tool.slug, checked)}
-                      aria-label={`Enable ${tool.name}`}
-                    />
-                  }
-                />
-              );
-            })}
-          </AgentSettingCard.Items>
-        )}
-      </AgentSettingCard.Body>
-    </AgentSettingCard.Root>
   );
 }
