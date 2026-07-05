@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { BooksIcon, CompassIcon, FileTextIcon, FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import type { Skill, SkillFile, SkillIndex } from "@ssota/contracts";
+import type { Skill, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +24,7 @@ import {
   SkillMdBodyEditor,
 } from "@/components/console/skill-detail-view";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { SkillImportSheet, type SkillImportTab } from "@/components/console/skill-import-sheet";
 
 type SkillDetail = {
   skill: Skill;
@@ -31,7 +32,7 @@ type SkillDetail = {
 };
 
 type SkillsTab = "explore" | "library";
-type AddSkillSheetMode = "custom" | "github" | "folder";
+type AddSkillSheetMode = "custom" | "import";
 
 const SKILL_LIST_SKELETON_ROWS = 6;
 
@@ -73,6 +74,7 @@ export function SkillsPageWorkspace({
   const [query, setQuery] = useState("");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addSheet, setAddSheet] = useState<AddSkillSheetMode | null>(null);
+  const [importTab, setImportTab] = useState<SkillImportTab>("github");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [isPending, startListTransition] = useTransition();
@@ -306,31 +308,33 @@ export function SkillsPageWorkspace({
                       data-testid="skills-add-custom"
                     >
                       <FileTextIcon className="size-4" aria-hidden />
-                      Custom
+                      Write custom skill…
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
                         setActiveId(null);
                         setDetail(null);
-                        setAddSheet("github");
+                        setImportTab("github");
+                        setAddSheet("import");
                       }}
                       data-testid="skills-add-github"
                     >
                       <GithubLogoIcon className="size-4" aria-hidden />
-                      Import from GitHub
+                      Import from GitHub…
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         setAddMenuOpen(false);
                         setActiveId(null);
                         setDetail(null);
-                        setAddSheet("folder");
+                        setImportTab("folder");
+                        setAddSheet("import");
                       }}
                       data-testid="skills-add-folder"
                     >
                       <FolderOpenIcon className="size-4" aria-hidden />
-                      Upload folder
+                      Import from folder…
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -469,29 +473,20 @@ export function SkillsPageWorkspace({
           }}
         />
 
-        <GithubSkillSheet
-          open={addSheet === "github"}
+        <SkillImportSheet
+          open={addSheet === "import"}
           teamspaceId={teamspaceId}
+          initialTab={importTab}
           onOpenChange={(open) => {
             if (!open) setAddSheet(null);
           }}
-          onCreated={(skill) => {
-            mergeLibraryIndex(skill);
+          onImported={(skills) => {
+            for (const skill of skills) {
+              mergeLibraryIndex(skill);
+            }
             setAddSheet(null);
-            setActiveId(skill.id);
-          }}
-        />
-
-        <FolderUploadSheet
-          open={addSheet === "folder"}
-          teamspaceId={teamspaceId}
-          onOpenChange={(open) => {
-            if (!open) setAddSheet(null);
-          }}
-          onCreated={(skill) => {
-            mergeLibraryIndex(skill);
-            setAddSheet(null);
-            setActiveId(skill.id);
+            if (skills[0]) setActiveId(skills[0].id);
+            setTab("library");
           }}
         />
       </CardListSheet.Root>
@@ -671,306 +666,6 @@ function CreateSkillSheet({
             onMarkdownChange={setBody}
             editorKey="skill-create"
             testId="skill-create-body"
-          />
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </div>
-    </CardListSheetPanel>
-  );
-}
-
-function GithubSkillSheet({
-  open,
-  teamspaceId,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  teamspaceId: string;
-  onOpenChange: (open: boolean) => void;
-  onCreated: (skill: Skill) => void;
-}) {
-  const [key, setKey] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [repo, setRepo] = useState("");
-  const [skillPath, setSkillPath] = useState("SKILL.md");
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const reset = () => {
-    setKey("");
-    setName("");
-    setDescription("");
-    setRepo("");
-    setSkillPath("SKILL.md");
-    setError(null);
-  };
-
-  const close = () => {
-    reset();
-    onOpenChange(false);
-  };
-
-  const submit = () => {
-    startTransition(async () => {
-      setError(null);
-      const res = await fetch("/api/skills/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teamspaceId,
-          key: key.trim(),
-          name: name.trim(),
-          description: description.trim(),
-          source: "custom",
-          metadata: {
-            kind: "custom",
-            catalogSource: {
-              source: repo.trim(),
-              sourceType: "github",
-              skillPath: skillPath.trim() || "SKILL.md",
-            },
-          },
-        }),
-      });
-      const data = (await res.json()) as { skill?: Skill; error?: string; detail?: string };
-      if (!res.ok || !data.skill) {
-        setError(data.error ?? data.detail ?? "Failed to import skill");
-        return;
-      }
-      reset();
-      onOpenChange(false);
-      onCreated(data.skill);
-    });
-  };
-
-  if (!open) return null;
-
-  return (
-    <CardListSheetPanel
-      testId="skill-github-dialog"
-      title="Import from GitHub"
-      subtitle="Fetch SKILL.md from the repository default branch."
-      onClose={close}
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={close}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={isPending || !key.trim() || !name.trim() || !repo.trim()}
-            onClick={submit}
-            data-testid="skill-github-submit"
-          >
-            Import to library
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="github-key">Key</Label>
-          <Input
-            id="github-key"
-            placeholder="my-github-skill"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            data-testid="skill-github-key"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="github-name">Name</Label>
-          <Input
-            id="github-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            data-testid="skill-github-name"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="github-description">Description</Label>
-          <Input
-            id="github-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="github-repo">Repository</Label>
-          <Input
-            id="github-repo"
-            placeholder="owner/repo"
-            value={repo}
-            onChange={(e) => setRepo(e.target.value)}
-            data-testid="skill-github-repo"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="github-path">Skill path</Label>
-          <Input
-            id="github-path"
-            placeholder=".agents/skills/my-skill/SKILL.md"
-            value={skillPath}
-            onChange={(e) => setSkillPath(e.target.value)}
-            data-testid="skill-github-path"
-          />
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </div>
-    </CardListSheetPanel>
-  );
-}
-
-function FolderUploadSheet({
-  open,
-  teamspaceId,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  teamspaceId: string;
-  onOpenChange: (open: boolean) => void;
-  onCreated: (skill: Skill) => void;
-}) {
-  const [key, setKey] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [files, setFiles] = useState<SkillFile[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const reset = () => {
-    setKey("");
-    setName("");
-    setDescription("");
-    setFiles([]);
-    setError(null);
-  };
-
-  const close = () => {
-    reset();
-    onOpenChange(false);
-  };
-
-  const onFolderPick = async (fileList: FileList | null) => {
-    if (!fileList?.length) return;
-    const root = fileList[0]?.webkitRelativePath.split("/")[0] ?? "skill";
-    const next: SkillFile[] = [];
-    for (const file of Array.from(fileList)) {
-      if (!file.name.endsWith(".md")) continue;
-      const relative = file.webkitRelativePath.includes("/")
-        ? file.webkitRelativePath.slice(file.webkitRelativePath.indexOf("/") + 1)
-        : file.name;
-      next.push({
-        path: relative.replace(/\\/g, "/"),
-        contents: await file.text(),
-      });
-    }
-    if (next.length === 0) {
-      setError("Folder must include at least one .md file (SKILL.md recommended).");
-      return;
-    }
-    setFiles(next);
-    if (!key.trim()) setKey(root.replace(/[^a-z0-9-]/gi, "-").toLowerCase());
-    if (!name.trim()) setName(root);
-    setError(null);
-  };
-
-  const submit = () => {
-    startTransition(async () => {
-      setError(null);
-      const res = await fetch("/api/skills/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teamspaceId,
-          key: key.trim(),
-          name: name.trim(),
-          description: description.trim(),
-          source: "custom",
-          files,
-        }),
-      });
-      const data = (await res.json()) as { skill?: Skill; error?: string };
-      if (!res.ok || !data.skill) {
-        setError(data.error ?? "Failed to upload skill");
-        return;
-      }
-      reset();
-      onOpenChange(false);
-      onCreated(data.skill);
-    });
-  };
-
-  if (!open) return null;
-
-  return (
-    <CardListSheetPanel
-      testId="skill-folder-dialog"
-      title="Upload skill folder"
-      subtitle="Select a folder containing SKILL.md and optional reference files."
-      onClose={close}
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={close}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={isPending || !key.trim() || !name.trim() || files.length === 0}
-            onClick={submit}
-            data-testid="skill-folder-submit"
-          >
-            Upload to library
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="folder-pick">Folder</Label>
-          <Input
-            id="folder-pick"
-            type="file"
-            multiple
-            // @ts-expect-error webkitdirectory is supported in Chromium
-            webkitdirectory=""
-            onChange={(e) => void onFolderPick(e.target.files)}
-            data-testid="skill-folder-input"
-          />
-          {files.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {files.length} file(s) selected
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="folder-key">Key</Label>
-          <Input
-            id="folder-key"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            data-testid="skill-folder-key"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="folder-name">Name</Label>
-          <Input
-            id="folder-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="folder-description">Description</Label>
-          <Input
-            id="folder-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
