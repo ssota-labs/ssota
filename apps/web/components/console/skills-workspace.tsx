@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { BooksIcon, CompassIcon, FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { BooksIcon, CompassIcon, FileTextIcon, FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { Skill, SkillFile, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -305,6 +305,7 @@ export function SkillsPageWorkspace({
                       }}
                       data-testid="skills-add-custom"
                     >
+                      <FileTextIcon className="size-4" aria-hidden />
                       Custom (SKILL.md)
                     </DropdownMenuItem>
                     <DropdownMenuItem
