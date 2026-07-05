@@ -5,6 +5,7 @@ import type { PageSiblingNavData } from "@/lib/console/page-sibling-nav";
 
 const siblingNavShellClassName =
   "shrink-0 bg-background px-4 py-3 md:px-6 md:py-4";
+const clientSiblingNavShellClassName = "shrink-0 bg-background";
 const siblingNavListClassName =
   "flex flex-wrap items-center gap-x-5 gap-y-2 md:gap-x-6";
 const siblingNavItemClassName =
@@ -88,7 +89,7 @@ export function ClientSiblingNav({
   ariaLabel?: string;
 }) {
   return (
-    <div className={siblingNavShellClassName} data-testid={testId}>
+    <div className={clientSiblingNavShellClassName} data-testid={testId}>
       <nav aria-label={ariaLabel} className={siblingNavListClassName}>
         {items.map((item) => {
           const isActive = item.id === activeId;
