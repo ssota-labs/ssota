@@ -122,6 +122,152 @@ describe("skills registry", () => {
     expect(pkg?.files.length).toBeGreaterThan(0);
   });
 
+  it("uniquifies key when registerSkill provenance differs", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const skillMd = `---
+name: provenance-test
+description: First import
+---
+
+Body one
+`;
+    const first = await port.registerSkill(organizationId, {
+      key: "provenance-test",
+      name: "Provenance Test",
+      description: "First import",
+      source: "custom",
+      files: [{ path: "SKILL.md", contents: skillMd }],
+      metadata: {
+        kind: "custom",
+        catalogSource: {
+          source: "acme/first-repo",
+          sourceType: "github",
+          skillPath: "skills/provenance-test/SKILL.md",
+        },
+      },
+    });
+    expect(first.key).toBe("provenance-test");
+
+    const secondMd = `---
+name: provenance-test
+description: Second import
+---
+
+Body two
+`;
+    const second = await port.registerSkill(organizationId, {
+      key: "provenance-test",
+      name: "Provenance Test",
+      description: "Second import",
+      source: "custom",
+      files: [{ path: "SKILL.md", contents: secondMd }],
+      metadata: {
+        kind: "custom",
+        catalogSource: {
+          source: "acme/second-repo",
+          sourceType: "github",
+          skillPath: "skills/provenance-test/SKILL.md",
+        },
+      },
+    });
+    expect(second.key).toBe("provenance-test-2");
+    expect(second.id).not.toBe(first.id);
+
+    await port.deleteCustomSkill(organizationId, first.id);
+    await port.deleteCustomSkill(organizationId, second.id);
+  });
+
+  it("updates skill when registerSkill provenance matches", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const catalogSource = {
+      source: "acme/update-repo",
+      sourceType: "github" as const,
+      skillPath: "skills/update-me/SKILL.md",
+    };
+    const v1 = `---
+name: update-me
+description: Version one
+---
+
+v1
+`;
+    const created = await port.registerSkill(organizationId, {
+      key: "update-me",
+      name: "Update Me",
+      description: "Version one",
+      source: "custom",
+      files: [{ path: "SKILL.md", contents: v1 }],
+      metadata: { kind: "custom", catalogSource },
+    });
+
+    const v2 = `---
+name: update-me
+description: Version two
+---
+
+v2
+`;
+    const updated = await port.registerSkill(organizationId, {
+      key: "update-me",
+      name: "Update Me",
+      description: "Version two",
+      source: "custom",
+      files: [{ path: "SKILL.md", contents: v2 }],
+      metadata: { kind: "custom", catalogSource },
+    });
+
+    expect(updated.id).toBe(created.id);
+    expect(updated.description).toBe("Version two");
+    const file = await port.readSkillFile(organizationId, updated.id, "SKILL.md");
+    expect(file?.contents).toContain("v2");
+
+    await port.deleteCustomSkill(organizationId, updated.id);
+  });
+
+  it("batch importSkills registers skills from inline files", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const skillA = `---
+name: batch-alpha
+description: Alpha skill
+---
+
+alpha
+`;
+    const skillB = `---
+name: batch-beta
+description: Beta skill
+---
+
+beta
+`;
+    const results = await port.importSkills(organizationId, [
+      {
+        skillPath: "skills/batch-alpha/SKILL.md",
+        files: [{ path: "SKILL.md", contents: skillA }],
+        folderRootName: "pack-a",
+      },
+      {
+        skillPath: "skills/batch-beta/SKILL.md",
+        files: [{ path: "SKILL.md", contents: skillB }],
+        folderRootName: "pack-a",
+      },
+    ]);
+
+    expect(results).toHaveLength(2);
+    expect(results.every((r) => r.ok)).toBe(true);
+    expect(results[0]?.skill?.key).toBe("batch-alpha");
+    expect(results[1]?.skill?.key).toBe("batch-beta");
+
+    for (const result of results) {
+      if (result.skill) {
+        await port.deleteCustomSkill(organizationId, result.skill.id);
+      }
+    }
+  });
+
   it("creates, updates, and deletes custom org skills", async () => {
     if (skip) return;
     const port = createSkillPort(db, { organizationId, teamspaceId });
