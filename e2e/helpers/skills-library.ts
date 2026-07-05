@@ -16,7 +16,9 @@ export async function resetCommunityExploreSkills(page: Page): Promise<void> {
   };
 
   for (const skill of data.skills ?? []) {
-    if (!COMMUNITY_EXPLORE_KEYS.includes(skill.key)) continue;
+    const isCommunityExplore = COMMUNITY_EXPLORE_KEYS.includes(skill.key);
+    const isE2eCustom = skill.key.startsWith("e2e-custom-skill-");
+    if (!isCommunityExplore && !isE2eCustom) continue;
     await page.request.delete(`/api/skills/library/${skill.id}`, {
       data: { teamspaceId },
     });
