@@ -111,6 +111,7 @@ export function WorkersWorkspace({
   const [workerDetail, setWorkerDetail] = useState<Worker | null>(null);
   const [editScript, setEditScript] = useState("");
   const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const [createKind, setCreateKind] = useState<WorkerKind>("tool");
@@ -130,6 +131,7 @@ export function WorkersWorkspace({
       setWorkerDetail(null);
       setEditScript("");
       setEditName("");
+      setEditDescription("");
       setDryRunResult(null);
       return;
     }
@@ -141,6 +143,7 @@ export function WorkersWorkspace({
         if (cancelled || !worker) return;
         setWorkerDetail(worker);
         setEditScript(worker.script);
+        setEditDescription(worker.description);
       })
       .finally(() => {
         if (!cancelled) setIsLoadingDetail(false);
@@ -154,8 +157,9 @@ export function WorkersWorkspace({
   useEffect(() => {
     if (activeWorker) {
       setEditName(activeWorker.name);
+      setEditDescription(activeWorker.description);
     }
-  }, [activeWorker?.id, activeWorker?.name]);
+  }, [activeWorker?.id, activeWorker?.name, activeWorker?.description]);
 
   const workersByKind = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -324,6 +328,42 @@ export function WorkersWorkspace({
     });
   }
 
+  function handleSaveDescription() {
+    if (!activeWorker) return;
+    const trimmed = editDescription.trim();
+    const saved = workerDetail?.description ?? activeWorker.description;
+    if (trimmed === saved) {
+      setEditDescription(saved);
+      return;
+    }
+    startTransition(async () => {
+      const worker = await updateWorkerAction(
+        orgSlug,
+        teamspaceSlug,
+        teamspaceId,
+        activeWorker.id,
+        { description: trimmed },
+      );
+      setEditDescription(worker.description);
+      setWorkerDetail((prev) =>
+        prev && prev.id === worker.id
+          ? { ...prev, description: worker.description, version: worker.version }
+          : prev,
+      );
+      setWorkers((prev) =>
+        prev.map((entry) =>
+          entry.id === worker.id
+            ? {
+                ...entry,
+                description: worker.description,
+                version: worker.version,
+              }
+            : entry,
+        ),
+      );
+    });
+  }
+
   function handleActiveIdChange(nextId: string | null) {
     if (isCreateWorkerSheetId(activeId) && !isCreateWorkerSheetId(nextId)) {
       resetCreateForm();
@@ -454,9 +494,28 @@ export function WorkersWorkspace({
               <Badge variant="outline">v{activeWorker.version}</Badge>
             </div>
 
-            {activeWorker.description ? (
-              <p className="text-sm text-muted-foreground">{activeWorker.description}</p>
-            ) : null}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor={`worker-description-${activeWorker.id}`}
+                className="text-xs text-muted-foreground"
+              >
+                Description
+              </Label>
+              {isLoadingDetail ? (
+                <Skeleton className="h-14 w-full rounded-md" />
+              ) : (
+                <Textarea
+                  id={`worker-description-${activeWorker.id}`}
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  onBlur={handleSaveDescription}
+                  placeholder="What this worker does and when to use it…"
+                  rows={2}
+                  data-testid="worker-edit-description"
+                  className="min-h-14 resize-none text-sm"
+                />
+              )}
+            </div>
 
             {activeWorker.kind === "webhook" ? (
               <div className="space-y-1">
