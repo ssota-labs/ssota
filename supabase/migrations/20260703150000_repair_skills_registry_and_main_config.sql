@@ -12,6 +12,19 @@ BEGIN
   END IF;
 END $$;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON e.enumtypid = t.oid
+    WHERE t.typname = 'skill_source'
+      AND e.enumlabel = 'skills_sh'
+  ) THEN
+    ALTER TYPE skill_source ADD VALUE 'skills_sh';
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS skills (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid REFERENCES organizations(id) ON DELETE CASCADE,

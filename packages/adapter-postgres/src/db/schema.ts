@@ -582,6 +582,26 @@ export const skillSnapshots = pgTable(
   },
 );
 
+export const organizationSkills = pgTable(
+  "organization_skills",
+  {
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: uniqueIndex("organization_skills_pk").on(
+      table.organizationId,
+      table.skillId,
+    ),
+    skillIdx: index("organization_skills_skill_id_idx").on(table.skillId),
+  }),
+);
+
 export const agentDefinitionSkills = pgTable(
   "agent_definition_skills",
   {

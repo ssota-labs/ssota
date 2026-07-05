@@ -17,6 +17,7 @@ import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedInboundChannelFixtures } from "./seed/inbound-channels.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
 import { seedBuiltinSkills } from "./seed/builtin-skills.js";
+import { seedCommunitySkills } from "./seed/community-skills.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
@@ -361,6 +362,9 @@ async function main() {
   console.log("Seeding platform builtin skills...");
   const builtinCount = await seedBuiltinSkills(db);
   console.log(`Seeded ${builtinCount} builtin skills.`);
+  console.log("Seeding community explore catalog...");
+  const communityCount = await seedCommunitySkills(db);
+  console.log(`Seeded ${communityCount} community skills.`);
   console.log("Seeding default sandbox environments...");
   await seedDefaultSandboxEnvironments(db);
   console.log("Seed complete.");

@@ -8,6 +8,7 @@ import {
 } from "../src/index.js";
 import { createSkillPort } from "../src/ports/skill-port.js";
 import { seedBuiltinSkills } from "../src/scripts/seed/builtin-skills.js";
+import { seedCommunitySkills } from "../src/scripts/seed/community-skills.js";
 import * as schema from "../src/db/schema.js";
 
 describe("skills registry", () => {
@@ -38,6 +39,7 @@ describe("skills registry", () => {
         .limit(1);
       agentDefinitionId = agents[0]?.id ?? "";
       await seedBuiltinSkills(db);
+      await seedCommunitySkills(db);
     } catch {
       skip = true;
     }
@@ -45,6 +47,30 @@ describe("skills registry", () => {
 
   afterAll(async () => {
     await client.end();
+  });
+
+  it("excludes platform builtins from library and explore lists", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const library = await port.listLibrarySkills(organizationId);
+    const explore = await port.listExploreSkills(organizationId);
+    expect(library.some((s) => s.key === "supabase")).toBe(false);
+    expect(explore.some((s) => s.key === "supabase")).toBe(false);
+    expect(explore.some((s) => s.key === "web-design-guidelines")).toBe(true);
+  });
+
+  it("saves explore skill to org library", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const explore = await port.listExploreSkills(organizationId);
+    const community = explore.find((s) => s.key === "web-design-guidelines");
+    expect(community).toBeDefined();
+    await port.addSkillToOrganization(organizationId, community!.id);
+    const library = await port.listLibrarySkills(organizationId);
+    expect(library.some((s) => s.id === community!.id)).toBe(true);
+    await port.removeSkillFromOrganization(organizationId, community!.id);
+    const libraryAfter = await port.listLibrarySkills(organizationId);
+    expect(libraryAfter.some((s) => s.id === community!.id)).toBe(false);
   });
 
   it("lists platform builtin skills for organization catalog", async () => {

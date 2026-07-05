@@ -21,6 +21,15 @@ describe("resolveSkillManifest", () => {
     async listForOrganization() {
       return builtins;
     },
+    async listLibrarySkills() {
+      return [];
+    },
+    async listExploreSkills() {
+      return [];
+    },
+    async listOrganizationSkills() {
+      return [];
+    },
     async listForAgentDefinition() {
       return [];
     },
@@ -49,6 +58,8 @@ describe("resolveSkillManifest", () => {
       throw new Error("not implemented");
     },
     async updateAgentSkillBindings() {},
+    async addSkillToOrganization() {},
+    async removeSkillFromOrganization() {},
     async upsertSnapshot() {
       throw new Error("not implemented");
     },
