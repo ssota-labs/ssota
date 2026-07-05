@@ -1,5 +1,5 @@
--- Idempotent repair: ensure `workers` exists after script_tools rename migration.
--- Production may have deployed app code before 20260705120000_script_tools_to_workers ran.
+-- Idempotent repair: ensure `workers` exists when script_tools rename migration was a no-op
+-- (e.g. production recorded 20260705120000 before script_tools table existed).
 
 DO $$
 BEGIN

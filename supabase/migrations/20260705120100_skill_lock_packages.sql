@@ -1,4 +1,6 @@
 -- Skills lock / blob packages: org inventory, content-addressed packages, agent binding locks
+-- Version 20260705120100: renamed from 20260705120000 to avoid schema_migrations version collision
+-- with script_tools_to_workers (Supabase keys migrations by numeric prefix only).
 
 DO $$
 BEGIN
