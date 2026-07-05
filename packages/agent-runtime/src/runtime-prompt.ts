@@ -35,6 +35,8 @@ Graph context: read with query_nodes / get_node / traverse_edges, write with cre
 
   /** @deprecated Scheduler no longer runs a model; cron fans out to main/task workflows. */
   scheduler: `Deprecated scheduler runtime.`,
+
+  worker: `Worker sandbox runtime — no LLM; TypeScript executes in an isolated sandbox.`,
 };
 
 export interface BuildRunInstructionsParams {

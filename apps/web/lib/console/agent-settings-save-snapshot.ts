@@ -12,7 +12,7 @@ export type AgentSettingsSaveSnapshot = {
   toolBundles: ToolBundle[];
   allowedTriggers: AgentTrigger[];
   model: string;
-  scriptToolIds: string[];
+  linkedWorkerIds: string[];
   linkedWorkerAgentIds: string[];
   connectorBindingsJson: string;
   enabledConnectorProviders: string[];
@@ -133,7 +133,7 @@ export function buildAgentSettingsSaveSnapshot(
       settingsTarget,
     ),
     model: draft.model,
-    scriptToolIds: sortStrings(draft.scriptToolIds),
+    linkedWorkerIds: sortStrings(draft.linkedWorkerIds),
     linkedWorkerAgentIds: sortStrings(draft.linkedWorkerAgentIds),
     connectorBindingsJson: stableConnectorBindingsJson(connectorBindings),
     enabledConnectorProviders: deriveEnabledConnectorProviders({
@@ -159,7 +159,7 @@ export function agentSettingsSnapshotsEqual(
     JSON.stringify(left.allowedTriggers) ===
       JSON.stringify(right.allowedTriggers) &&
     left.model === right.model &&
-    JSON.stringify(left.scriptToolIds) === JSON.stringify(right.scriptToolIds) &&
+    JSON.stringify(left.linkedWorkerIds) === JSON.stringify(right.linkedWorkerIds) &&
     JSON.stringify(left.linkedWorkerAgentIds) ===
       JSON.stringify(right.linkedWorkerAgentIds) &&
     left.connectorBindingsJson === right.connectorBindingsJson &&

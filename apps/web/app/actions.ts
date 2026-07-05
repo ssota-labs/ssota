@@ -75,6 +75,7 @@ export async function updateAgentDefinitionAction(
       timeoutMs?: number;
     };
     scriptToolIds?: string[];
+    linkedWorkerIds?: string[];
   },
 ) {
   const user = await getCurrentUser();
@@ -112,12 +113,10 @@ export async function updateAgentDefinitionAction(
 
   await port.upsertDefinition(parsed);
 
-  if (input.scriptToolIds) {
-    const { getScriptToolPort } = await import("@/lib/ports");
-    await getScriptToolPort(teamspaceId).setAgentScriptTools(
-      input.id,
-      input.scriptToolIds,
-    );
+  const workerIds = input.linkedWorkerIds ?? input.scriptToolIds;
+  if (workerIds) {
+    const { getWorkerPort } = await import("@/lib/ports");
+    await getWorkerPort(teamspaceId).setAgentWorkers(input.id, workerIds);
   }
 
   for (const path of withConsolePaths(["/agents"])) {

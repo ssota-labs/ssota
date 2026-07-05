@@ -26,7 +26,7 @@ export {
   createTeamspaceMainConfigPort,
   seedTeamspaceMainConfig,
 } from "./teamspace-main-config-port.js";
-export { createScriptToolPort } from "./script-tool-port.js";
+export { createWorkerPort, createScriptToolPort, listBuilderWorkersByKind } from "./worker-port.js";
 export { createSkillPort } from "./skill-port.js";
 export {
   createSandboxEnvironmentPort,

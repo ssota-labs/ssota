@@ -109,10 +109,22 @@ export function buildBreadcrumbSegments(
     }
     return [{ labelKey: "nav.agents" }];
   }
+  if (relative === "workers" || relative.startsWith("workers/")) {
+    return [
+      { labelKey: "nav.agents", href: "agents" },
+      { labelKey: "nav.workers" },
+    ];
+  }
+  if (relative === "tools" || relative.startsWith("tools/")) {
+    return [
+      { labelKey: "nav.agents", href: "agents" },
+      { labelKey: "nav.workers" },
+    ];
+  }
   if (relative === "templates" || relative.startsWith("templates/")) {
     return [
       { labelKey: "nav.agents", href: "agents" },
-      { labelKey: "nav.tools" },
+      { labelKey: "nav.templates" },
     ];
   }
   if (

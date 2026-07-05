@@ -1,5 +1,5 @@
-import { ToolsRouteLoading } from "@/components/console/browse-content-loading/tools-content-loading";
+import { WorkersContentLoading } from "@/components/console/browse-content-loading/workers-content-loading";
 
 export default function Loading() {
-  return <ToolsRouteLoading />;
+  return <WorkersContentLoading />;
 }

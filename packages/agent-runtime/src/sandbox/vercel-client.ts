@@ -38,6 +38,21 @@ function getSandboxCredentials(): Record<string, string> {
   return {};
 }
 
+/** Explicit Vercel API credentials (local scripts / CI). */
+export function hasVercelSandboxCredentials(): boolean {
+  const { VERCEL_TOKEN, VERCEL_TEAM_ID, VERCEL_PROJECT_ID } = process.env;
+  return Boolean(VERCEL_TOKEN && VERCEL_TEAM_ID && VERCEL_PROJECT_ID);
+}
+
+/**
+ * Use remote Vercel Sandbox when deployed on Vercel (OIDC) or when API creds are set.
+ * Otherwise fall back to local subprocess execution (dev laptops).
+ */
+export function shouldUseVercelSandbox(): boolean {
+  if (hasVercelSandboxCredentials()) return true;
+  return process.env.VERCEL === "1";
+}
+
 async function loadSandboxSdk() {
   try {
     const { Sandbox } = await import("@vercel/sandbox");

@@ -1,4 +1,4 @@
-import type { ScriptToolIndex, SkillIndex } from "@ssota/contracts";
+import type { WorkerIndex, SkillIndex } from "@ssota/contracts";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
@@ -6,7 +6,7 @@ import { mergeAgentToolsConnectionSeed } from "@/lib/console/agent-settings-conn
 import {
   getOrCreateProjectAccount,
   getSchedulePort,
-  getScriptToolPort,
+  getWorkerPort,
   getSkillPort,
 } from "@/lib/ports";
 
@@ -19,7 +19,7 @@ export type AgentScheduleSummary = {
 };
 
 export type AgentSettingsContext = {
-  scriptTools: ScriptToolIndex[];
+  storedWorkers: WorkerIndex[];
   skillCatalog: SkillIndex[];
   schedules: AgentScheduleSummary[];
   connectors: ConnectorDef[];
@@ -38,9 +38,9 @@ export async function loadAgentSettingsContext(
   channelsHref: string,
 ): Promise<AgentSettingsContext> {
   const account = await getOrCreateProjectAccount(teamspaceId);
-  const [scriptTools, schedules, inboundChannels, skillCatalog] =
+  const [storedWorkers, schedules, inboundChannels, skillCatalog] =
     await Promise.all([
-      getScriptToolPort(teamspaceId).listScriptTools(),
+      getWorkerPort(teamspaceId).listWorkers("tool"),
       getSchedulePort(teamspaceId, account.id).list(),
       import("@/lib/connect/inbound-channel-status").then((m) =>
         m.loadInboundChannelStatus(teamspaceId),
@@ -53,7 +53,7 @@ export async function loadAgentSettingsContext(
   const { getConnectors } = await import("@/lib/connect/connectors");
 
   return {
-    scriptTools,
+    storedWorkers,
     skillCatalog,
     schedules: schedules.map((s) => ({
       id: s.id,

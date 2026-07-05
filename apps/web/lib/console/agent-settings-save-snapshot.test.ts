@@ -13,7 +13,7 @@ const baseDraft = (): AgentSettingsDraft => ({
   toolBundles: ["graph.read"],
   allowedTriggers: ["chat", "task"],
   model: "auto",
-  scriptToolIds: [],
+  linkedWorkerIds: [],
   linkedWorkerAgentIds: [],
   enabledConnectorProviders: [],
   connectorBindings: [],

@@ -8,7 +8,7 @@ import { createPageTools } from "./pages.js";
 import { createAgentDefinitionTools } from "./agent-definitions.js";
 import { createDelegateTools } from "./delegate.js";
 import { createSandboxTools } from "./sandbox.js";
-import { createScriptToolTools } from "./script-tools.js";
+import { createWorkerTools } from "./worker-tools.js";
 import { createSkillTools } from "./skills.js";
 
 const GRAPH_READ = new Set([
@@ -63,7 +63,7 @@ export function buildAgentTools(definition: {
   const agents = createAgentDefinitionTools();
   const delegate = createDelegateTools();
   const sandbox = createSandboxTools();
-  const scriptTools = createScriptToolTools();
+  const workerTools = createWorkerTools();
   const skills = createSkillTools();
 
   let tools: ToolSet = {};
@@ -89,8 +89,8 @@ export function buildAgentTools(definition: {
   if (bundles.has("sandbox.code")) {
     tools = mergeTools(tools, sandbox);
   }
-  if (bundles.has("script_tools")) {
-    tools = mergeTools(tools, scriptTools);
+  if (bundles.has("workers")) {
+    tools = mergeTools(tools, workerTools);
   }
   if (bundles.has("skills.read")) {
     tools = mergeTools(tools, skills);

@@ -17,11 +17,24 @@ import type {
   ConnectionTrigger,
   SkillIndex,
   ToolBundle,
+  Worker,
+  WorkerIndex,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  Artifact,
+  ArtifactContent,
+  ArtifactHeader,
+  ArtifactTitle,
+} from "@/components/ai-elements/artifact";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
+import {
+  WorkerScriptEditor,
+  WorkerScriptEditorSkeleton,
+} from "@/components/console/worker-script-editor";
+import { getWorkerAction } from "@/app/[orgSlug]/[teamspaceSlug]/workers/actions";
 import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
@@ -64,7 +77,7 @@ export type AgentSettingsDraft = {
   toolBundles: ToolBundle[];
   allowedTriggers: NonNullable<AgentDefinition["runPolicy"]["allowedTriggers"]>;
   model: string;
-  scriptToolIds: string[];
+  linkedWorkerIds: string[];
   linkedWorkerAgentIds: string[];
   connectorBindings: AgentConnectorBinding[];
   enabledConnectorProviders: string[];
@@ -78,7 +91,7 @@ type AgentSettingsDialogsProps = {
   draft: AgentSettingsDraft;
   onDraftChange: (patch: Partial<AgentSettingsDraft>) => void;
   workers: AgentDefinition[];
-  scriptTools: Array<{ id: string; key: string; name: string }>;
+  storedWorkers: WorkerIndex[];
   skillCatalog: SkillIndex[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
@@ -125,7 +138,7 @@ export function AgentSettingsDialogs({
   draft,
   onDraftChange,
   workers,
-  scriptTools,
+  storedWorkers,
   skillCatalog,
   connectors,
   connections,
@@ -150,6 +163,10 @@ export function AgentSettingsDialogs({
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
   const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
   const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
+  const [selectedWorkerDetail, setSelectedWorkerDetail] = useState<Worker | null>(
+    null,
+  );
+  const [isLoadingWorkerDetail, setIsLoadingWorkerDetail] = useState(false);
   const connectorByProvider = useMemo(
     () => new Map(connectors.map((c) => [c.provider, c])),
     [connectors],
@@ -221,7 +238,7 @@ export function AgentSettingsDialogs({
       });
     }
 
-    for (const tool of scriptTools) {
+    for (const tool of storedWorkers) {
       entries.push({
         kind: "script",
         id: `script:${tool.id}`,
@@ -232,7 +249,7 @@ export function AgentSettingsDialogs({
     }
 
     return entries;
-  }, [connectors, scriptTools]);
+  }, [connectors, storedWorkers]);
 
   const filteredToolEntries = useMemo(
     () =>
@@ -331,10 +348,10 @@ export function AgentSettingsDialogs({
   };
 
   const toggleScriptTool = (id: string, enabled: boolean) => {
-    const next = new Set(draft.scriptToolIds);
+    const next = new Set(draft.linkedWorkerIds);
     if (enabled) next.add(id);
     else next.delete(id);
-    onDraftChange({ scriptToolIds: [...next] });
+    onDraftChange({ linkedWorkerIds: [...next] });
   };
 
   const toggleSkillBinding = (skillId: string, enabled: boolean) => {
@@ -351,7 +368,7 @@ export function AgentSettingsDialogs({
           (binding) => binding.provider === entry.provider,
         );
       case "script":
-        return draft.scriptToolIds.includes(entry.toolId);
+        return draft.linkedWorkerIds.includes(entry.toolId);
     }
   };
 
@@ -420,7 +437,7 @@ export function AgentSettingsDialogs({
     }
 
     return groups;
-  }, [filteredToolEntries, draft.connectorBindings, draft.scriptToolIds]);
+  }, [filteredToolEntries, draft.connectorBindings, draft.linkedWorkerIds]);
 
   const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
     id: skill.id,
@@ -463,6 +480,30 @@ export function AgentSettingsDialogs({
   const selectedAddTrigger = selectedAddTriggerId
     ? findAddableTrigger(selectedAddTriggerId)
     : null;
+
+  useEffect(() => {
+    if (openDialog !== "tools" || selectedTool?.kind !== "script") {
+      setSelectedWorkerDetail(null);
+      setIsLoadingWorkerDetail(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingWorkerDetail(true);
+    setSelectedWorkerDetail(null);
+
+    void getWorkerAction(teamspaceId, selectedTool.toolId)
+      .then((worker) => {
+        if (!cancelled) setSelectedWorkerDetail(worker);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingWorkerDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openDialog, selectedTool, teamspaceId]);
 
   const addConnectionTrigger = async (triggerId: string) => {
     const def = findAddableTrigger(triggerId);
@@ -696,7 +737,8 @@ export function AgentSettingsDialogs({
     }
 
     if (selectedTool.kind === "script") {
-      const enabled = draft.scriptToolIds.includes(selectedTool.toolId);
+      const enabled = draft.linkedWorkerIds.includes(selectedTool.toolId);
+      const workerMeta = storedWorkers.find((w) => w.id === selectedTool.toolId);
       return (
         <>
           <SidebarDetailHeader
@@ -708,21 +750,56 @@ export function AgentSettingsDialogs({
               </span>
             }
           />
-          <p className="text-muted-foreground mb-6 text-sm">
-            Run this TypeScript script as a tool during agent execution.
+          <p className="text-muted-foreground mb-4 text-sm">
+            {workerMeta?.description.trim() ||
+              "Run this TypeScript script as a tool during agent execution."}
           </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
-              Enable for this agent
-            </Label>
-            <Switch
-              id={`tool-enable-${selectedTool.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleScriptTool(selectedTool.toolId, checked)
-              }
-            />
-          </div>
+          <Artifact
+            className="mb-6"
+            data-testid={`agent-script-preview-${selectedTool.key}`}
+          >
+            <ArtifactHeader>
+              <ArtifactTitle>TypeScript script</ArtifactTitle>
+              {workerMeta ? (
+                <span className="text-muted-foreground text-xs">
+                  v{workerMeta.version}
+                </span>
+              ) : null}
+            </ArtifactHeader>
+            <ArtifactContent className="p-0">
+              {isLoadingWorkerDetail ? (
+                <WorkerScriptEditorSkeleton className="rounded-none border-0 shadow-none" />
+              ) : (
+                <WorkerScriptEditor
+                  value={selectedWorkerDetail?.script ?? ""}
+                  onChange={() => {}}
+                  readOnly
+                  className="rounded-none border-0 bg-transparent shadow-none"
+                  testId={`agent-script-readonly-${selectedTool.key}`}
+                />
+              )}
+            </ArtifactContent>
+          </Artifact>
+          <Button
+            type="button"
+            size="sm"
+            variant={enabled ? "outline" : "default"}
+            className="gap-2"
+            data-testid={`agent-script-${enabled ? "remove" : "add"}-${selectedTool.toolId}`}
+            onClick={() => toggleScriptTool(selectedTool.toolId, !enabled)}
+          >
+            {enabled ? (
+              <>
+                <MinusIcon className="size-4" aria-hidden />
+                Remove from agent
+              </>
+            ) : (
+              <>
+                <PlusIcon className="size-4" aria-hidden />
+                Add to agent
+              </>
+            )}
+          </Button>
         </>
       );
     }
