@@ -16,6 +16,7 @@ import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { WorkerScriptEditor } from "@/components/console/worker-script-editor";
 import {
   createWorkerAction,
   deleteWorkerAction,
@@ -428,13 +429,12 @@ export function WorkersWorkspace({
               {isLoadingDetail ? (
                 <p className="text-xs text-muted-foreground">Loading script…</p>
               ) : (
-                <Textarea
+                <WorkerScriptEditor
                   id={`worker-script-${activeWorker.id}`}
+                  testId="worker-edit-script"
                   value={editScript}
-                  onChange={(e) => setEditScript(e.target.value)}
-                  rows={14}
-                  className="font-mono text-xs"
-                  data-testid="worker-edit-script"
+                  onChange={setEditScript}
+                  minHeight="16rem"
                 />
               )}
             </div>
@@ -546,14 +546,13 @@ export function WorkersWorkspace({
               </div>
             ) : null}
             <div className="grid gap-2">
-              <Label htmlFor="worker-script">TypeScript script</Label>
-              <Textarea
-                id="worker-script"
+              <Label htmlFor="worker-script-create">TypeScript script</Label>
+              <WorkerScriptEditor
+                id="worker-script-create"
+                testId="worker-create-script"
                 value={createScript}
-                onChange={(e) => setCreateScript(e.target.value)}
-                rows={12}
-                className="font-mono text-xs"
-                data-testid="worker-create-script"
+                onChange={setCreateScript}
+                minHeight="16rem"
               />
             </div>
           </div>
