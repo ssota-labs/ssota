@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { BooksIcon, CompassIcon, FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { Skill, SkillFile, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -293,11 +293,13 @@ export function SkillsPageWorkspace({
                   id: "explore",
                   title: "Explore",
                   testId: "skills-tab-explore",
+                  icon: <CompassIcon aria-hidden />,
                 },
                 {
                   id: "library",
                   title: "My library",
                   testId: "skills-tab-library",
+                  icon: <BooksIcon aria-hidden />,
                 },
               ]}
               activeId={tab}

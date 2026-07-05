@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@ssota/ui/lib/utils";
 import type { PageSiblingNavData } from "@/lib/console/page-sibling-nav";
@@ -38,10 +39,38 @@ function SiblingNavLabel({
   );
 }
 
+function SiblingNavItemContent({
+  title,
+  isActive,
+  icon,
+}: {
+  title: string;
+  isActive: boolean;
+  icon?: ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      {icon ? (
+        <span
+          className={cn(
+            "shrink-0 [&_svg]:size-5 md:[&_svg]:size-[1.35rem]",
+            isActive ? "text-foreground" : "text-muted-foreground",
+          )}
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
+      <SiblingNavLabel title={title} isActive={isActive} />
+    </span>
+  );
+}
+
 export type ClientSiblingNavItem = {
   id: string;
   title: string;
   testId?: string;
+  icon?: ReactNode;
 };
 
 /** Client-side section tabs — same chrome as {@link PageSiblingNav}. */
@@ -72,7 +101,11 @@ export function ClientSiblingNav({
               data-testid={item.testId}
               className={siblingNavItemClassName}
             >
-              <SiblingNavLabel title={item.title} isActive={isActive} />
+              <SiblingNavItemContent
+                title={item.title}
+                isActive={isActive}
+                icon={item.icon}
+              />
             </button>
           );
         })}
