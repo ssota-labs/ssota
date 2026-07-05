@@ -695,7 +695,6 @@ function GithubSkillSheet({
   const [description, setDescription] = useState("");
   const [repo, setRepo] = useState("");
   const [skillPath, setSkillPath] = useState("SKILL.md");
-  const [ref, setRef] = useState("main");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -705,7 +704,6 @@ function GithubSkillSheet({
     setDescription("");
     setRepo("");
     setSkillPath("SKILL.md");
-    setRef("main");
     setError(null);
   };
 
@@ -732,7 +730,6 @@ function GithubSkillSheet({
               source: repo.trim(),
               sourceType: "github",
               skillPath: skillPath.trim() || "SKILL.md",
-              ref: ref.trim() || "main",
             },
           },
         }),
@@ -754,7 +751,7 @@ function GithubSkillSheet({
     <CardListSheetPanel
       testId="skill-github-dialog"
       title="Import from GitHub"
-      subtitle="Fetch SKILL.md (and references) from a public repository path."
+      subtitle="Fetch SKILL.md from the repository default branch."
       onClose={close}
       footer={
         <div className="flex justify-end gap-2">
@@ -819,14 +816,6 @@ function GithubSkillSheet({
             value={skillPath}
             onChange={(e) => setSkillPath(e.target.value)}
             data-testid="skill-github-path"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="github-ref">Git ref</Label>
-          <Input
-            id="github-ref"
-            value={ref}
-            onChange={(e) => setRef(e.target.value)}
           />
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

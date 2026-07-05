@@ -3,6 +3,7 @@ import {
   hashSkillFiles,
   inferLockSourceType,
   parseGithubRepo,
+  resolveGithubDefaultRef,
   skillDirFromPath,
 } from "../src/ports/skill-helpers.js";
 
@@ -56,5 +57,32 @@ describe("skill-helpers", () => {
         externalId: null,
       }),
     ).toBe("inline");
+  });
+
+  it("resolves github default branch from repo metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ default_branch: "develop" }), {
+        status: 200,
+      });
+    try {
+      await expect(resolveGithubDefaultRef("acme", "skills")).resolves.toBe(
+        "develop",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("falls back to main when github default branch lookup fails", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response("", { status: 404 });
+    try {
+      await expect(resolveGithubDefaultRef("acme", "skills")).resolves.toBe(
+        "main",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
