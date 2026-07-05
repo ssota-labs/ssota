@@ -48,6 +48,18 @@ function mapIndex(row: WorkerRow): WorkerIndex {
   };
 }
 
+/** Builder-scoped sync workers across all teamspaces (cron fan-out). */
+export async function listBuilderWorkersByKind(
+  db: Db,
+  kind: WorkerKind,
+): Promise<Worker[]> {
+  const rows = await db
+    .select()
+    .from(schema.workers)
+    .where(and(eq(schema.workers.kind, kind), isNull(schema.workers.accountId)));
+  return rows.map(mapWorker);
+}
+
 export function createWorkerPort(
   db: Db,
   scope: ActionPortsScope,

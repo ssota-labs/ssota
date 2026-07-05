@@ -8,6 +8,7 @@ export {
   createAgentDefinitionPort,
   createWorkerPort,
   createScriptToolPort,
+  listBuilderWorkersByKind,
   createSkillPort,
   createSandboxEnvironmentPort,
   createSandboxSessionRecordPort,
