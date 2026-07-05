@@ -12,6 +12,7 @@ import {
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ListRowSkeleton } from "@/components/console/route-loaders";
@@ -654,11 +655,12 @@ function CreateSkillSheet({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="skill-description">Description</Label>
-          <Input
+          <Textarea
             id="skill-description"
             placeholder="Short summary for the agent manifest"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            rows={3}
             data-testid="skill-create-description"
           />
         </div>
@@ -1038,10 +1040,11 @@ function EditCustomSkillForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="skill-edit-description">Description</Label>
-        <Input
+        <Textarea
           id="skill-edit-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          rows={3}
         />
       </div>
       <div className="space-y-1.5">
