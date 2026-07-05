@@ -1,13 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import { CardListSheet } from "@/components/card-list-sheet";
+import { Button } from "@ssota/ui/components/ui/button";
 import type { AgentDefinition } from "@ssota/contracts";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
 import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
+import {
+  CREATE_AGENT_SHEET_ID,
+  buildEmptyAgentDefinition,
+  isCreateAgentSheetId,
+} from "@/lib/console/agent-create-draft";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
@@ -16,7 +23,6 @@ type AgentsWorkspaceProps = {
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
   skillLinks: Record<string, string[]>;
-  skillsHref: string;
   connectionsHref: string;
 };
 
@@ -27,16 +33,18 @@ export function AgentsWorkspace({
   settingsContext,
   scriptToolLinks,
   skillLinks,
-  skillsHref,
   connectionsHref,
 }: AgentsWorkspaceProps) {
   const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [createDraft, setCreateDraft] = useState<AgentDefinition | null>(null);
   const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
-  const activeDefinition =
-    activeId === MAIN_AGENT_ID
+  const isCreating = isCreateAgentSheetId(activeId);
+  const activeDefinition = isCreating
+    ? createDraft
+    : activeId === MAIN_AGENT_ID
       ? mainAgent
       : (definitions.find((entry) => entry.id === activeId) ?? null);
   const open = activeDefinition !== null;
@@ -54,7 +62,15 @@ export function AgentsWorkspace({
     setMainAgent(mainAgentDefinition);
   }, [mainAgentDefinition]);
 
-  const close = () => setActiveId(null);
+  const close = useCallback(() => {
+    setActiveId(null);
+    setCreateDraft(null);
+  }, []);
+
+  const openCreateSheet = useCallback(() => {
+    setCreateDraft(buildEmptyAgentDefinition(teamspaceId));
+    setActiveId(CREATE_AGENT_SHEET_ID);
+  }, [teamspaceId]);
 
   const handleActiveIdChange = useCallback(
     (nextId: string | null) => {
@@ -65,14 +81,21 @@ export function AgentsWorkspace({
       if (nextId === activeId) {
         return;
       }
-      const applyChange = () => setActiveId(nextId);
+      const applyChange = () => {
+        if (isCreateAgentSheetId(nextId)) {
+          openCreateSheet();
+          return;
+        }
+        setCreateDraft(null);
+        setActiveId(nextId);
+      };
       if (requestCloseRef.current) {
         requestCloseRef.current(applyChange);
         return;
       }
       applyChange();
     },
-    [activeId],
+    [activeId, openCreateSheet],
   );
 
   const registerRequestClose = useCallback(
@@ -95,12 +118,14 @@ export function AgentsWorkspace({
           title="Agents"
           description="Configure the project agent and agents you create for this project."
           actions={
-            <a
-              href={skillsHref}
-              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            <Button
+              type="button"
+              onClick={openCreateSheet}
+              data-testid="agents-create-button"
             >
-              Open Skills
-            </a>
+              <PlusIcon className="size-4" aria-hidden />
+              Create agent
+            </Button>
           }
         />
 
@@ -153,6 +178,7 @@ export function AgentsWorkspace({
       {open && activeDefinition ? (
         <AgentSettingsSheet
           definition={activeDefinition}
+          mode={isCreating ? "create" : "edit"}
           settingsTarget={activeId === MAIN_AGENT_ID ? "main" : "agent"}
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
@@ -168,6 +194,9 @@ export function AgentsWorkspace({
           connectionsHref={connectionsHref}
           schedules={settingsContext.schedules}
           onClose={close}
+          onCreated={(definition) => {
+            setDefinitions((prev) => [...prev, definition]);
+          }}
           registerRequestClose={registerRequestClose}
         />
       ) : null}

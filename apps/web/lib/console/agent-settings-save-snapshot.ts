@@ -6,6 +6,8 @@ import { mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import { normalizeConnectorBindingForSnapshot } from "@/lib/console/agent-connector-bindings";
 
 export type AgentSettingsSaveSnapshot = {
+  name: string;
+  description: string;
   instructionsJson: string;
   toolBundles: ToolBundle[];
   allowedTriggers: AgentTrigger[];
@@ -31,10 +33,11 @@ function sortTriggers(values: AgentTrigger[]): AgentTrigger[] {
 export function resolveAllowedTriggersForSave(
   draft: AgentSettingsDraft,
   agentSchedules: AgentScheduleSummary[],
+  settingsTarget: "main" | "agent" = "agent",
 ): AgentTrigger[] {
   const allowedTriggers: AgentTrigger[] = Array.from(
     new Set<AgentTrigger>([...draft.allowedTriggers, "chat"]),
-  );
+  ).filter((trigger) => settingsTarget !== "main" || trigger !== "task");
   if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
     allowedTriggers.push("schedule");
   }
@@ -115,13 +118,20 @@ export function resolveConnectorBindingsForSave(
 export function buildAgentSettingsSaveSnapshot(
   draft: AgentSettingsDraft,
   agentSchedules: AgentScheduleSummary[],
+  settingsTarget: "main" | "agent" = "agent",
 ): AgentSettingsSaveSnapshot {
   const scheduleEnabled = resolveScheduleEnabled(draft, agentSchedules);
   const connectorBindings = resolveConnectorBindingsForSave(draft);
   return {
+    name: draft.name.trim(),
+    description: draft.description.trim(),
     instructionsJson: JSON.stringify(draft.instructions),
     toolBundles: resolveToolBundlesForSave(draft),
-    allowedTriggers: resolveAllowedTriggersForSave(draft, agentSchedules),
+    allowedTriggers: resolveAllowedTriggersForSave(
+      draft,
+      agentSchedules,
+      settingsTarget,
+    ),
     model: draft.model,
     scriptToolIds: sortStrings(draft.scriptToolIds),
     linkedWorkerAgentIds: sortStrings(draft.linkedWorkerAgentIds),
@@ -142,6 +152,8 @@ export function agentSettingsSnapshotsEqual(
   right: AgentSettingsSaveSnapshot,
 ): boolean {
   return (
+    left.name === right.name &&
+    left.description === right.description &&
     left.instructionsJson === right.instructionsJson &&
     JSON.stringify(left.toolBundles) === JSON.stringify(right.toolBundles) &&
     JSON.stringify(left.allowedTriggers) ===
@@ -163,8 +175,17 @@ export function isAgentSettingsDraftDirty(
   draft: AgentSettingsDraft,
   savedDraft: AgentSettingsDraft,
   agentSchedules: AgentScheduleSummary[],
+  settingsTarget: "main" | "agent" = "agent",
 ): boolean {
-  const current = buildAgentSettingsSaveSnapshot(draft, agentSchedules);
-  const saved = buildAgentSettingsSaveSnapshot(savedDraft, agentSchedules);
+  const current = buildAgentSettingsSaveSnapshot(
+    draft,
+    agentSchedules,
+    settingsTarget,
+  );
+  const saved = buildAgentSettingsSaveSnapshot(
+    savedDraft,
+    agentSchedules,
+    settingsTarget,
+  );
   return !agentSettingsSnapshotsEqual(current, saved);
 }

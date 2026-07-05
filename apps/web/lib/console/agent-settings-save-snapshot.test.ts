@@ -7,6 +7,8 @@ import {
 } from "./agent-settings-save-snapshot";
 
 const baseDraft = (): AgentSettingsDraft => ({
+  name: "Research",
+  description: "When research is needed",
   instructions: [{ type: "paragraph", content: "Hello" }],
   toolBundles: ["graph.read"],
   allowedTriggers: ["chat", "task"],
@@ -50,6 +52,16 @@ describe("agent-settings-save-snapshot", () => {
       },
     ]);
     expect(triggers).toContain("schedule");
+  });
+
+  it("drops task trigger for main agent settings", () => {
+    const draft: AgentSettingsDraft = {
+      ...baseDraft(),
+      allowedTriggers: ["chat", "task"],
+    };
+    const triggers = resolveAllowedTriggersForSave(draft, [], "main");
+    expect(triggers).not.toContain("task");
+    expect(triggers).toContain("chat");
   });
 
   it("normalizes equivalent drafts to the same snapshot", () => {

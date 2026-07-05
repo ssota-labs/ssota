@@ -41,6 +41,7 @@ import {
 } from "@/lib/console/agent-connector-bindings";
 import {
   ADDABLE_TRIGGER_GROUPS,
+  addTriggerExcludeIdsForSettingsTarget,
   filterAddableTriggerGroups,
   findAddableTrigger,
 } from "@/lib/console/agent-trigger-catalog";
@@ -57,6 +58,8 @@ import {
 } from "@/components/console/agent-settings-sidebar-dialog";
 
 export type AgentSettingsDraft = {
+  name: string;
+  description: string;
   instructions: AgentDefinition["instructions"];
   toolBundles: ToolBundle[];
   allowedTriggers: NonNullable<AgentDefinition["runPolicy"]["allowedTriggers"]>;
@@ -86,6 +89,7 @@ type AgentSettingsDialogsProps = {
   accountId: string;
   returnTo: string;
   allowOrgScope: boolean;
+  settingsTarget: "main" | "agent";
   openDialog: AgentSettingsDialogKind | null;
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
@@ -132,6 +136,7 @@ export function AgentSettingsDialogs({
   accountId,
   returnTo,
   allowOrgScope,
+  settingsTarget,
   openDialog,
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
@@ -180,9 +185,13 @@ export function AgentSettingsDialogs({
         })
       : channelsHref;
 
-  const addedConnectionTriggerIds = useMemo(
-    () => new Set(draft.connectionTriggers.map((t) => t.id)),
-    [draft.connectionTriggers],
+  const addTriggerExcludeIds = useMemo(
+    () =>
+      addTriggerExcludeIdsForSettingsTarget(
+        settingsTarget,
+        draft.connectionTriggers.map((t) => t.id),
+      ),
+    [draft.connectionTriggers, settingsTarget],
   );
 
   const filteredAddTriggerGroups = useMemo(
@@ -190,9 +199,9 @@ export function AgentSettingsDialogs({
       filterAddableTriggerGroups(
         ADDABLE_TRIGGER_GROUPS,
         addTriggerSearch,
-        addedConnectionTriggerIds,
+        addTriggerExcludeIds,
       ),
-    [addTriggerSearch, addedConnectionTriggerIds],
+    [addTriggerSearch, addTriggerExcludeIds],
   );
 
   const addTriggerFlatItems = useMemo(

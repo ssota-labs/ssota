@@ -3,7 +3,10 @@ import { resetMainAgentConnectorBindingSeed } from "../helpers/agent-main-config
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+
 const PROJECT_AGENT_CARD = "main-agent-card";
+const TASK_AGENT_CARD = `agent-item-${BUILTIN_AGENT_IDS.implementFeature}`;
 
 test.describe("Agents", () => {
   test.beforeAll(async () => {
@@ -58,7 +61,7 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-advanced-card")).toBeVisible();
   });
 
-  test("triggers card shows default chat/task and add trigger button", async ({ page }) => {
+  test("triggers card shows default chat and add trigger button", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
@@ -67,7 +70,7 @@ test.describe("Agents", () => {
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
     await expect(triggersCard.getByTestId("agent-trigger-chat").getByRole("switch")).toHaveCount(0);
-    await expect(triggersCard.getByTestId("agent-trigger-task").getByRole("switch")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-task")).toHaveCount(0);
     await expect(triggersCard.getByTestId("agent-trigger-chatbot")).not.toBeVisible();
     await expect(
       triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
@@ -92,17 +95,10 @@ test.describe("Agents", () => {
     await expect(addDialog.getByTestId("add-trigger-confirm")).toBeVisible();
     await expect(addDialog.getByRole("button", { name: "Cancel" })).toBeVisible();
     await expect(addDialog.getByRole("button", { name: "Done" })).toHaveCount(0);
-    await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
-    await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
+    await expect(nav.getByText("Slack", { exact: true })).toHaveCount(0);
+    await expect(nav.getByText("Agent mentioned").first()).toHaveCount(0);
     await expect(nav.getByText("Notion", { exact: true })).not.toBeVisible();
     await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
-    await addDialog.getByTestId("add-trigger-slack:agent_mentioned").click();
-    await expect(
-      addDialog.getByText(/creates a Slack user group/i),
-    ).toBeVisible();
-    await expect(
-      addDialog.getByText(/Saved or Later messages/i),
-    ).toBeVisible();
   });
 
   test("frequency select opens inside add-trigger dialog", async ({ page }) => {
@@ -242,7 +238,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId(TASK_AGENT_CARD).click();
 
     const sheet = page.getByTestId("agent-settings-sheet");
     const saveButton = page.getByTestId("agent-settings-save");
@@ -268,7 +264,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId(TASK_AGENT_CARD).click();
     await page
       .getByTestId("agent-trigger-task")
       .getByRole("switch")
@@ -366,6 +362,44 @@ test.describe("Agents", () => {
     await expect(
       toolsCard.getByTestId("agent-bound-connection-user-seed-notion-user-1"),
     ).not.toBeVisible();
+  });
+
+  test("header shows create agent button instead of open skills link", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await expect(page.getByTestId("agents-create-button")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Skills" })).toHaveCount(0);
+  });
+
+  test("creates agent from header button and opens settings sheet", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    const agentName = `E2E Agent ${Date.now()}`;
+    await page.getByTestId("agents-create-button").click();
+
+    const sheet = page.getByTestId("agent-settings-sheet");
+    await expect(sheet).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Create agent", exact: true }),
+    ).toBeVisible();
+    await sheet.getByTestId("agent-settings-name").fill(agentName);
+    await sheet
+      .getByTestId("agent-settings-description")
+      .fill("Use for automated E2E agent creation tests.");
+    await page.getByTestId("agent-settings-save").click();
+
+    await expect(sheet).not.toBeVisible();
+    await expect(
+      page.getByRole("main").locator("span.text-sm.font-medium", {
+        hasText: agentName,
+      }),
+    ).toBeVisible();
   });
 
   test("sidebar nav link reaches agents", async ({ page }) => {
