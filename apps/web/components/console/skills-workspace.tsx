@@ -27,6 +27,7 @@ import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ClientSiblingNav } from "@/components/console/page-sibling-nav";
 import {
   SkillDetailCard,
+  SkillDetailCardSkeleton,
   SkillMarkdownView,
 } from "@/components/console/skill-detail-view";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
@@ -81,7 +82,7 @@ export function SkillsPageWorkspace({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [isPending, startListTransition] = useTransition();
-  const [, startDetailTransition] = useTransition();
+  const [isDetailPending, startDetailTransition] = useTransition();
   const [isRemoving, startRemove] = useTransition();
   const listRequestId = useRef(0);
 
@@ -184,6 +185,9 @@ export function SkillsPageWorkspace({
     detail?.files.find(
       (f) => f.path === "SKILL.md" || f.path.endsWith("/SKILL.md"),
     )?.contents ?? "";
+
+  const isDetailLoading =
+    isDetailPending || (activeId != null && detail?.skill.id !== activeId);
 
   const handleSearch = () => {
     if (tab === "library") loadLibrary(query);
@@ -430,6 +434,11 @@ export function SkillsPageWorkspace({
                     viewKey={`${activeSkill.id}-body`}
                   />
                 </SkillDetailCard>
+              ) : isDetailLoading ? (
+                <SkillDetailCardSkeleton
+                  title="SKILL.md"
+                  testId="skill-detail-body-skeleton"
+                />
               ) : null}
 
               {tab === "library" &&
