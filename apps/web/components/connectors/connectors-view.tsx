@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ArrowClockwiseIcon,
-  ArrowLeftIcon,
   BuildingsIcon,
   CheckCircleIcon,
   LinkBreakIcon,
@@ -133,8 +132,9 @@ export function ConnectorsView({
             <BrowseWorkspace.Grid>
               {group.items.map((connector) => {
                 const entry = byProvider.get(connector.provider);
-                const connected =
-                  (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
+                const connected = allowOrgScope
+                  ? (entry?.org.length ?? 0) > 0
+                  : (entry?.user.length ?? 0) > 0;
                 return (
                   <ConnectorBrowseCard
                     key={connector.provider}
@@ -228,17 +228,8 @@ function ConnectorSettingsPanel({
   onClose: () => void;
 }) {
   const configured = Boolean(connector.connectorUid);
-  const scopes: Scope[] = allowOrgScope ? ["user", "org"] : ["user"];
-  const [scope, setScope] = useState<Scope | null>(
-    scopes.length === 1 ? "user" : null,
-  );
-
-  useEffect(() => {
-    setScope(scopes.length === 1 ? "user" : null);
-  }, [connector.provider, scopes.length]);
-
-  const connectionsFor = (s: Scope) =>
-    s === "user" ? userConnections : orgConnections;
+  const scope: Scope = allowOrgScope ? "org" : "user";
+  const scopeConnections = scope === "org" ? orgConnections : userConnections;
 
   return (
     <CardListSheetPanel
@@ -251,37 +242,17 @@ function ConnectorSettingsPanel({
           <ConnectorBrandIcon provider={connector.provider} className="size-5" />
         </span>
       }
-      headerAction={
-        scope !== null && scopes.length > 1 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Back"
-            onClick={() => setScope(null)}
-            className="shrink-0"
-          >
-            <ArrowLeftIcon className="size-4" />
-          </Button>
-        ) : undefined
-      }
     >
       <div className="space-y-4" data-testid={`connection-detail-${connector.provider}`}>
         {!configured ? (
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             This connector is not configured for this deployment.
           </p>
-        ) : scope === null ? (
-          <ScopeList
-            scopes={scopes}
-            connectionsFor={connectionsFor}
-            onSelect={setScope}
-          />
         ) : (
-          <ScopeDetail
+          <ConnectorScopeCard
             connector={connector}
             scope={scope}
-            connections={connectionsFor(scope)}
+            connections={scopeConnections}
             teamspaceId={teamspaceId}
             accountId={accountId}
             returnTo={returnTo}
@@ -292,61 +263,7 @@ function ConnectorSettingsPanel({
   );
 }
 
-function ScopeList({
-  scopes,
-  connectionsFor,
-  onSelect,
-}: {
-  scopes: Scope[];
-  connectionsFor: (s: Scope) => ConnectorConnection[];
-  onSelect: (s: Scope) => void;
-}) {
-  return (
-    <AgentSettingCard.Root testId="connection-scope-list">
-      <AgentSettingCard.Header
-        title="Access scope"
-        description="Who this connection applies to and which tools the agent may use."
-      />
-      <AgentSettingCard.Body>
-        <AgentSettingCard.Items divided>
-          {scopes.map((s) => {
-            const meta = SCOPE_META[s];
-            const ScopeIcon = meta.icon;
-            const count = connectionsFor(s).length;
-            return (
-              <AgentSettingCard.Item
-                key={s}
-                testId={`scope-${s}`}
-                onPress={() => onSelect(s)}
-                icon={
-                  <ScopeIcon className="size-3.5 text-muted-foreground" />
-                }
-                title={meta.title}
-                subtitle={meta.subtitle}
-                trailing={
-                  <div className="flex items-center gap-2">
-                    {count > 0 ? (
-                      <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
-                        <CheckCircleIcon
-                          weight="fill"
-                          className="size-3 text-primary"
-                        />
-                        {count}
-                      </Badge>
-                    ) : null}
-                    <AgentSettingCard.ItemCaret />
-                  </div>
-                }
-              />
-            );
-          })}
-        </AgentSettingCard.Items>
-      </AgentSettingCard.Body>
-    </AgentSettingCard.Root>
-  );
-}
-
-function ScopeDetail({
+function ConnectorScopeCard({
   connector,
   scope,
   connections,
