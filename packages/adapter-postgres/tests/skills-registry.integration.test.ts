@@ -268,6 +268,19 @@ beta
     }
   });
 
+  it("derives library key from title when key is omitted", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const created = await port.registerSkill(organizationId, {
+      name: "Frontend Design",
+      description: "Auto key from title",
+      source: "custom",
+      body: "Body",
+    });
+    expect(created.key).toBe("frontend-design");
+    await port.deleteCustomSkill(organizationId, created.id);
+  });
+
   it("creates, updates, and deletes custom org skills", async () => {
     if (skip) return;
     const port = createSkillPort(db, { organizationId, teamspaceId });

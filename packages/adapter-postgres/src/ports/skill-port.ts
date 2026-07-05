@@ -5,6 +5,7 @@ import {
   normalizeSkillKey,
   splitSkillFrontmatter,
   stripSkillFrontmatter,
+  toSkillKey,
   uniquifySkillKey,
 } from "@ssota/core";
 import {
@@ -430,9 +431,10 @@ export function createSkillPort(
     async registerSkill(orgId, input: RegisterSkillInput) {
       let key =
         input.key ??
-        (input.externalId ? input.externalId.split("/").pop() : undefined);
+        (input.externalId ? input.externalId.split("/").pop() : undefined) ??
+        (input.name?.trim() ? toSkillKey(input.name) : undefined);
       if (!key) {
-        throw new Error("registerSkill requires key or externalId");
+        throw new Error("registerSkill requires key, externalId, or name");
       }
 
       let files = input.files ?? [];
