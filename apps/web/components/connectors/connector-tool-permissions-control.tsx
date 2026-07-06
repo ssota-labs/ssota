@@ -14,13 +14,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
-import { setToolkitDisabledAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
+import { setConnectionDisabledAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 import {
-  patchToolkitToolSettingsDisabledCache,
-  prefetchToolkitToolSettings,
-  useToolkitToolSettings,
-} from "@/lib/hooks/use-toolkit-tool-settings";
+  patchConnectionToolSettingsDisabledCache,
+  prefetchConnectionToolSettings,
+  useConnectionToolSettings,
+} from "@/lib/hooks/use-connection-tool-settings";
 
 function ConnectorToolkitToolPermissionsPopoverContent({
   toolkit,
@@ -37,10 +37,12 @@ function ConnectorToolkitToolPermissionsPopoverContent({
   returnTo: string;
   connectionId: string;
 }) {
-  const { tools, disabled, loading, error } = useToolkitToolSettings(
+  const { tools, disabled, loading, error } = useConnectionToolSettings({
     teamspaceId,
+    connectionId,
     toolkit,
-  );
+    scope,
+  });
   const [optimisticDisabled, setOptimisticDisabled] = useState<string[] | null>(
     null,
   );
@@ -72,13 +74,14 @@ function ConnectorToolkitToolPermissionsPopoverContent({
 
     void (async () => {
       try {
-        await setToolkitDisabledAction({
+        await setConnectionDisabledAction({
           teamspaceId,
+          connectionId,
           toolkit,
           disabled: next,
           revalidate: returnTo,
         });
-        patchToolkitToolSettingsDisabledCache(teamspaceId, toolkit, next);
+        patchConnectionToolSettingsDisabledCache(teamspaceId, connectionId, next);
       } catch {
         setOptimisticDisabled((current) => {
           const reverted = new Set(current ?? disabled);
@@ -174,9 +177,21 @@ export function ConnectorToolPermissionsControl({
                   aria-label={`Tool permissions for ${providerLabel}`}
                   data-testid={`connection-tool-settings-${scope}-${connectionId}`}
                   onPointerEnter={() =>
-                    prefetchToolkitToolSettings(teamspaceId, toolkit)
+                    prefetchConnectionToolSettings({
+                      teamspaceId,
+                      connectionId,
+                      toolkit,
+                      scope,
+                    })
                   }
-                  onFocus={() => prefetchToolkitToolSettings(teamspaceId, toolkit)}
+                  onFocus={() =>
+                    prefetchConnectionToolSettings({
+                      teamspaceId,
+                      connectionId,
+                      toolkit,
+                      scope,
+                    })
+                  }
                 />
               }
             />

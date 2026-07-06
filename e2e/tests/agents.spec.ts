@@ -332,17 +332,37 @@ test.describe("Agents", () => {
     page,
   }) => {
     const disabledToolSlug = "NOTION_SEARCH_NOTION_PAGE";
+    const orgConnectionId = "seed-notion-org-1";
 
     await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId("agent-tools-manage").click();
+
+    const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
+    await expect(toolsDialog).toBeVisible();
+    await toolsDialog.getByTestId("agent-connect-notion").click();
+    const addOrgBinding = toolsDialog.getByTestId(
+      `agent-connection-add-org-${orgConnectionId}`,
+    );
+    if (await addOrgBinding.isVisible()) {
+      await addOrgBinding.click();
+    }
+    await toolsDialog.getByRole("button", { name: "Done" }).click();
+    await expect(toolsDialog).not.toBeVisible();
+    await page.getByTestId("agent-settings-save").click();
+    await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
+
     await gotoProject(page, "connections");
 
     await page.getByTestId("connector-notion").click();
     await page
-      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .getByTestId(`connection-tool-settings-org-${orgConnectionId}`)
       .click();
 
     const connectionsPopover = page.getByTestId(
-      "connection-tool-permissions-popover",
+      `connection-tool-permissions-popover-org-${orgConnectionId}`,
     );
     await expect(connectionsPopover).toBeVisible();
 
@@ -363,7 +383,7 @@ test.describe("Agents", () => {
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
     await toolsCard
-      .getByTestId("agent-bound-connection-settings-user-seed-notion-user-1")
+      .getByTestId(`agent-bound-connection-settings-org-${orgConnectionId}`)
       .click();
 
     const popover = page.getByTestId("agent-tool-permissions-popover");
@@ -381,7 +401,7 @@ test.describe("Agents", () => {
     await gotoProject(page, "connections");
     await page.getByTestId("connector-notion").click();
     await page
-      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .getByTestId(`connection-tool-settings-org-${orgConnectionId}`)
       .click();
     await expect(connectionsPopover).toBeVisible();
     const restoreSwitch = connectionsPopover
@@ -390,6 +410,70 @@ test.describe("Agents", () => {
     if ((await restoreSwitch.getAttribute("aria-checked")) === "false") {
       await restoreSwitch.click();
     }
+    await page.keyboard.press("Escape");
+    await page.getByTestId("card-list-sheet-close").click();
+
+    await gotoProject(page, "agents");
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await toolsCard
+      .getByTestId(`agent-bound-connection-unlink-org-${orgConnectionId}`)
+      .click();
+    await page.getByTestId("agent-settings-save").click();
+    await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
+  });
+
+  test("connection tool permissions are isolated per connected account", async ({
+    page,
+  }) => {
+    const disabledToolSlug = "NOTION_SEARCH_NOTION_PAGE";
+
+    await loginAsSmoke(page);
+    await gotoProject(page, "connections");
+
+    await page.getByTestId("connector-notion").click();
+
+    await page
+      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .click();
+    const org1Popover = page.getByTestId(
+      "connection-tool-permissions-popover-org-seed-notion-org-1",
+    );
+    await expect(org1Popover).toBeVisible();
+    const org1Switch = org1Popover
+      .getByTestId(`connection-tool-permission-row-${disabledToolSlug}`)
+      .getByRole("switch");
+    if ((await org1Switch.getAttribute("aria-checked")) === "true") {
+      await org1Switch.click();
+      await expect(org1Switch).toHaveAttribute("aria-checked", "false");
+    }
+    await page.keyboard.press("Escape");
+
+    await page
+      .getByTestId("connection-tool-settings-org-seed-notion-org-2")
+      .click();
+    const org2Popover = page.getByTestId(
+      "connection-tool-permissions-popover-org-seed-notion-org-2",
+    );
+    await expect(org2Popover).toBeVisible();
+    const org2Switch = org2Popover
+      .getByTestId(`connection-tool-permission-row-${disabledToolSlug}`)
+      .getByRole("switch");
+    await expect(org2Switch).toHaveAttribute("aria-checked", "true");
+
+    await page.keyboard.press("Escape");
+
+    await page
+      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .click();
+    await expect(org1Popover).toBeVisible();
+    await expect(org1Switch).toHaveAttribute("aria-checked", "false");
+
+    if ((await org1Switch.getAttribute("aria-checked")) === "false") {
+      await org1Switch.click();
+      await expect(org1Switch).toHaveAttribute("aria-checked", "true");
+    }
+    await page.keyboard.press("Escape");
+    await page.getByTestId("card-list-sheet-close").click();
   });
 
   test("unlinks bound connection from tools card and persists on save", async ({

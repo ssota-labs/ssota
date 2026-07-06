@@ -91,7 +91,7 @@ import {
   removeConnectorBinding,
   updateBindingInList,
 } from "@/lib/console/agent-connector-bindings";
-import { prefetchToolkitToolSettings } from "@/lib/hooks/use-toolkit-tool-settings";
+import { prefetchConnectionToolSettings } from "@/lib/hooks/use-connection-tool-settings";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -129,10 +129,20 @@ function BoundConnectionToolPermissionsControl({
                   aria-label={`Tool permissions for ${label}`}
                   data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
                   onPointerEnter={() =>
-                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                    prefetchConnectionToolSettings({
+                      teamspaceId,
+                      connectionId: binding.connectionId,
+                      toolkit: binding.provider,
+                      scope: binding.scope,
+                    })
                   }
                   onFocus={() =>
-                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                    prefetchConnectionToolSettings({
+                      teamspaceId,
+                      connectionId: binding.connectionId,
+                      toolkit: binding.provider,
+                      scope: binding.scope,
+                    })
                   }
                 />
               }
@@ -298,7 +308,12 @@ export function AgentSettingsSheet({
 
   useEffect(() => {
     for (const binding of draft.connectorBindings) {
-      prefetchToolkitToolSettings(teamspaceId, binding.provider);
+      prefetchConnectionToolSettings({
+        teamspaceId,
+        connectionId: binding.connectionId,
+        toolkit: binding.provider,
+        scope: binding.scope,
+      });
     }
   }, [teamspaceId, draft.connectorBindings]);
 
