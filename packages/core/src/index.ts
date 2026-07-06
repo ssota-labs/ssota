@@ -617,6 +617,7 @@ export * from "./skill/plugin-manifest.js";
 export * from "./skill/github-discover-paths.js";
 export * from "./skill/discover.js";
 export * from "./skill/library-match.js";
+export * from "./worker/worker-key.js";
 export * from "./ports/sandbox-environment.js";
 export * from "./ports/sandbox-session.js";
 export * from "./ports/page-port.js";

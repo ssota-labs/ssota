@@ -134,7 +134,7 @@ export type AgentDefinitionWorkerLink = z.infer<
 >;
 
 export const CreateWorkerInputSchema = z.object({
-  key: z.string().min(1),
+  key: z.string().min(1).optional(),
   name: z.string().min(1),
   description: z.string().default(""),
   kind: WorkerKindSchema,
