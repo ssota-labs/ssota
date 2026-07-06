@@ -293,7 +293,9 @@ export const connectorToolSettings = pgTable(
       .references(() => profiles.id, { onDelete: "cascade" }),
     /** Composio toolkit slug (e.g. "gmail", "slack"). */
     toolkit: text("toolkit").notNull(),
-    /** Tool slugs the user has disabled for this toolkit. */
+    /** Composio connected-account id; NULL = legacy per-toolkit row (deprecated). */
+    connectionId: text("connection_id"),
+    /** Tool slugs the user has disabled for this connection. */
     disabledTools: jsonb("disabled_tools")
       .$type<string[]>()
       .notNull()
@@ -306,9 +308,16 @@ export const connectorToolSettings = pgTable(
       .notNull(),
   },
   (table) => ({
-    uniqueScope: uniqueIndex(
-      "connector_tool_settings_org_profile_toolkit_unique",
-    ).on(table.orgId, table.profileId, table.toolkit),
+    uniqueConnection: uniqueIndex(
+      "connector_tool_settings_org_profile_connection_unique",
+    )
+      .on(table.orgId, table.profileId, table.connectionId)
+      .where(sql`${table.connectionId} IS NOT NULL`),
+    uniqueLegacyToolkit: uniqueIndex(
+      "connector_tool_settings_legacy_toolkit_unique",
+    )
+      .on(table.orgId, table.profileId, table.toolkit)
+      .where(sql`${table.connectionId} IS NULL`),
   }),
 );
 

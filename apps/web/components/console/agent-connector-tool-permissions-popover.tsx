@@ -15,7 +15,7 @@ import {
   getEffectiveToolPermission,
   setBindingToolPermission,
 } from "@/lib/console/agent-connector-bindings";
-import { useToolkitToolSettings } from "@/lib/hooks/use-toolkit-tool-settings";
+import { useConnectionToolSettings } from "@/lib/hooks/use-connection-tool-settings";
 
 const PERMISSION_OPTIONS: Array<{
   value: ConnectorToolPermission;
@@ -85,7 +85,12 @@ export function AgentConnectorToolPermissionsPopoverContent({
   onBindingChange: (next: AgentConnectorBinding) => void;
 }) {
   const { tools, disabled: globalDisabled, loading, error } =
-    useToolkitToolSettings(teamspaceId, binding.provider);
+    useConnectionToolSettings({
+      teamspaceId,
+      connectionId: binding.connectionId,
+      toolkit: binding.provider,
+      scope: binding.scope,
+    });
 
   const handlePermissionChange = (
     slug: string,
