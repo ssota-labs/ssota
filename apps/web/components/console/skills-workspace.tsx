@@ -18,6 +18,10 @@ import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ListRowSkeleton } from "@/components/console/route-loaders";
 import { ClientSiblingNav } from "@/components/console/page-sibling-nav";
 import {
+  defaultSkillMdPath,
+  SkillFileExplorer,
+} from "@/components/console/skill-file-explorer";
+import {
   SkillDetailCard,
   SkillDetailCardSkeleton,
   SkillMarkdownView,
@@ -77,6 +81,7 @@ export function SkillsPageWorkspace({
   const [importTab, setImportTab] = useState<SkillImportTab>("github");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isPending, startListTransition] = useTransition();
   const [isDetailPending, startDetailTransition] = useTransition();
   const [isRemoving, startRemove] = useTransition();
@@ -172,10 +177,24 @@ export function SkillsPageWorkspace({
   useEffect(() => {
     if (!activeId) {
       setDetail(null);
+      setSelectedFilePath(null);
       return;
     }
     loadDetail(activeId);
   }, [activeId, loadDetail]);
+
+  useEffect(() => {
+    if (!detail?.files.length) {
+      setSelectedFilePath(null);
+      return;
+    }
+    setSelectedFilePath((current) => {
+      if (current && detail.files.some((f) => f.path === current)) {
+        return current;
+      }
+      return defaultSkillMdPath(detail.files);
+    });
+  }, [detail]);
 
   const skillBody =
     detail?.files.find(
@@ -427,16 +446,18 @@ export function SkillsPageWorkspace({
                 </SkillDetailCard>
               ) : null}
 
-              {skillBody.trim() ? (
-                <SkillDetailCard title="SKILL.md" testId="skill-detail-body" scrollable>
-                  <SkillMarkdownView
-                    markdown={skillBody}
-                    viewKey={`${activeSkill.id}-body`}
+              {detail?.files.length ? (
+                <SkillDetailCard title="Files" testId="skill-detail-files">
+                  <SkillFileExplorer
+                    files={detail.files}
+                    skillId={activeSkill.id}
+                    selectedPath={selectedFilePath}
+                    onSelectedPathChange={setSelectedFilePath}
                   />
                 </SkillDetailCard>
               ) : isDetailLoading ? (
                 <SkillDetailCardSkeleton
-                  title="SKILL.md"
+                  title="Files"
                   testId="skill-detail-body-skeleton"
                 />
               ) : null}
