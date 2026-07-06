@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { SkillPort } from "@ssota/core";
 import { stripSkillFrontmatter } from "@ssota/core";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { hashSkillFiles } from "./skill-helpers.js";
+import { fetchGithubSkillFiles, hashSkillFiles } from "./skill-helpers.js";
 import { resolveBindingLock, upsertSkillPackageRow } from "./skill-lock-resolve.js";
 
 type SkillRow = typeof schema.skills.$inferSelect;
@@ -39,6 +39,13 @@ function mapSkill(row: SkillRow): Skill {
   });
 }
 
+function skillOrigin(row: SkillRow): SkillIndex["origin"] {
+  const meta = row.metadata as Record<string, unknown>;
+  if (meta?.catalogSource) return "github";
+  if (meta?.kind === "community") return "community";
+  return "inline";
+}
+
 function mapIndex(row: SkillRow): SkillIndex {
   return {
     id: row.id,
@@ -46,6 +53,7 @@ function mapIndex(row: SkillRow): SkillIndex {
     name: row.name,
     description: row.description,
     source: row.source,
+    origin: skillOrigin(row),
   };
 }
 
@@ -89,6 +97,48 @@ export function createSkillPort(
         .where(orgCatalogCondition(orgId))
         .orderBy(asc(schema.skills.key));
       return rows.map(mapIndex);
+    },
+
+    async listLibrarySkills(orgId) {
+      const rows = await db
+        .select({ skill: schema.skills })
+        .from(schema.organizationSkills)
+        .innerJoin(
+          schema.skills,
+          eq(schema.organizationSkills.skillId, schema.skills.id),
+        )
+        .where(
+          and(
+            eq(schema.organizationSkills.organizationId, orgId),
+            ne(schema.skills.source, "builtin"),
+          ),
+        )
+        .orderBy(asc(schema.organizationSkills.addedAt));
+      return rows.map((row) => mapIndex(row.skill));
+    },
+
+    async listExploreSkills(orgId) {
+      const libraryRows = await db
+        .select({ skillId: schema.organizationSkills.skillId })
+        .from(schema.organizationSkills)
+        .where(eq(schema.organizationSkills.organizationId, orgId));
+      const libraryIds = new Set(libraryRows.map((row) => row.skillId));
+
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .where(
+          and(
+            isNull(schema.skills.organizationId),
+            eq(schema.skills.source, "custom"),
+            sql`${schema.skills.metadata}->>'kind' = 'community'`,
+          ),
+        )
+        .orderBy(asc(schema.skills.key));
+
+      return rows
+        .filter((row) => !libraryIds.has(row.id))
+        .map(mapIndex);
     },
 
     async listForAgentDefinition(agentDefinitionId) {
@@ -288,13 +338,20 @@ export function createSkillPort(
         throw new Error("registerSkill requires key or externalId");
       }
 
-      const files = input.files ?? [];
+      let files = input.files ?? [];
+      const catalogSource = input.metadata?.catalogSource;
+      if (files.length === 0 && catalogSource) {
+        files = await fetchGithubSkillFiles(catalogSource, { githubToken });
+      }
+
       const contentHash = files.length > 0 ? hashFiles(files) : null;
       const source = input.source ?? "custom";
       const metadata = {
         ...(input.metadata ?? {}),
+        kind: input.metadata?.kind ?? ("custom" as const),
+        ...(catalogSource ? { catalogSource } : {}),
         ...(contentHash && input.files?.length
-          ? { packageHash: contentHash, kind: "custom" as const }
+          ? { packageHash: contentHash }
           : {}),
       };
 
@@ -479,6 +536,63 @@ export function createSkillPort(
       }
 
       await db.delete(schema.skills).where(eq(schema.skills.id, skillId));
+      await db
+        .delete(schema.organizationSkills)
+        .where(
+          and(
+            eq(schema.organizationSkills.organizationId, orgId),
+            eq(schema.organizationSkills.skillId, skillId),
+          ),
+        );
+    },
+
+    async addSkillToOrganization(orgId, skillId) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .where(
+          and(
+            eq(schema.skills.id, skillId),
+            or(
+              isNull(schema.skills.organizationId),
+              eq(schema.skills.organizationId, orgId),
+            ),
+            ne(schema.skills.source, "builtin"),
+          ),
+        )
+        .limit(1);
+      if (!rows[0]) {
+        throw new Error("SKILL_NOT_FOUND");
+      }
+      await db
+        .insert(schema.organizationSkills)
+        .values({ organizationId: orgId, skillId })
+        .onConflictDoNothing();
+    },
+
+    async removeSkillFromOrganization(orgId, skillId) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .where(eq(schema.skills.id, skillId))
+        .limit(1);
+      const existing = rows[0];
+      if (!existing) {
+        throw new Error("SKILL_NOT_FOUND");
+      }
+
+      await db
+        .delete(schema.organizationSkills)
+        .where(
+          and(
+            eq(schema.organizationSkills.organizationId, orgId),
+            eq(schema.organizationSkills.skillId, skillId),
+          ),
+        );
+
+      if (existing.organizationId === orgId && existing.source === "custom") {
+        await db.delete(schema.skills).where(eq(schema.skills.id, skillId));
+      }
     },
 
     async updateAgentSkillBindings(
@@ -531,32 +645,6 @@ export function createSkillPort(
           lockError: resolved.lockError,
         });
       }
-    },
-
-    async addSkillToOrganization(orgId, skillId) {
-      const rows = await db
-        .select({ id: schema.skills.id })
-        .from(schema.skills)
-        .where(and(orgCatalogCondition(orgId), eq(schema.skills.id, skillId)))
-        .limit(1);
-      if (!rows[0]) {
-        throw new Error("SKILL_NOT_FOUND");
-      }
-      await db
-        .insert(schema.organizationSkills)
-        .values({ organizationId: orgId, skillId })
-        .onConflictDoNothing();
-    },
-
-    async removeSkillFromOrganization(orgId, skillId) {
-      await db
-        .delete(schema.organizationSkills)
-        .where(
-          and(
-            eq(schema.organizationSkills.organizationId, orgId),
-            eq(schema.organizationSkills.skillId, skillId),
-          ),
-        );
     },
 
     async refreshAgentSkillBinding(tsId, agentDefinitionId, skillId) {

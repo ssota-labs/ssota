@@ -186,7 +186,9 @@ export async function resolveBindingLock(
       contentHash: computedHash,
       sourceType: "github",
       files,
-      storageKey: `github://${catalog.source}@${catalog.ref ?? "main"}`,
+      storageKey: `github://${catalog.source}${
+        catalog.ref ? `@${catalog.ref}` : ""
+      }`,
     });
     return { lock, lockStatus: "ready", lockError: null };
   } catch (error) {

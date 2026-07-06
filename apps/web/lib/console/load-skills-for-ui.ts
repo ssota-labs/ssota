@@ -19,5 +19,5 @@ export async function loadSkillsForUi(
     );
     registerTeamspaceOrganization(teamspaceId, organizationId);
   }
-  return port.listForOrganization(organizationId);
+  return port.listLibrarySkills(organizationId);
 }

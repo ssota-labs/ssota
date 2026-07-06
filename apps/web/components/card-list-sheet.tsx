@@ -149,29 +149,55 @@ function List({
 type RowProps = {
   id: string;
   children: ReactNode;
+  /** Sibling controls (e.g. Save) rendered outside the row button to avoid nested buttons. */
+  action?: ReactNode;
   className?: string;
   testId?: string;
   onClick?: () => void;
 };
 
-function Row({ id, children, className, testId, onClick }: RowProps) {
+const rowButtonClassName =
+  "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors";
+
+function Row({ id, children, action, className, testId, onClick }: RowProps) {
   const { activeId, setActiveId } = useCardListSheetList();
   const active = activeId === id;
+
+  const openRow = () => {
+    setActiveId(id);
+    onClick?.();
+  };
+
+  if (action) {
+    return (
+      <div
+        data-testid={testId}
+        data-card-list-sheet-row=""
+        className={cn(
+          "hover:bg-muted/40 flex w-full items-center gap-3 transition-colors",
+          active && "bg-transparent",
+          className,
+        )}
+      >
+        <button
+          type="button"
+          className={cn(rowButtonClassName, "min-w-0 flex-1 border-0 bg-transparent p-0 px-4 py-3")}
+          onClick={openRow}
+        >
+          {children}
+        </button>
+        <div className="shrink-0 pr-4">{action}</div>
+      </div>
+    );
+  }
 
   return (
     <button
       type="button"
       data-testid={testId}
       data-card-list-sheet-row=""
-      className={cn(
-        "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-        active && "bg-transparent",
-        className,
-      )}
-      onClick={() => {
-        setActiveId(id);
-        onClick?.();
-      }}
+      className={cn(rowButtonClassName, active && "bg-transparent", className)}
+      onClick={openRow}
     >
       {children}
     </button>

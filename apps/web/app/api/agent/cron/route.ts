@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/ports";
-import { schema, createAgentRunPort } from "@ssota/adapter-postgres";
+import {
+  schema,
+  createAgentRunPort,
+  isPostgresRelationMissingError,
+} from "@ssota/adapter-postgres";
 import { fanOutSchedule } from "@/lib/schedules/schedule-fan-out";
 import { fanOutSyncWorkers } from "@/lib/workers/worker-sync-fan-out";
 import { shouldRunNow } from "@/lib/schedules/should-run-now";
@@ -73,13 +77,31 @@ export async function GET(request: Request) {
     if (runHandle) started.push(runHandle);
   }
 
-  const syncResult = await fanOutSyncWorkers(db, now);
+  let syncResult: { started: string[]; skipped: string[] } = {
+    started: [],
+    skipped: [],
+  };
+  let syncWorkersSkipped = false;
+
+  try {
+    syncResult = await fanOutSyncWorkers(db, now);
+  } catch (error) {
+    if (isPostgresRelationMissingError(error, "workers")) {
+      console.warn(
+        "[agent/cron] workers table missing; schedule fan-out continues without sync workers",
+      );
+      syncWorkersSkipped = true;
+    } else {
+      throw error;
+    }
+  }
 
   return NextResponse.json({
     started,
     skipped,
     evaluated: schedules.length,
     syncWorkers: syncResult,
+    ...(syncWorkersSkipped ? { syncWorkersSkipped: true } : {}),
   });
 }
 

@@ -328,6 +328,70 @@ test.describe("Agents", () => {
     ).toBeVisible();
   });
 
+  test("agent tool permissions show Connections disabled hint", async ({
+    page,
+  }) => {
+    const disabledToolSlug = "NOTION_SEARCH_NOTION_PAGE";
+
+    await loginAsSmoke(page);
+    await gotoProject(page, "connections");
+
+    await page.getByTestId("connector-notion").click();
+    await page
+      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .click();
+
+    const connectionsPopover = page.getByTestId(
+      "connection-tool-permissions-popover",
+    );
+    await expect(connectionsPopover).toBeVisible();
+
+    const connectionsToolRow = connectionsPopover.getByTestId(
+      `connection-tool-permission-row-${disabledToolSlug}`,
+    );
+    const connectionsSwitch = connectionsToolRow.getByRole("switch");
+    if ((await connectionsSwitch.getAttribute("aria-checked")) === "true") {
+      await connectionsSwitch.click();
+      await expect(connectionsSwitch).toHaveAttribute("aria-checked", "false");
+    }
+
+    await page.keyboard.press("Escape");
+    await page.getByTestId("card-list-sheet-close").click();
+
+    await gotoProject(page, "agents");
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+
+    const toolsCard = page.getByTestId("agent-settings-tools-card");
+    await toolsCard
+      .getByTestId("agent-bound-connection-settings-user-seed-notion-user-1")
+      .click();
+
+    const popover = page.getByTestId("agent-tool-permissions-popover");
+    await expect(popover).toBeVisible();
+    await expect(
+      popover.getByTestId("agent-tool-permissions-connections-hint"),
+    ).toBeVisible();
+    await expect(
+      popover.getByTestId(
+        `agent-tool-permission-connections-disabled-${disabledToolSlug}`,
+      ),
+    ).toHaveText("Disabled in Connections");
+
+    await page.keyboard.press("Escape");
+    await gotoProject(page, "connections");
+    await page.getByTestId("connector-notion").click();
+    await page
+      .getByTestId("connection-tool-settings-org-seed-notion-org-1")
+      .click();
+    await expect(connectionsPopover).toBeVisible();
+    const restoreSwitch = connectionsPopover
+      .getByTestId(`connection-tool-permission-row-${disabledToolSlug}`)
+      .getByRole("switch");
+    if ((await restoreSwitch.getAttribute("aria-checked")) === "false") {
+      await restoreSwitch.click();
+    }
+  });
+
   test("unlinks bound connection from tools card and persists on save", async ({
     page,
   }) => {
