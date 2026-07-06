@@ -60,6 +60,7 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "apps/design-lab/dist/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
