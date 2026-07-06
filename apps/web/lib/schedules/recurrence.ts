@@ -111,8 +111,8 @@ function parseHourWindow(
 
 /**
  * Best-effort inverse of `recurrenceToCron` for the shapes the builder emits.
- * Returns null for expressions the visual builder can't represent (the dialog
- * then falls back to its raw-cron editing mode).
+ * Returns null for expressions the visual builder can't represent (callers
+ * fall back to a default recurrence shape).
  */
 export function cronToRecurrence(
   cron: string,

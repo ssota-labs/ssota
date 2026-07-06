@@ -715,6 +715,7 @@ export function WorkersWorkspace({
                     <CronScheduleField
                       value={createSyncSchedule}
                       onSave={setCreateSyncSchedule}
+                      presentation="dialog"
                       showEnabled={false}
                       testId="worker-create-schedule"
                     />

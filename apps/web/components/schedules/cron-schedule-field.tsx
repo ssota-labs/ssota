@@ -22,6 +22,8 @@ type CronScheduleFieldProps = {
   isPending?: boolean;
   testId?: string;
   showEnabled?: boolean;
+  /** Create form: open dialog instead of popover when nested in a sheet. */
+  presentation?: "popover" | "dialog";
 };
 
 export function CronScheduleField({
@@ -32,6 +34,7 @@ export function CronScheduleField({
   isPending = false,
   testId = "cron-schedule-field",
   showEnabled = true,
+  presentation = "popover",
 }: CronScheduleFieldProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CronScheduleValue>(value);
@@ -51,6 +54,12 @@ export function CronScheduleField({
     setError(null);
     anchorRef.current = element;
     setOpen((current) => !current);
+  }
+
+  function openDialog() {
+    setDraft(value);
+    setError(null);
+    setOpen(true);
   }
 
   function handleSave(event: React.FormEvent) {
@@ -92,18 +101,54 @@ export function CronScheduleField({
     />
   );
 
+  const item = (
+    <AgentSettingCard.Item
+      testId={testId}
+      onPress={presentation === "dialog" ? openDialog : openEditor}
+      icon={<ClockIcon className="size-3.5 text-muted-foreground" />}
+      title={summary}
+      subtitle={
+        subtitle ??
+        `${value.timezone}${showEnabled && !value.enabled ? " · disabled" : ""}`
+      }
+    />
+  );
+
+  if (presentation === "dialog" && open) {
+    return (
+      <>
+        {item}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          data-testid={`${testId}-dialog`}
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="bg-background max-h-[min(85vh,32rem)] w-full max-w-md overflow-y-auto rounded-lg border p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {editor}
+            <div className="mt-3 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <AgentSettingCard.Item
-        testId={testId}
-        onPress={openEditor}
-        icon={<ClockIcon className="size-3.5 text-muted-foreground" />}
-        title={summary}
-        subtitle={
-          subtitle ??
-          `${value.timezone}${showEnabled && !value.enabled ? " · disabled" : ""}`
-        }
-      />
+      {item}
       <CronSchedulePopover
         open={open}
         onOpenChange={setOpen}
