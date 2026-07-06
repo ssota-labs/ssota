@@ -249,7 +249,9 @@ export function SkillFileExplorer({
 
   if (files.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">No files in this skill package.</p>
+      <p className="px-3 py-2 text-sm text-muted-foreground">
+        No files in this skill package.
+      </p>
     );
   }
 
@@ -261,14 +263,11 @@ export function SkillFileExplorer({
 
   return (
     <div
-      className={cn(
-        "flex min-h-0 flex-col gap-3 sm:flex-row sm:gap-0",
-        className,
-      )}
+      className={cn("flex min-h-0 flex-col sm:flex-row", className)}
       data-testid="skill-file-explorer"
     >
       <nav
-        className="shrink-0 overflow-y-auto rounded-md border border-border bg-muted/15 sm:max-h-[min(24rem,45vh)] sm:w-[38%] sm:min-w-[9rem] sm:border-r sm:border-b-0 sm:rounded-none sm:rounded-l-md sm:bg-transparent"
+        className="shrink-0 overflow-y-auto border-b border-border bg-muted/15 sm:max-h-[min(24rem,45vh)] sm:w-[38%] sm:min-w-[9rem] sm:border-b-0 sm:border-r"
         aria-label="Skill files"
         data-testid="skill-file-tree"
       >
@@ -288,7 +287,7 @@ export function SkillFileExplorer({
       </nav>
 
       <div
-        className="min-h-0 min-w-0 flex-1 overflow-y-auto sm:max-h-[min(24rem,45vh)] sm:px-3 sm:py-2"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-2 sm:max-h-[min(24rem,45vh)]"
         data-testid={previewTestId}
       >
         {selectedFile ? (

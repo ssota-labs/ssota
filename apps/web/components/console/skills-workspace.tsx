@@ -447,7 +447,7 @@ export function SkillsPageWorkspace({
               ) : null}
 
               {detail?.files.length ? (
-                <SkillDetailCard title="Files" testId="skill-detail-files">
+                <SkillDetailCard title="Files" testId="skill-detail-files" bodyClassName="p-0">
                   <SkillFileExplorer
                     files={detail.files}
                     skillId={activeSkill.id}

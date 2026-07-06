@@ -31,6 +31,7 @@ export function SkillDetailCard({
   className,
   testId,
   scrollable = false,
+  bodyClassName,
 }: {
   title: string;
   children: ReactNode;
@@ -38,6 +39,7 @@ export function SkillDetailCard({
   testId?: string;
   /** Cap body height and scroll long markdown (matches SkillMdBodyEditor). */
   scrollable?: boolean;
+  bodyClassName?: string;
 }) {
   return (
     <section
@@ -56,6 +58,7 @@ export function SkillDetailCard({
         className={cn(
           "px-3 py-2",
           scrollable && "max-h-[min(24rem,45vh)] min-h-0 overflow-y-auto",
+          bodyClassName,
         )}
       >
         {children}
