@@ -20,6 +20,7 @@ import type {
   AgentTrigger,
   ConnectionTrigger,
   SkillIndex,
+  WorkerIndex,
 } from "@ssota/contracts";
 import { deriveEnabledConnectorProviders } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -170,10 +171,10 @@ type AgentSettingsSheetProps = {
   settingsTarget?: "main" | "agent";
   teamspaceId: string;
   accountId: string;
-  scriptToolIds: string[];
+  linkedWorkerIds: string[];
   boundSkillIds: string[];
   skillCatalog: SkillIndex[];
-  scriptTools: Array<{ id: string; key: string; name: string }>;
+  storedWorkers: WorkerIndex[];
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
@@ -195,7 +196,7 @@ function defaultCardTriggers(settingsTarget: "main" | "agent"): AgentTrigger[] {
 
 function buildDraft(
   definition: AgentDefinition,
-  scriptToolIds: string[],
+  linkedWorkerIds: string[],
   boundSkillIds: string[],
   schedules: AgentScheduleSummary[],
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] },
@@ -221,7 +222,7 @@ function buildDraft(
       ...new Set([...allowedTriggers, ...defaultCardTriggers(settingsTarget)]),
     ],
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
-    scriptToolIds,
+    linkedWorkerIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
     connectorBindings,
     enabledConnectorProviders:
@@ -240,10 +241,10 @@ export function AgentSettingsSheet({
   settingsTarget = "agent",
   teamspaceId,
   accountId,
-  scriptToolIds: initialScriptToolIds,
+  linkedWorkerIds: initialLinkedWorkerIds,
   boundSkillIds: initialBoundSkillIds,
   skillCatalog,
-  scriptTools,
+  storedWorkers,
   workers,
   connectors,
   connections,
@@ -260,7 +261,7 @@ export function AgentSettingsSheet({
   const [draft, setDraft] = useState(() =>
     buildDraft(
       definition,
-      initialScriptToolIds,
+      initialLinkedWorkerIds,
       initialBoundSkillIds,
       schedules,
       connections,
@@ -286,14 +287,14 @@ export function AgentSettingsSheet({
     setDraft(
       buildDraft(
         definition,
-        initialScriptToolIds,
+        initialLinkedWorkerIds,
         initialBoundSkillIds,
         schedules,
         connections,
         settingsTarget,
       ),
     );
-  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections, settingsTarget]);
+  }, [definition, initialLinkedWorkerIds, initialBoundSkillIds, schedules, connections, settingsTarget]);
 
   useEffect(() => {
     for (const binding of draft.connectorBindings) {
@@ -309,13 +310,13 @@ export function AgentSettingsSheet({
     () =>
       buildDraft(
         definition,
-        initialScriptToolIds,
+        initialLinkedWorkerIds,
         initialBoundSkillIds,
         schedules,
         connections,
         settingsTarget,
       ),
-    [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections, settingsTarget],
+    [definition, initialLinkedWorkerIds, initialBoundSkillIds, schedules, connections, settingsTarget],
   );
 
   const isDirty = useMemo(
@@ -462,8 +463,8 @@ export function AgentSettingsSheet({
     });
   };
 
-  const linkedScriptTools = scriptTools.filter((t) =>
-    draft.scriptToolIds.includes(t.id),
+  const linkedWorkers = storedWorkers.filter((t) =>
+    draft.linkedWorkerIds.includes(t.id),
   );
 
   const boundConnectorItems = useMemo(() => {
@@ -533,7 +534,7 @@ export function AgentSettingsSheet({
           instructions: draft.instructions,
           toolBundles: bundles,
           runPolicy,
-          scriptToolIds: draft.scriptToolIds,
+          linkedWorkerIds: draft.linkedWorkerIds,
         });
       }
 
@@ -804,7 +805,7 @@ export function AgentSettingsSheet({
             <AgentSettingCard.Body>
               <AgentSettingCard.Items>
                 {boundConnectorItems.length === 0 &&
-                linkedScriptTools.length === 0 ? (
+                linkedWorkers.length === 0 ? (
                   <AgentSettingCard.Item
                     testId="agent-tools-empty"
                     icon={
@@ -872,7 +873,7 @@ export function AgentSettingsSheet({
                         }
                       />
                     ))}
-                    {linkedScriptTools.map((tool) => (
+                    {linkedWorkers.map((tool) => (
                       <AgentSettingCard.Item
                         key={tool.id}
                         icon={
@@ -1076,7 +1077,7 @@ export function AgentSettingsSheet({
         draft={draft}
         onDraftChange={patchDraft}
         workers={workers}
-        scriptTools={scriptTools}
+        storedWorkers={storedWorkers}
         skillCatalog={skillCatalog}
         connectors={connectors}
         connections={connections}

@@ -24,7 +24,7 @@ export const ToolBundleSchema = z.enum([
   "pages.author",
   "connectors",
   "delegate",
-  "script_tools",
+  "workers",
   "skills.read",
   "sandbox.code",
 ]);
@@ -36,7 +36,7 @@ export const DEFAULT_AGENT_TOOL_BUNDLES: ToolBundle[] = [
   "graph.read",
   "tasks.manage",
   "connectors",
-  "script_tools",
+  "workers",
 ];
 
 export function mergeAgentToolBundles(bundles: ToolBundle[]): ToolBundle[] {

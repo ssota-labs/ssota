@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 
-export default async function TemplatesRedirectPage({
+export default function TemplatesRedirectPage({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, teamspaceSlug } = await params;
-  redirect(`/${orgSlug}/${teamspaceSlug}/tools`);
+  return redirect("/onboarding/template");
 }

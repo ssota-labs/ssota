@@ -1,17 +1,18 @@
-import type { ScriptTool, ScriptToolIndex } from "@ssota/contracts";
+/**
+ * @deprecated Import from `./worker-port.js` instead.
+ */
+import type { Worker, WorkerIndex } from "@ssota/contracts";
+import type { WorkerPort } from "./worker-port.js";
 
-export interface ScriptToolReadPort {
-  listScriptTools(): Promise<ScriptToolIndex[]>;
-  getByKey(key: string): Promise<ScriptTool | null>;
-  listForAgentDefinition(agentDefinitionId: string): Promise<ScriptTool[]>;
-  listLinkedScriptToolIds(agentDefinitionId: string): Promise<string[]>;
-}
+export type ScriptTool = Worker;
+export type ScriptToolIndex = WorkerIndex;
+export type ScriptToolPort = WorkerPort;
 
-export interface ScriptToolWritePort {
-  setAgentScriptTools(
-    agentDefinitionId: string,
-    scriptToolIds: string[],
-  ): Promise<void>;
-}
-
-export type ScriptToolPort = ScriptToolReadPort & ScriptToolWritePort;
+export type ScriptToolReadPort = Pick<
+  WorkerPort,
+  | "listWorkers"
+  | "getByKey"
+  | "listForAgentDefinition"
+  | "listLinkedWorkerIds"
+>;
+export type ScriptToolWritePort = Pick<WorkerPort, "setAgentWorkers">;

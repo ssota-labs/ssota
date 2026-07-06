@@ -607,7 +607,7 @@ export * from "./ports/workflow-read-port.js";
 export * from "./ports/agent-definition-port.js";
 export * from "./ports/teamspace-main-config-port.js";
 export * from "./use-cases/agent/read-agent-definition.js";
-export * from "./ports/script-tool-port.js";
+export * from "./ports/worker-port.js";
 export * from "./ports/skill-read-port.js";
 export * from "./skill/frontmatter.js";
 export * from "./skill/skill-key.js";

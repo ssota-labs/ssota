@@ -83,10 +83,10 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Partial<Record<WorkflowToolName, string>>
     "Create or update an agent definition (upsert by id). Write the playbook as markdown in body.",
   delegate:
     "Launch a specialized read-only subagent for focused exploration; returns only a summary.",
-  list_script_tools: "List script tools available to this agent in this project.",
-  describe_script_tool: "Describe a script tool by key (schemas + permissions).",
-  run_script_tool:
-    "Execute a stored script tool in an isolated sandbox with a scoped SDK.",
+  list_workers: "List tool-kind workers available to this agent in this project.",
+  describe_worker: "Describe a worker by key (schemas + kind config).",
+  run_worker:
+    "Execute a stored tool-kind worker in an isolated sandbox with a scoped SDK.",
   read_skill:
     "Load the full body of a bound skill by key when the task matches its description. Optional file path (default SKILL.md).",
   ...COMPOSIO_META_TOOL_DESCRIPTIONS,

@@ -23,7 +23,7 @@ export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
   "pages.author": "Pages",
   connectors: "Connectors",
   delegate: "Delegate subagents",
-  script_tools: "TypeScript scripts",
+  workers: "Workers",
   "skills.read": "Runtime skills",
   "sandbox.code": "Sandbox code",
 };

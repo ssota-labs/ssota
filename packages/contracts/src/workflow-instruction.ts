@@ -47,7 +47,7 @@ export type UpsertWorkflowInstructionInput = z.infer<
   typeof UpsertWorkflowInstructionInputSchema
 >;
 
-export const AgentRuntimeKindSchema = z.enum(["main", "task", "scheduler"]);
+export const AgentRuntimeKindSchema = z.enum(["main", "task", "scheduler", "worker"]);
 
 export type AgentRuntimeKind = z.infer<typeof AgentRuntimeKindSchema>;
 

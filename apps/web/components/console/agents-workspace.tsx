@@ -21,7 +21,7 @@ type AgentsWorkspaceProps = {
   mainAgentDefinition: AgentDefinition;
   definitions: AgentDefinition[];
   settingsContext: AgentSettingsContext;
-  scriptToolLinks: Record<string, string[]>;
+  workerLinks: Record<string, string[]>;
   skillLinks: Record<string, string[]>;
   connectionsHref: string;
 };
@@ -31,7 +31,7 @@ export function AgentsWorkspace({
   mainAgentDefinition,
   definitions: initialDefinitions,
   settingsContext,
-  scriptToolLinks,
+  workerLinks,
   skillLinks,
   connectionsHref,
 }: AgentsWorkspaceProps) {
@@ -182,10 +182,10 @@ export function AgentsWorkspace({
           settingsTarget={activeId === MAIN_AGENT_ID ? "main" : "agent"}
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
-          scriptToolIds={scriptToolLinks[activeDefinition.id] ?? []}
+          linkedWorkerIds={workerLinks[activeDefinition.id] ?? []}
           boundSkillIds={skillLinks[activeDefinition.id] ?? []}
           skillCatalog={settingsContext.skillCatalog}
-          scriptTools={settingsContext.scriptTools}
+          storedWorkers={settingsContext.storedWorkers}
           workers={workers}
           connectors={settingsContext.connectors}
           connections={settingsContext.connections}

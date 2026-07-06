@@ -19,6 +19,10 @@
     "./workflow": {
       "types": "./dist/workflow/main-agent.d.ts",
       "default": "./dist/workflow/main-agent.js"
+    },
+    "./workers/execute-worker": {
+      "types": "./dist/workers/execute-worker.d.ts",
+      "default": "./dist/workers/execute-worker.js"
     }
   },
   "scripts": {

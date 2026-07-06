@@ -4,7 +4,7 @@ import {
   createDbCatalogWritePort,
   createTaskPort,
   createAgentDefinitionPort,
-  createScriptToolPort,
+  createWorkerPort,
   createSkillPort,
   createTeamspaceMainConfigPort,
   createPagePort,
@@ -87,9 +87,12 @@ export function getTeamspaceMainConfigPort() {
   return createTeamspaceMainConfigPort(getDb());
 }
 
-export function getScriptToolPort(teamspaceId: string, accountId?: string) {
-  return createScriptToolPort(getDb(), { teamspaceId, accountId });
+export function getWorkerPort(teamspaceId: string, accountId?: string) {
+  return createWorkerPort(getDb(), { teamspaceId, accountId });
 }
+
+/** @deprecated Use getWorkerPort */
+export const getScriptToolPort = getWorkerPort;
 
 export function getSkillPort(organizationId: string) {
   return createSkillPort(getDb(), {

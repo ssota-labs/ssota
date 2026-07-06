@@ -2,6 +2,8 @@ export type { UIMessageChunk } from "ai";
 export { buildRunPrompt, resolveRunAgent, resolveRunAgentDefinition } from "./run.js";
 export type { RunAgentInput, RunAgentResult, ResolvedRunAgent } from "./run.js";
 
+export { executeWorker } from "./workers/execute-worker.js";
+export type { ExecuteWorkerOptions, WorkerExecuteTrigger } from "./workers/execute-worker.js";
 export {
   createSsotaTools,
   createGraphTools,
@@ -9,6 +11,8 @@ export {
   createPageTools,
   buildAgentTools,
   toolBundlesForAgentDefinitionId,
+  createWorkerTools,
+  createScriptToolTools,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
@@ -132,6 +136,7 @@ export {
   getTaskPort,
   getGraphReadPort,
   getAgentDefinitionPort,
+  getWorkerPort,
   getScriptToolPort,
   getWorkflowInstructionPort,
   ensureTeamspaceOrganizationScope,

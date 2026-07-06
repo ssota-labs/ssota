@@ -52,10 +52,10 @@ const AGENT_DEF_TOOLS: WorkflowToolName[] = [
 
 const DELEGATE_TOOLS: WorkflowToolName[] = ["delegate"];
 
-const SCRIPT_TOOLS: WorkflowToolName[] = [
-  "list_script_tools",
-  "describe_script_tool",
-  "run_script_tool",
+const WORKER_TOOLS: WorkflowToolName[] = [
+  "list_workers",
+  "describe_worker",
+  "run_worker",
 ];
 
 const SKILL_TOOLS: WorkflowToolName[] = ["read_skill"];
@@ -95,8 +95,8 @@ export function resolveWorkflowToolNames(
   if (bundles.has("delegate")) {
     for (const n of DELEGATE_TOOLS) names.add(n);
   }
-  if (bundles.has("script_tools")) {
-    for (const n of SCRIPT_TOOLS) names.add(n);
+  if (bundles.has("workers")) {
+    for (const n of WORKER_TOOLS) names.add(n);
   }
   if (bundles.has("skills.read")) {
     for (const n of SKILL_TOOLS) names.add(n);
