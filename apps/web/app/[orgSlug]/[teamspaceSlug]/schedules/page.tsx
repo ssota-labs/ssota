@@ -1,9 +1,8 @@
 import { Suspense } from "react";
-import { SchedulesList } from "@/components/schedules/schedules-list";
+import { ScheduleHub } from "@/components/schedules/schedule-hub";
 import { SchedulesContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrg } from "@/lib/console/resolve-project";
-import { loadAgentDefinitionsForUi } from "@/lib/console/load-agents-for-ui";
-import { getOrCreateProjectAccount, getSchedulePort } from "@/lib/ports";
+import { loadScheduleHubContext } from "@/lib/schedules/load-schedule-hub-context";
 
 export default function SchedulesPage({
   params,
@@ -24,33 +23,18 @@ async function SchedulesPageInner({
 }) {
   const { orgSlug, teamspaceSlug } = await params;
   const { project } = await resolveOrg(orgSlug, teamspaceSlug);
-
-  const account = await getOrCreateProjectAccount(project.id);
-  const [schedules, instructions] = await Promise.all([
-    getSchedulePort(project.id, account.id).list(),
-    loadAgentDefinitionsForUi(project.id),
-  ]);
+  const hub = await loadScheduleHubContext(project.id);
 
   return (
     <div className="relative min-h-0 flex-1">
-      <SchedulesList
-        schedules={schedules.map((schedule) => ({
-          id: schedule.id,
-          agentDefinitionId: schedule.agentDefinitionId,
-          targetType: schedule.targetType,
-          cronExpression: schedule.cronExpression,
-          timezone: schedule.timezone,
-          enabled: schedule.enabled,
-          createdAt: schedule.createdAt,
-          updatedAt: schedule.updatedAt,
-        }))}
-        instructions={instructions.map((i) => ({
-          id: i.id,
-          name: i.name,
-          description: i.description,
-        }))}
-        teamspaceId={project.id}
-        accountId={account.id}
+      <ScheduleHub
+        orgSlug={orgSlug}
+        teamspaceSlug={teamspaceSlug}
+        teamspaceId={hub.teamspaceId}
+        accountId={hub.accountId}
+        schedules={hub.schedules}
+        syncWorkers={hub.syncWorkers}
+        agents={hub.agents}
       />
     </div>
   );
