@@ -39,20 +39,24 @@ test.describe("schedule-hub", () => {
     });
   });
 
-  test("opens edit sheet from agent trigger row", async ({ page }) => {
+  test("opens edit popover from agent trigger row", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "schedules");
 
     const firstItem = page
       .locator('[data-testid^="schedule-list-item-"]')
       .first();
-    await firstItem.getByRole("button").first().click();
+    await firstItem.click();
 
-    const sheet = page.getByTestId("schedule-sheet-panel");
-    await expect(sheet).toBeVisible();
+    const popover = page.getByTestId("schedule-edit-popover");
+    await expect(popover).toBeVisible();
     await expect(
-      sheet.getByRole("heading", { name: /Edit trigger|트리거 편집/i }),
+      popover.getByRole("button", { name: "Save changes" }),
     ).toBeVisible();
+    await expect(popover.getByLabel("Every")).toHaveValue("1");
+
+    await firstItem.click();
+    await expect(popover).not.toBeVisible();
   });
 
   test("links to workers for sync management", async ({ page }) => {

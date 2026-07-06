@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -33,6 +33,8 @@ import {
   type InstructionOption,
   type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
+import { ScheduleEditPopover } from "@/components/schedules/schedule-edit-popover";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import { toggleSyncWorkerEnabledAction } from "@/app/[orgSlug]/[teamspaceSlug]/schedules/actions";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
@@ -60,19 +62,15 @@ function summarizeCron(cron: string, timezone: string): string {
 function ScheduleRows({
   schedules,
   agents,
-  teamspaceId,
-  accountId,
   isPending,
-  onEdit,
+  onPress,
   onToggle,
   onDelete,
 }: {
   schedules: ScheduleHubAgentSchedule[];
   agents: InstructionOption[];
-  teamspaceId: string;
-  accountId: string;
   isPending: boolean;
-  onEdit: (schedule: ScheduleHubAgentSchedule) => void;
+  onPress: (schedule: ScheduleHubAgentSchedule, element: HTMLDivElement) => void;
   onToggle: (schedule: ScheduleHubAgentSchedule, enabled: boolean) => void;
   onDelete: (schedule: ScheduleHubAgentSchedule) => void;
 }) {
@@ -82,93 +80,69 @@ function ScheduleRows({
   }, [agents]);
 
   return (
-    <div
-      className="divide-y divide-border overflow-hidden rounded-lg border border-border"
-      data-testid="schedule-hub-agent-list"
-    >
-      {schedules.map((schedule) => {
-        const next = nextOccurrence(schedule.cronExpression, schedule.timezone);
-        return (
-          <div
-            key={schedule.id}
-            className="hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 transition-colors"
-            data-testid={`schedule-list-item-${schedule.id}`}
-          >
-            <button
-              type="button"
-              className="flex min-w-0 flex-1 items-center gap-3 text-left"
-              onClick={() => onEdit(schedule)}
-            >
-              <div className="min-w-0 flex-1 space-y-1">
-                <span className="text-sm font-medium">
-                  {agentName(schedule.agentDefinitionId)}
-                </span>
-                <p className="text-muted-foreground line-clamp-2 text-xs">
-                  {summarizeCron(schedule.cronExpression, schedule.timezone)}
-                </p>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Badge variant="outline" className="font-mono text-[10px]">
-                    {schedule.cronExpression}
-                  </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    {schedule.timezone}
-                  </Badge>
-                  <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                    <ClockIcon className="size-3" />
-                    {next
-                      ? next.toLocaleString("en-US", {
-                          timeZone: schedule.timezone,
-                        })
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-              <CaretRightIcon
-                className="text-muted-foreground size-4 shrink-0"
-                aria-hidden
+    <AgentSettingCard.Root testId="schedule-hub-agent-list">
+      <AgentSettingCard.Body>
+        <AgentSettingCard.Items>
+          {schedules.map((schedule) => {
+            const label = summarizeCron(
+              schedule.cronExpression,
+              schedule.timezone,
+            );
+            return (
+              <AgentSettingCard.Item
+                key={schedule.id}
+                className="group"
+                testId={`schedule-list-item-${schedule.id}`}
+                onPress={(element) => onPress(schedule, element)}
+                icon={
+                  <ClockIcon className="size-3.5 text-muted-foreground" />
+                }
+                title={label}
+                subtitle={agentName(schedule.agentDefinitionId)}
+                trailing={
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      checked={schedule.enabled}
+                      onCheckedChange={(value) => onToggle(schedule, value)}
+                      disabled={isPending}
+                      aria-label={`Toggle ${label}`}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger
+                        render={
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Delete schedule"
+                          >
+                            <TrashIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This stops the recurring run. This can&apos;t be
+                            undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(schedule)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                }
               />
-            </button>
-            <div className="flex shrink-0 items-center gap-1">
-              <Switch
-                checked={schedule.enabled}
-                onCheckedChange={(value) => onToggle(schedule, value)}
-                onClick={(event) => event.stopPropagation()}
-                disabled={isPending}
-                aria-label={`Toggle ${agentName(schedule.agentDefinitionId)}`}
-              />
-              <AlertDialog>
-                <AlertDialogTrigger
-                  render={
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Delete schedule"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <TrashIcon className="size-4" />
-                    </Button>
-                  }
-                />
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This stops the recurring run. This can&apos;t be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(schedule)}>
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+            );
+          })}
+        </AgentSettingCard.Items>
+      </AgentSettingCard.Body>
+    </AgentSettingCard.Root>
   );
 }
 
@@ -255,9 +229,12 @@ export function ScheduleHub({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] =
-    useState<ScheduleEditTarget | null>(null);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
+    null,
+  );
+  const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const ignoreNextScheduleRowPressRef = useRef(false);
   const [syncWorkers, setSyncWorkers] =
     useState<ScheduleHubSyncWorker[]>(initialSyncWorkers);
 
@@ -271,21 +248,38 @@ export function ScheduleHub({
   );
 
   function openCreateSheet() {
-    setEditingSchedule(null);
-    setSheetOpen(true);
+    setCreateSheetOpen(true);
   }
 
-  function openEditSheet(schedule: ScheduleHubAgentSchedule) {
-    setEditingSchedule({
-      id: schedule.id,
-      agentDefinitionId: schedule.agentDefinitionId,
-      targetType: schedule.targetType,
-      cronExpression: schedule.cronExpression,
-      timezone: schedule.timezone,
-      enabled: schedule.enabled,
+  function openEditPopover(
+    schedule: ScheduleHubAgentSchedule,
+    element: HTMLDivElement,
+  ) {
+    if (ignoreNextScheduleRowPressRef.current) {
+      ignoreNextScheduleRowPressRef.current = false;
+      return;
+    }
+    setEditingScheduleId((current) => {
+      if (current === schedule.id) return null;
+      schedulePopoverAnchorRef.current = element;
+      return schedule.id;
     });
-    setSheetOpen(true);
   }
+
+  const editingSchedule = editingScheduleId
+    ? schedules.find((row) => row.id === editingScheduleId)
+    : undefined;
+
+  const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
+    ? {
+        id: editingSchedule.id,
+        agentDefinitionId: editingSchedule.agentDefinitionId,
+        targetType: editingSchedule.targetType,
+        cronExpression: editingSchedule.cronExpression,
+        timezone: editingSchedule.timezone,
+        enabled: editingSchedule.enabled,
+      }
+    : undefined;
 
   function toggleScheduleEnabled(
     schedule: ScheduleHubAgentSchedule,
@@ -316,6 +310,9 @@ export function ScheduleHub({
           { method: "DELETE" },
         );
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        if (editingScheduleId === schedule.id) {
+          setEditingScheduleId(null);
+        }
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete");
@@ -344,10 +341,6 @@ export function ScheduleHub({
       }
     });
   }
-
-  useEffect(() => {
-    if (!sheetOpen) setEditingSchedule(null);
-  }, [sheetOpen]);
 
   const isEmpty = schedules.length === 0 && syncWorkers.length === 0;
 
@@ -384,10 +377,8 @@ export function ScheduleHub({
             <ScheduleRows
               schedules={schedules}
               agents={agents}
-              teamspaceId={teamspaceId}
-              accountId={accountId}
               isPending={isPending}
-              onEdit={openEditSheet}
+              onPress={openEditPopover}
               onToggle={toggleScheduleEnabled}
               onDelete={removeSchedule}
             />
@@ -426,13 +417,27 @@ export function ScheduleHub({
         </BrowseWorkspace.Section>
       </BrowseWorkspace.Frame>
 
-      <ScheduleSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+      <ScheduleEditPopover
+        open={editingScheduleId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingScheduleId(null);
+        }}
+        anchorRef={schedulePopoverAnchorRef}
+        schedule={scheduleEditTarget}
         teamspaceId={teamspaceId}
         accountId={accountId}
         instructions={agents}
-        schedule={editingSchedule ?? undefined}
+        onDismissFromAnchor={() => {
+          ignoreNextScheduleRowPressRef.current = true;
+        }}
+      />
+
+      <ScheduleSheet
+        open={createSheetOpen}
+        onOpenChange={setCreateSheetOpen}
+        teamspaceId={teamspaceId}
+        accountId={accountId}
+        instructions={agents}
       />
     </div>
   );
