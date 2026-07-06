@@ -31,6 +31,7 @@ export function SkillDetailCard({
   className,
   testId,
   scrollable = false,
+  scrollLines,
   bodyClassName,
 }: {
   title: string;
@@ -39,8 +40,19 @@ export function SkillDetailCard({
   testId?: string;
   /** Cap body height and scroll long markdown (matches SkillMdBodyEditor). */
   scrollable?: boolean;
+  /** Fixed body height in ~text-sm lines; scrolls when content overflows. */
+  scrollLines?: number;
   bodyClassName?: string;
 }) {
+  const scrollBodyClass =
+    scrollLines != null
+      ? scrollLines === 3
+        ? "h-[4.75rem] min-h-[4.75rem] overflow-y-auto"
+        : `h-[calc(${scrollLines}*1.25rem+1rem)] min-h-0 overflow-y-auto`
+      : scrollable
+        ? "max-h-[min(24rem,45vh)] min-h-0 overflow-y-auto"
+        : undefined;
+
   return (
     <section
       className={cn(
@@ -55,11 +67,7 @@ export function SkillDetailCard({
         </h3>
       </header>
       <div
-        className={cn(
-          "px-3 py-2",
-          scrollable && "max-h-[min(24rem,45vh)] min-h-0 overflow-y-auto",
-          bodyClassName,
-        )}
+        className={cn("px-3 py-2", scrollBodyClass, bodyClassName)}
       >
         {children}
       </div>

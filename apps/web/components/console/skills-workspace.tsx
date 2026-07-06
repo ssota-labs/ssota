@@ -437,7 +437,7 @@ export function SkillsPageWorkspace({
                 <SkillDetailCard
                   title="Description"
                   testId="skill-detail-description"
-                  scrollable
+                  scrollLines={3}
                 >
                   <SkillMarkdownView
                     markdown={activeSkill.description}
