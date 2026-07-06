@@ -674,10 +674,7 @@ export function WorkersWorkspace({
           }
         >
           <div className="grid gap-4" data-testid="workers-create-form">
-            <p className="text-sm text-muted-foreground">
-              {createSection.description} The worker key is assigned automatically
-              from the name.
-            </p>
+            <p className="text-sm text-muted-foreground">{createSection.description}</p>
             <div className="grid gap-2">
               <Label htmlFor="worker-name">Name</Label>
               <Input
