@@ -478,8 +478,8 @@ export function AgentSettingsSheet({
     });
   };
 
-  const linkedWorkers = storedWorkers.filter((t) =>
-    draft.linkedWorkerIds.includes(t.id),
+  const linkedWorkers = storedWorkers.filter(
+    (t) => t.kind !== "tool" && draft.linkedWorkerIds.includes(t.id),
   );
 
   const boundConnectorItems = useMemo(() => {
@@ -815,7 +815,7 @@ export function AgentSettingsSheet({
           <AgentSettingCard.Root testId="agent-settings-tools-card">
             <AgentSettingCard.Header
               title="Tools and access"
-              description="Connectors and TypeScript scripts for this agent."
+              description="Connectors and integrations for this agent."
             />
             <AgentSettingCard.Body>
               <AgentSettingCard.Items>
@@ -826,7 +826,7 @@ export function AgentSettingsSheet({
                     icon={
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
                     }
-                    title="No connectors or scripts selected yet"
+                    title="No connectors selected yet"
                   />
                 ) : (
                   <>

@@ -4,7 +4,7 @@ import {
   listBuilderWorkersByKind,
 } from "@ssota/adapter-postgres";
 import { WorkerSyncConfigSchema } from "@ssota/contracts";
-import { executeWorker } from "@ssota/agent-runtime/workers/execute-worker";
+import { executeScopedWorker } from "@/lib/workers/execute-scoped-worker";
 import { shouldRunNow } from "@/lib/schedules/should-run-now";
 
 const TICK_MS = 60_000;
@@ -55,7 +55,7 @@ export async function fanOutSyncWorkers(
       trigger: "schedule",
     });
 
-    const result = await executeWorker({
+    const result = await executeScopedWorker({
       worker,
       input: {},
       trigger: "schedule",

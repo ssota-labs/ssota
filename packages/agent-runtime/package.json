@@ -23,6 +23,10 @@
     "./workers/execute-worker": {
       "types": "./dist/workers/execute-worker.d.ts",
       "default": "./dist/workers/execute-worker.js"
+    },
+    "./workers/worker-sdk-host": {
+      "types": "./dist/workers/worker-sdk-host.d.ts",
+      "default": "./dist/workers/worker-sdk-host.js"
     }
   },
   "scripts": {

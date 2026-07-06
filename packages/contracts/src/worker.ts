@@ -42,6 +42,7 @@ export const WorkerSyncConfigSchema = z.object({
   cronExpression: z.string().min(1),
   timezone: z.string().default("UTC"),
   enabled: z.boolean().default(true),
+  permissions: WorkerPermissionsSchema.optional(),
 });
 export type WorkerSyncConfig = z.infer<typeof WorkerSyncConfigSchema>;
 
@@ -57,6 +58,7 @@ export const WorkerWebhookConfigSchema = z.object({
   enabled: z.boolean().default(true),
   verification: WorkerWebhookVerificationSchema.default("none"),
   secretEnvKey: z.string().optional(),
+  permissions: WorkerPermissionsSchema.optional(),
 });
 export type WorkerWebhookConfig = z.infer<typeof WorkerWebhookConfigSchema>;
 
@@ -170,6 +172,35 @@ export function workerTimeoutMs(worker: Worker): number {
 }
 
 export function workerSupportsDryRun(worker: Worker): boolean {
-  if (worker.kind !== "tool") return false;
-  return readWorkerToolConfig(worker).defaultConfig.supportsDryRun;
+  if (worker.kind === "tool") {
+    return readWorkerToolConfig(worker).defaultConfig.supportsDryRun;
+  }
+  return true;
+}
+
+const DEFAULT_SYNC_PERMISSIONS: WorkerPermissions = {
+  graphRead: true,
+  graphWrite: true,
+  connectorScopes: [],
+  canMutate: true,
+};
+
+const DEFAULT_WEBHOOK_PERMISSIONS: WorkerPermissions = {
+  graphRead: true,
+  graphWrite: false,
+  connectorScopes: [],
+  canMutate: false,
+};
+
+/** Resolve execution permissions for any worker kind. */
+export function readWorkerPermissions(worker: Worker): WorkerPermissions {
+  if (worker.kind === "tool") {
+    return readWorkerToolConfig(worker).permissions;
+  }
+  if (worker.kind === "sync") {
+    const cfg = WorkerSyncConfigSchema.parse(worker.kindConfig);
+    return cfg.permissions ?? DEFAULT_SYNC_PERMISSIONS;
+  }
+  const cfg = WorkerWebhookConfigSchema.parse(worker.kindConfig);
+  return cfg.permissions ?? DEFAULT_WEBHOOK_PERMISSIONS;
 }
