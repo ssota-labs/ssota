@@ -16,7 +16,9 @@ type FileTreeNode = {
 
 function pathsToTree(files: SkillFileEntry[], packagePrefix: string): FileTreeNode[] {
   type DirLeaf = { __file: string };
-  type DirBranch = Record<string, DirLeaf | DirBranch>;
+  interface DirBranch {
+    [segment: string]: DirLeaf | DirBranch;
+  }
 
   const root: DirBranch = {};
 
@@ -53,7 +55,7 @@ function pathsToTree(files: SkillFileEntry[], packagePrefix: string): FileTreeNo
         const child = obj[key]!;
         const id = prefix ? `${prefix}/${key}` : key;
         if ("__file" in child) {
-          return { id: child.__file, label: key, kind: "file" as const };
+          return { id: (child as DirLeaf).__file, label: key, kind: "file" as const };
         }
         return {
           id: `${id}/`,
