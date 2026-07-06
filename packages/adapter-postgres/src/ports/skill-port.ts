@@ -1,12 +1,22 @@
 import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { SkillPort } from "@ssota/core";
-import { stripSkillFrontmatter } from "@ssota/core";
+import {
+  humanizeSkillName,
+  normalizeSkillKey,
+  splitSkillFrontmatter,
+  stripSkillFrontmatter,
+  toSkillKey,
+  uniquifySkillKey,
+} from "@ssota/core";
 import {
   SkillSchema,
   SkillSnapshotSchema,
   SkillPackageSchema,
+  type ImportSkillItem,
+  type ImportSkillResult,
   type RegisterSkillInput,
   type Skill,
+  type SkillCatalogSource,
   type SkillFile,
   type SkillIndex,
   type SkillLockEntry,
@@ -15,6 +25,10 @@ import {
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { fetchGithubSkillFiles, hashSkillFiles } from "./skill-helpers.js";
+import {
+  discoverGithubSkills,
+  libraryRefsFromSkills,
+} from "./skill-github-discover.js";
 import { resolveBindingLock, upsertSkillPackageRow } from "./skill-lock-resolve.js";
 
 type SkillRow = typeof schema.skills.$inferSelect;
@@ -83,6 +97,70 @@ function skillMdBody(files: SkillFile[]): string {
   return stripSkillFrontmatter(skillFile.contents);
 }
 
+function provenanceEqual(
+  existingMeta: Record<string, unknown>,
+  incomingMeta: Record<string, unknown> | undefined,
+): boolean {
+  const existingCs = existingMeta.catalogSource as SkillCatalogSource | undefined;
+  const incomingCs = incomingMeta?.catalogSource as SkillCatalogSource | undefined;
+  if (existingCs && incomingCs) {
+    return (
+      existingCs.source === incomingCs.source &&
+      existingCs.skillPath === incomingCs.skillPath
+    );
+  }
+
+  const existingOrigin = existingMeta.importOrigin as
+    | { type?: string; rootName?: string; skillPath?: string }
+    | undefined;
+  const incomingOrigin = incomingMeta?.importOrigin as
+    | { type?: string; rootName?: string; skillPath?: string }
+    | undefined;
+  if (existingOrigin?.type === "folder" && incomingOrigin?.type === "folder") {
+    return (
+      existingOrigin.rootName === incomingOrigin.rootName &&
+      existingOrigin.skillPath === incomingOrigin.skillPath
+    );
+  }
+
+  return false;
+}
+
+async function allocateUniqueSkillKey(
+  db: Db,
+  orgId: string,
+  preferredKey: string,
+): Promise<string> {
+  const base = normalizeSkillKey(preferredKey);
+  const rows = await db
+    .select({ key: schema.skills.key })
+    .from(schema.skills)
+    .where(eq(schema.skills.organizationId, orgId));
+  return uniquifySkillKey(
+    base,
+    rows.map((row) => row.key),
+  );
+}
+
+function readSkillMdMeta(files: SkillFile[]): {
+  name: string;
+  description: string;
+} {
+  const skillFile = files.find(
+    (f) => f.path === "SKILL.md" || f.path.endsWith("/SKILL.md"),
+  );
+  if (!skillFile) {
+    throw new Error("SKILL.md not found in import bundle");
+  }
+  const { frontmatter } = splitSkillFrontmatter(skillFile.contents);
+  const name = frontmatter.name?.trim();
+  const description = frontmatter.description?.trim() ?? "";
+  if (!name) {
+    throw new Error("SKILL.md frontmatter name is required");
+  }
+  return { name, description };
+}
+
 export function createSkillPort(
   db: Db,
   scope: { organizationId: string; teamspaceId?: string; githubToken?: string },
@@ -115,6 +193,26 @@ export function createSkillPort(
         )
         .orderBy(asc(schema.organizationSkills.addedAt));
       return rows.map((row) => mapIndex(row.skill));
+    },
+
+    async listLibraryImportRefs(orgId) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .innerJoin(
+          schema.organizationSkills,
+          eq(schema.organizationSkills.skillId, schema.skills.id),
+        )
+        .where(eq(schema.organizationSkills.organizationId, orgId));
+
+      return libraryRefsFromSkills(
+        rows.map((row) => ({
+          id: row.skills.id,
+          key: row.skills.key,
+          contentHash: row.skills.contentHash,
+          metadata: row.skills.metadata as Record<string, unknown>,
+        })),
+      );
     },
 
     async listExploreSkills(orgId) {
@@ -331,11 +429,12 @@ export function createSkillPort(
     },
 
     async registerSkill(orgId, input: RegisterSkillInput) {
-      const key =
+      let key =
         input.key ??
-        (input.externalId ? input.externalId.split("/").pop() : undefined);
+        (input.externalId ? input.externalId.split("/").pop() : undefined) ??
+        (input.name?.trim() ? toSkillKey(input.name) : undefined);
       if (!key) {
-        throw new Error("registerSkill requires key or externalId");
+        throw new Error("registerSkill requires key, externalId, or name");
       }
 
       let files = input.files ?? [];
@@ -377,20 +476,35 @@ export function createSkillPort(
         )
         .limit(1);
 
+      if (
+        existing[0] &&
+        !provenanceEqual(existing[0].metadata as Record<string, unknown>, metadata)
+      ) {
+        key = await allocateUniqueSkillKey(db, orgId, key);
+      }
+
+      const existingForKey = await db
+        .select()
+        .from(schema.skills)
+        .where(
+          and(eq(schema.skills.organizationId, orgId), eq(schema.skills.key, key)),
+        )
+        .limit(1);
+
       let skillRow: SkillRow;
-      if (existing[0]) {
+      if (existingForKey[0]) {
         const [updated] = await db
           .update(schema.skills)
           .set({
-            name: input.name ?? existing[0].name,
-            description: input.description ?? existing[0].description,
-            externalId: input.externalId ?? existing[0].externalId,
-            contentHash: resolvedHash ?? existing[0].contentHash,
+            name: input.name ?? existingForKey[0].name,
+            description: input.description ?? existingForKey[0].description,
+            externalId: input.externalId ?? existingForKey[0].externalId,
+            contentHash: resolvedHash ?? existingForKey[0].contentHash,
             source,
             metadata,
             updatedAt: sql`now()`,
           })
-          .where(eq(schema.skills.id, existing[0].id))
+          .where(eq(schema.skills.id, existingForKey[0].id))
           .returning();
         skillRow = updated!;
       } else {
@@ -452,6 +566,72 @@ export function createSkillPort(
         .onConflictDoNothing();
 
       return mapSkill(skillRow);
+    },
+
+    async discoverGithubSkills(orgId, repo) {
+      const library = await this.listLibraryImportRefs(orgId);
+
+      const { skills, skippedCount } = await discoverGithubSkills(repo, library, {
+        githubToken,
+      });
+      return { skills, skippedCount };
+    },
+
+    async importSkills(orgId, items: ImportSkillItem[]): Promise<ImportSkillResult[]> {
+      const results: ImportSkillResult[] = [];
+
+      for (const item of items) {
+        try {
+          let files = item.files ?? [];
+          const catalogSource = item.catalogSource;
+          if (files.length === 0 && catalogSource) {
+            files = await fetchGithubSkillFiles(catalogSource, { githubToken });
+          }
+          if (files.length === 0) {
+            throw new Error("Import item requires files or catalogSource");
+          }
+
+          const { name, description } = readSkillMdMeta(files);
+          const contentHash = hashFiles(files);
+          const metadata = {
+            kind: "custom" as const,
+            ...(catalogSource ? { catalogSource } : {}),
+            ...(item.folderRootName
+              ? {
+                  importOrigin: {
+                    type: "folder" as const,
+                    rootName: item.folderRootName,
+                    skillPath: item.skillPath,
+                  },
+                }
+              : {}),
+            packageHash: contentHash,
+          };
+
+          const key =
+            item.resolvedKey ??
+            (await allocateUniqueSkillKey(db, orgId, normalizeSkillKey(name)));
+
+          const skill = await this.registerSkill(orgId, {
+            key,
+            name: humanizeSkillName(name),
+            description,
+            source: "custom",
+            files,
+            metadata,
+          });
+
+          results.push({ ok: true, skillPath: item.skillPath, skill });
+        } catch (error) {
+          results.push({
+            ok: false,
+            skillPath: item.skillPath,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      return results;
     },
 
     async updateCustomSkill(orgId, skillId, input: UpdateSkillInput) {

@@ -60,6 +60,14 @@ export const SkillMetadataSchema = z.object({
   tags: z.array(z.string()).optional(),
   /** Inline upload: content hash of org skill_packages row */
   packageHash: z.string().optional(),
+  /** Folder import provenance for re-import matching */
+  importOrigin: z
+    .object({
+      type: z.literal("folder"),
+      rootName: z.string().optional(),
+      skillPath: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type SkillMetadata = z.infer<typeof SkillMetadataSchema>;
@@ -196,3 +204,53 @@ export const MarketSkillResultSchema = z.object({
 });
 
 export type MarketSkillResult = z.infer<typeof MarketSkillResultSchema>;
+
+export const SkillLibraryStatusSchema = z.enum([
+  "new",
+  "imported",
+  "update",
+  "key_collision",
+]);
+
+export type SkillLibraryStatus = z.infer<typeof SkillLibraryStatusSchema>;
+
+export const DiscoveredSkillSchema = z.object({
+  skillPath: z.string().min(1),
+  frontmatterName: z.string().min(1),
+  description: z.string(),
+  suggestedKey: z.string().min(1),
+  displayName: z.string().min(1),
+  pluginName: z.string().optional(),
+  contentHash: z.string().optional(),
+  libraryStatus: SkillLibraryStatusSchema.optional(),
+  resolvedKey: z.string().optional(),
+  existingSkillId: z.string().uuid().optional(),
+});
+
+export type DiscoveredSkill = z.infer<typeof DiscoveredSkillSchema>;
+
+export const ImportSkillItemSchema = z.object({
+  skillPath: z.string().min(1),
+  resolvedKey: z.string().min(1).optional(),
+  files: z.array(SkillFileSchema).optional(),
+  catalogSource: SkillCatalogSourceSchema.optional(),
+  folderRootName: z.string().optional(),
+});
+
+export type ImportSkillItem = z.infer<typeof ImportSkillItemSchema>;
+
+export const ImportSkillsInputSchema = z.object({
+  teamspaceId: z.string().uuid(),
+  items: z.array(ImportSkillItemSchema).min(1),
+});
+
+export type ImportSkillsInput = z.infer<typeof ImportSkillsInputSchema>;
+
+export const ImportSkillResultSchema = z.object({
+  ok: z.boolean(),
+  skillPath: z.string(),
+  skill: SkillSchema.optional(),
+  error: z.string().optional(),
+});
+
+export type ImportSkillResult = z.infer<typeof ImportSkillResultSchema>;

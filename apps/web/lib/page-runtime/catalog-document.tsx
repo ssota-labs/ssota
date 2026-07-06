@@ -25,15 +25,18 @@ export function toBlocks(value: unknown): PartialBlock[] | undefined {
 export function DocumentViewEl({
   content,
   compact,
+  onEditorReady,
 }: {
   content: unknown;
   compact?: boolean;
+  onEditorReady?: () => void;
 }) {
   return (
     <SsotaBlockNoteEditor
       editable={false}
       initialContent={toBlocks(content)}
       compact={compact}
+      onEditorReady={onEditorReady ? () => onEditorReady() : undefined}
     />
   );
 }

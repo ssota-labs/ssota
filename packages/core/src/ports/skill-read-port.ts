@@ -1,5 +1,8 @@
 import type {
   AgentDefinitionSkillLink,
+  DiscoveredSkill,
+  ImportSkillItem,
+  ImportSkillResult,
   MarketSkillResult,
   OrganizationSkill,
   RegisterSkillInput,
@@ -11,12 +14,15 @@ import type {
   SkillSnapshot,
   UpdateSkillInput,
 } from "@ssota/contracts";
+import type { LibrarySkillRef } from "../skill/library-match.js";
 
 export interface SkillReadPort {
   /** Org catalog + platform builtins (organizationId null). Runtime / legacy listing. */
   listForOrganization(organizationId: string): Promise<SkillIndex[]>;
   /** Org library — saved skills only (no platform builtins). */
   listLibrarySkills(organizationId: string): Promise<SkillIndex[]>;
+  /** Provenance fields for client-side folder import library matching. */
+  listLibraryImportRefs(organizationId: string): Promise<LibrarySkillRef[]>;
   /** Community catalog entries not yet saved to the org library. */
   listExploreSkills(organizationId: string): Promise<SkillIndex[]>;
   listForAgentDefinition(agentDefinitionId: string): Promise<SkillIndex[]>;
@@ -45,6 +51,14 @@ export interface SkillWritePort {
     organizationId: string,
     input: RegisterSkillInput,
   ): Promise<Skill>;
+  discoverGithubSkills(
+    organizationId: string,
+    repo: string,
+  ): Promise<{ skills: DiscoveredSkill[]; skippedCount: number }>;
+  importSkills(
+    organizationId: string,
+    items: ImportSkillItem[],
+  ): Promise<ImportSkillResult[]>;
   updateCustomSkill(
     organizationId: string,
     skillId: string,

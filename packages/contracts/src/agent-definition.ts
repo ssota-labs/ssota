@@ -43,6 +43,23 @@ export function mergeAgentToolBundles(bundles: ToolBundle[]): ToolBundle[] {
   return [...new Set([...DEFAULT_AGENT_TOOL_BUNDLES, ...bundles])];
 }
 
+/** Legacy DB values from pre-workers rename (`script_tools` → `workers`). */
+const LEGACY_TOOL_BUNDLE_ALIASES: Record<string, ToolBundle> = {
+  script_tools: "workers",
+};
+
+/** Normalize stored tool bundle strings before Zod parse (read-path compat). */
+export function normalizeLegacyToolBundles(bundles: readonly unknown[]): ToolBundle[] {
+  const normalized: ToolBundle[] = [];
+  for (const raw of bundles) {
+    if (typeof raw !== "string") continue;
+    const candidate = LEGACY_TOOL_BUNDLE_ALIASES[raw] ?? raw;
+    const parsed = ToolBundleSchema.safeParse(candidate);
+    if (parsed.success) normalized.push(parsed.data);
+  }
+  return [...new Set(normalized)];
+}
+
 export const NodeScopeSchema = z.object({
   catalogKeys: z.array(z.string()).optional(),
   nodeIds: z.array(z.string().uuid()).optional(),
