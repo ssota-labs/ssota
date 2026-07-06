@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@ssota/ui/components/ui/alert-dialog";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
@@ -207,6 +219,31 @@ export function ScheduleSheet({
     });
   }
 
+  function handleDelete() {
+    if (!schedule) return;
+    setError(null);
+    startTransition(async () => {
+      try {
+        const res = await fetch(
+          `/api/schedules/${schedule.id}?teamspaceId=${teamspaceId}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) {
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? `Request failed (${res.status})`);
+        }
+        onOpenChange(false);
+        router.refresh();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to delete schedule",
+        );
+      }
+    });
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -289,6 +326,39 @@ export function ScheduleSheet({
       {isEdit ? "Save changes" : "Add trigger"}
     </Button>
   );
+
+  const deleteButton =
+    isEdit && schedule ? (
+      <AlertDialog>
+        <AlertDialogTrigger
+          render={
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className={cn(compact && "size-8")}
+              disabled={isPending}
+              aria-label="Delete trigger"
+              data-testid="schedule-delete-trigger"
+            >
+              <TrashIcon className="size-4" aria-hidden />
+            </Button>
+          }
+        />
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete trigger?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This stops the recurring run. This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    ) : null;
 
   const form = (
     <form
@@ -521,7 +591,10 @@ export function ScheduleSheet({
         {inlineSubmitPlacement === "header" ? (
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold leading-none">{title}</h3>
-            {submitButton}
+            <div className="flex shrink-0 items-center gap-1">
+              {deleteButton}
+              {submitButton}
+            </div>
           </div>
         ) : null}
         {form}
