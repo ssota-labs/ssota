@@ -11,6 +11,7 @@ import {
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Worker, WorkerIndex, WorkerKind } from "@ssota/contracts";
+import { WorkerSyncConfigSchema } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
@@ -28,7 +29,15 @@ import {
 } from "@/components/ai-elements/artifact";
 import { CardListSheet, CardListSheetInlineTitle, CardListSheetPanel } from "@/components/card-list-sheet";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import { WorkerScriptEditor, WorkerScriptEditorSkeleton } from "@/components/console/worker-script-editor";
+import {
+  CronScheduleField,
+} from "@/components/schedules/cron-schedule-field";
+import {
+  defaultCronScheduleValue,
+  type CronScheduleValue,
+} from "@/components/schedules/cron-schedule-form";
 import {
   createWorkerAction,
   deleteWorkerAction,
@@ -114,7 +123,8 @@ export function WorkersWorkspace({
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createScript, setCreateScript] = useState(DEFAULT_SCRIPT);
-  const [createCron, setCreateCron] = useState("0 * * * *");
+  const [createSyncSchedule, setCreateSyncSchedule] =
+    useState<CronScheduleValue>(defaultCronScheduleValue);
 
   const activeWorker = workers.find((w) => w.id === activeId) ?? null;
   const isCreating = isCreateWorkerSheetId(activeId);
@@ -209,7 +219,7 @@ export function WorkersWorkspace({
     setCreateName("");
     setCreateDescription("");
     setCreateScript(DEFAULT_SCRIPT);
-    setCreateCron("0 * * * *");
+    setCreateSyncSchedule(defaultCronScheduleValue());
   }
 
   function handleCreate() {
@@ -218,9 +228,9 @@ export function WorkersWorkspace({
       const kindConfig =
         createKind === "sync"
           ? {
-              cronExpression: createCron,
-              timezone: "UTC",
-              enabled: true,
+              cronExpression: createSyncSchedule.cronExpression,
+              timezone: createSyncSchedule.timezone,
+              enabled: createSyncSchedule.enabled,
             }
           : { enabled: true, verification: "none" as const };
 
@@ -356,6 +366,37 @@ export function WorkersWorkspace({
       );
     });
   }
+
+  function handleSaveSyncSchedule(next: CronScheduleValue) {
+    if (!activeWorker || activeWorker.kind !== "sync" || !workerDetail) return;
+    startTransition(async () => {
+      const worker = await updateWorkerAction(
+        orgSlug,
+        teamspaceSlug,
+        teamspaceId,
+        activeWorker.id,
+        {
+          kindConfig: {
+            cronExpression: next.cronExpression,
+            timezone: next.timezone,
+            enabled: next.enabled,
+          },
+        },
+      );
+      setWorkerDetail(worker);
+    });
+  }
+
+  const activeSyncSchedule = useMemo((): CronScheduleValue | null => {
+    if (!workerDetail || workerDetail.kind !== "sync") return null;
+    const parsed = WorkerSyncConfigSchema.safeParse(workerDetail.kindConfig);
+    if (!parsed.success) return defaultCronScheduleValue();
+    return {
+      cronExpression: parsed.data.cronExpression,
+      timezone: parsed.data.timezone,
+      enabled: parsed.data.enabled,
+    };
+  }, [workerDetail]);
 
   function handleActiveIdChange(nextId: string | null) {
     if (isCreateWorkerSheetId(activeId) && !isCreateWorkerSheetId(nextId)) {
@@ -522,6 +563,26 @@ export function WorkersWorkspace({
               </div>
             ) : null}
 
+            {activeWorker.kind === "sync" && activeSyncSchedule ? (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Schedule</Label>
+                {isLoadingDetail ? (
+                  <Skeleton className="h-11 w-full rounded-md" />
+                ) : (
+                  <AgentSettingCard.Root>
+                    <AgentSettingCard.Body className="py-1">
+                      <CronScheduleField
+                        value={activeSyncSchedule}
+                        onSave={handleSaveSyncSchedule}
+                        isPending={isPending}
+                        testId="worker-edit-schedule"
+                      />
+                    </AgentSettingCard.Body>
+                  </AgentSettingCard.Root>
+                )}
+              </div>
+            ) : null}
+
             <Artifact data-testid="worker-script-artifact">
               <ArtifactHeader>
                 <ArtifactTitle>TypeScript script</ArtifactTitle>
@@ -648,13 +709,13 @@ export function WorkersWorkspace({
             </div>
             {createKind === "sync" ? (
               <div className="grid gap-2">
-                <Label htmlFor="worker-cron">Cron expression</Label>
-                <Input
-                  id="worker-cron"
-                  value={createCron}
-                  onChange={(e) => setCreateCron(e.target.value)}
-                  placeholder="0 * * * *"
-                  data-testid="worker-create-cron"
+                <Label>Schedule</Label>
+                <CronScheduleField
+                  value={createSyncSchedule}
+                  onSave={setCreateSyncSchedule}
+                  presentation="dialog"
+                  showEnabled={false}
+                  testId="worker-create-schedule"
                 />
               </div>
             ) : null}
