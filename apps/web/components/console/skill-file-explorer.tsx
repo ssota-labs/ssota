@@ -267,7 +267,7 @@ export function SkillFileExplorer({
       data-testid="skill-file-explorer"
     >
       <nav
-        className="shrink-0 overflow-y-auto border-b border-border bg-muted/15 sm:max-h-[min(24rem,45vh)] sm:w-[38%] sm:min-w-[9rem] sm:border-b-0 sm:border-r"
+        className="shrink-0 overflow-y-auto border-b border-border bg-muted/15 sm:max-h-[min(24rem,45vh)] sm:w-[7.5rem] sm:border-b-0 sm:border-r"
         aria-label="Skill files"
         data-testid="skill-file-tree"
       >
