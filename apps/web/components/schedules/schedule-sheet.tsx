@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TrashIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -307,6 +312,9 @@ export function ScheduleSheet({
       ? `schedule-sheet-form-${schedule.id}`
       : "schedule-sheet-form";
 
+  const useHeaderIconActions =
+    presentation === "inline" && compact && inlineSubmitPlacement === "header";
+
   const submitButton = (
     <Button
       type="submit"
@@ -314,10 +322,7 @@ export function ScheduleSheet({
       disabled={isPending || Boolean(preview.error)}
       className={cn(
         presentation === "sheet" ? "w-full" : undefined,
-        presentation === "inline" &&
-          compact &&
-          inlineSubmitPlacement === "header" &&
-          "h-8 px-3 text-xs",
+        useHeaderIconActions && "size-8",
       )}
       data-testid={
         presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
@@ -325,6 +330,30 @@ export function ScheduleSheet({
     >
       {isEdit ? "Save changes" : "Add trigger"}
     </Button>
+  );
+
+  const headerSaveButton = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="submit"
+            form={formId}
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            disabled={isPending || Boolean(preview.error)}
+            aria-label="Save changes"
+            data-testid="schedule-save-trigger"
+          >
+            <FloppyDiskIcon className="size-4" aria-hidden />
+          </Button>
+        }
+      />
+      <TooltipContent side="top" sideOffset={5}>
+        Save changes
+      </TooltipContent>
+    </Tooltip>
   );
 
   const deleteButton =
@@ -336,7 +365,10 @@ export function ScheduleSheet({
               type="button"
               size="icon"
               variant="ghost"
-              className={cn(compact && "size-8")}
+              className={cn(
+                compact && "size-8",
+                "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+              )}
               disabled={isPending}
               aria-label="Delete trigger"
               data-testid="schedule-delete-trigger"
@@ -592,8 +624,8 @@ export function ScheduleSheet({
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold leading-none">{title}</h3>
             <div className="flex shrink-0 items-center gap-1">
+              {isEdit && useHeaderIconActions ? headerSaveButton : submitButton}
               {deleteButton}
-              {submitButton}
             </div>
           </div>
         ) : null}
