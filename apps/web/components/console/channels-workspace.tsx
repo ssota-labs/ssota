@@ -11,6 +11,11 @@ import {
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -195,7 +200,7 @@ function InboundChannelSettingsPanel({
                 description={`Connected ${channel.label} workspaces for inbound @mentions.`}
               />
               <AgentSettingCard.Body>
-                <AgentSettingCard.Items divided>
+                <AgentSettingCard.Items>
                   {channel.workspaces.length === 0 ? (
                     <AgentSettingCard.Empty>
                       No workspaces connected yet.
@@ -223,30 +228,48 @@ function InboundChannelSettingsPanel({
                           subtitle={subtitle}
                           trailing={
                             <div className="flex items-center gap-1">
-                              <a
-                                href={connectHref}
-                                className={buttonVariants({
-                                  variant: "ghost",
-                                  size: "icon-sm",
-                                  className: "text-muted-foreground",
-                                })}
-                                data-testid={`channel-reconnect-${channel.platform}-${itemKey}`}
-                                aria-label={`Reconnect ${title}`}
-                              >
-                                <ArrowClockwiseIcon className="size-4" />
-                              </a>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={isPending}
-                                className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                                onClick={() => setDisconnectTarget(workspace)}
-                                data-testid={`channel-disconnect-${channel.platform}-${itemKey}`}
-                              >
-                                <LinkBreakIcon className="size-4" />
-                                Disconnect
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <a
+                                      href={connectHref}
+                                      className={buttonVariants({
+                                        variant: "ghost",
+                                        size: "icon-sm",
+                                        className: "text-muted-foreground",
+                                      })}
+                                      data-testid={`channel-reconnect-${channel.platform}-${itemKey}`}
+                                      aria-label={`Reconnect ${title}`}
+                                    />
+                                  }
+                                >
+                                  <ArrowClockwiseIcon className="size-4" aria-hidden />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" sideOffset={5}>
+                                  Reconnect
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      disabled={isPending}
+                                      className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                      aria-label={`Disconnect ${title}`}
+                                      onClick={() => setDisconnectTarget(workspace)}
+                                      data-testid={`channel-disconnect-${channel.platform}-${itemKey}`}
+                                    />
+                                  }
+                                >
+                                  <LinkBreakIcon className="size-4" aria-hidden />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" sideOffset={5}>
+                                  Disconnect
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           }
                         />

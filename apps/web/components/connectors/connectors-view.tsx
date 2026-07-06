@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
-  ArrowLeftIcon,
+  ArrowClockwiseIcon,
   BuildingsIcon,
-  CaretRightIcon,
   CheckCircleIcon,
   LinkBreakIcon,
   PlusIcon,
@@ -13,22 +12,18 @@ import {
 import type { Icon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
-import { Switch } from "@ssota/ui/components/ui/switch";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@ssota/ui/components/ui/sheet";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
+import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { ConnectorToolPermissionsControl } from "@/components/connectors/connector-tool-permissions-control";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
-import {
-  disconnectConnectionAction,
-  loadToolkitToolSettingsAction,
-  setToolkitDisabledAction,
-} from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
+import { disconnectConnectionAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,
@@ -120,7 +115,13 @@ export function ConnectorsView({
     : { user: [], org: [] };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <CardListSheet.Root
+      activeId={selected}
+      onActiveIdChange={(id) => setSelected(id as ConnectorProvider | null)}
+      dismissOnOutsideClick
+      className="absolute inset-0 flex flex-col"
+      testId="connections-workspace"
+    >
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title={t("nav.connections")}
@@ -132,8 +133,9 @@ export function ConnectorsView({
             <BrowseWorkspace.Grid>
               {group.items.map((connector) => {
                 const entry = byProvider.get(connector.provider);
-                const connected =
-                  (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
+                const connected = allowOrgScope
+                  ? (entry?.org.length ?? 0) > 0
+                  : (entry?.user.length ?? 0) > 0;
                 return (
                   <ConnectorBrowseCard
                     key={connector.provider}
@@ -148,25 +150,19 @@ export function ConnectorsView({
         ))}
       </BrowseWorkspace.Frame>
 
-      <Sheet
-        open={selected !== null}
-        onOpenChange={(open) => !open && setSelected(null)}
-      >
-        <SheetContent side="right" className="flex flex-col gap-0 p-0">
-          {selectedConnector ? (
-            <ConnectorSettings
-              connector={selectedConnector}
-              userConnections={selectedScoped.user}
-              orgConnections={selectedScoped.org}
-              allowOrgScope={allowOrgScope}
-              teamspaceId={teamspaceId}
-              accountId={accountId}
-              returnTo={returnTo}
-            />
-          ) : null}
-        </SheetContent>
-      </Sheet>
-    </div>
+      {selectedConnector ? (
+        <ConnectorSettingsPanel
+          connector={selectedConnector}
+          userConnections={selectedScoped.user}
+          orgConnections={selectedScoped.org}
+          allowOrgScope={allowOrgScope}
+          teamspaceId={teamspaceId}
+          accountId={accountId}
+          returnTo={returnTo}
+          onClose={() => setSelected(null)}
+        />
+      ) : null}
+    </CardListSheet.Root>
   );
 }
 
@@ -213,7 +209,7 @@ export function ConnectorBrowseCard({
   );
 }
 
-function ConnectorSettings({
+function ConnectorSettingsPanel({
   connector,
   userConnections,
   orgConnections,
@@ -221,6 +217,7 @@ function ConnectorSettings({
   teamspaceId,
   accountId,
   returnTo,
+  onClose,
 }: {
   connector: ConnectorDef;
   userConnections: ConnectorConnection[];
@@ -229,117 +226,48 @@ function ConnectorSettings({
   teamspaceId: string;
   accountId: string;
   returnTo: string;
+  onClose: () => void;
 }) {
   const configured = Boolean(connector.connectorUid);
-  const scopes: Scope[] = allowOrgScope ? ["user", "org"] : ["user"];
-  // Single scope → open it directly; multiple → show the scope list first.
-  const [scope, setScope] = useState<Scope | null>(
-    scopes.length === 1 ? "user" : null,
-  );
-  const connectionsFor = (s: Scope) =>
-    s === "user" ? userConnections : orgConnections;
+  const scope: Scope = allowOrgScope ? "org" : "user";
+  const scopeConnections = scope === "org" ? orgConnections : userConnections;
 
   return (
-    <>
-      <SheetHeader className="gap-3 border-b px-5 py-4">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-            <ConnectorBrandIcon provider={connector.provider} className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <SheetTitle className="text-base">{connector.label}</SheetTitle>
-            <SheetDescription className="text-xs">
-              {connector.description}
-            </SheetDescription>
-          </div>
-        </div>
-      </SheetHeader>
-
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+    <CardListSheetPanel
+      title={connector.label}
+      subtitle={connector.description}
+      onClose={onClose}
+      testId={`connector-detail-${connector.provider}`}
+      headerPrefix={
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+          <ConnectorBrandIcon provider={connector.provider} className="size-5" />
+        </span>
+      }
+    >
+      <div className="space-y-4" data-testid={`connection-detail-${connector.provider}`}>
         {!configured ? (
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             This connector is not configured for this deployment.
           </p>
-        ) : scope === null ? (
-          <ScopeList scopes={scopes} connectionsFor={connectionsFor} onSelect={setScope} />
         ) : (
-          <ScopeDetail
+          <ConnectorScopeCard
             connector={connector}
             scope={scope}
-            connections={connectionsFor(scope)}
-            onBack={scopes.length > 1 ? () => setScope(null) : undefined}
+            connections={scopeConnections}
             teamspaceId={teamspaceId}
             accountId={accountId}
             returnTo={returnTo}
           />
         )}
       </div>
-    </>
+    </CardListSheetPanel>
   );
 }
 
-/** Card-list of access scopes (document-list-sheet style: divided rows → detail). */
-function ScopeList({
-  scopes,
-  connectionsFor,
-  onSelect,
-}: {
-  scopes: Scope[];
-  connectionsFor: (s: Scope) => ConnectorConnection[];
-  onSelect: (s: Scope) => void;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <h3 className="text-sm font-medium">Access scope</h3>
-        <p className="text-xs text-muted-foreground">
-          Who this connection applies to and which tools the agent may use.
-        </p>
-      </div>
-
-      <div className="divide-y divide-border overflow-hidden rounded-lg border">
-        {scopes.map((s) => {
-          const meta = SCOPE_META[s];
-          const ScopeIcon = meta.icon;
-          const count = connectionsFor(s).length;
-          return (
-            <button
-              key={s}
-              type="button"
-              data-testid={`scope-${s}`}
-              onClick={() => onSelect(s)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-                <ScopeIcon className="size-4 text-muted-foreground" />
-              </span>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <span className="block text-sm font-medium">{meta.title}</span>
-                <p className="line-clamp-1 text-xs text-muted-foreground">
-                  {meta.subtitle}
-                </p>
-              </div>
-              {count > 0 ? (
-                <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
-                  <CheckCircleIcon weight="fill" className="size-3 text-primary" />
-                  {count}
-                </Badge>
-              ) : null}
-              <CaretRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** Detail for one scope: connected accounts + connect + tool access. */
-function ScopeDetail({
+function ConnectorScopeCard({
   connector,
   scope,
   connections,
-  onBack,
   teamspaceId,
   accountId,
   returnTo,
@@ -347,14 +275,12 @@ function ScopeDetail({
   connector: ConnectorDef;
   scope: Scope;
   connections: ConnectorConnection[];
-  onBack?: () => void;
   teamspaceId: string;
   accountId: string;
   returnTo: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const meta = SCOPE_META[scope];
-  const ScopeIcon = meta.icon;
   const connected = connections.length > 0;
   const href = buildConnectorAuthorizeHref({
     slug: connector.provider,
@@ -366,172 +292,115 @@ function ScopeDetail({
 
   function disconnect(connectionId: string) {
     startTransition(async () => {
-      await disconnectConnectionAction({ teamspaceId, connectionId, revalidate: returnTo });
-    });
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {onBack ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Back"
-            onClick={onBack}
-            className="shrink-0"
-          >
-            <ArrowLeftIcon className="size-4" />
-          </Button>
-        ) : null}
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-          <ScopeIcon className="size-4 text-muted-foreground" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-medium">{meta.title}</p>
-          <p className="text-xs text-muted-foreground">{meta.subtitle}</p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {connections.map((conn) => (
-          <div
-            key={conn.id}
-            className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
-            data-testid="connection-row"
-          >
-            <span className="truncate text-sm">{conn.name ?? connector.label}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={isPending}
-              className="shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-              onClick={() => disconnect(conn.id)}
-            >
-              <LinkBreakIcon className="size-4" />
-              Disconnect
-            </Button>
-          </div>
-        ))}
-
-        <a
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-          href={href}
-          data-testid={`connect-${scope}-${connector.provider}`}
-        >
-          <PlusIcon className="size-4" />
-          {connected ? "Add account" : "Connect"}
-        </a>
-      </div>
-
-      {/* Per-tool restrictions apply to the personal (user) scope. */}
-      {scope === "user" && connected ? (
-        <ToolAccessSection
-          toolkit={connector.provider}
-          teamspaceId={teamspaceId}
-          returnTo={returnTo}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-interface ToolRow {
-  slug: string;
-  name: string;
-}
-
-/**
- * Per-toolkit tool restrictions. Lazily loads the toolkit's available tools and
- * the entity's disabled set; toggling a tool off persists it
- * (connector_tool_settings) and excludes it from the agent's next session.
- */
-function ToolAccessSection({
-  toolkit,
-  teamspaceId,
-  returnTo,
-}: {
-  toolkit: string;
-  teamspaceId: string;
-  returnTo: string;
-}) {
-  const [tools, setTools] = useState<ToolRow[] | null>(null);
-  const [disabled, setDisabled] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    loadToolkitToolSettingsAction({ teamspaceId, toolkit })
-      .then((res) => {
-        if (!active) return;
-        setTools(res.tools.map((t) => ({ slug: t.slug, name: t.name })));
-        setDisabled(new Set(res.disabled));
-      })
-      .catch(() => {
-        if (active) setTools([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [teamspaceId, toolkit]);
-
-  function toggle(slug: string, enabled: boolean) {
-    const next = new Set(disabled);
-    if (enabled) next.delete(slug);
-    else next.add(slug);
-    setDisabled(next);
-    startTransition(async () => {
-      await setToolkitDisabledAction({
+      await disconnectConnectionAction({
         teamspaceId,
-        toolkit,
-        disabled: [...next],
+        connectionId,
         revalidate: returnTo,
       });
     });
   }
 
   return (
-    <div className="space-y-2 border-t pt-3">
-      <div className="space-y-0.5">
-        <p className="text-xs font-medium">Tool access</p>
-        <p className="text-[11px] text-muted-foreground">
-          Turn off tools the agent should not use for this connector.
-        </p>
-      </div>
-
-      {loading ? (
-        <p className="text-xs text-muted-foreground">Loading tools…</p>
-      ) : !tools || tools.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No tools available.</p>
-      ) : (
-        <ul className="max-h-64 space-y-0.5 overflow-y-auto">
-          {tools.map((tool) => {
-            const enabled = !disabled.has(tool.slug);
-            return (
-              <li
-                key={tool.slug}
-                className="flex items-center justify-between gap-3 rounded-md px-1.5 py-1.5 hover:bg-accent/40"
-              >
-                <span className="min-w-0 truncate text-xs" title={tool.slug}>
-                  {tool.name}
-                </span>
-                <Switch
-                  checked={enabled}
-                  onCheckedChange={(checked) => toggle(tool.slug, checked)}
-                  aria-label={`Enable ${tool.name}`}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    <div className="space-y-4">
+      <AgentSettingCard.Root testId={`connection-scope-${scope}`}>
+        <AgentSettingCard.Header
+          title={meta.title}
+          description={meta.subtitle}
+        />
+        <AgentSettingCard.Body>
+          <AgentSettingCard.Items>
+            {connections.length === 0 ? (
+              <AgentSettingCard.Empty>
+                No accounts connected yet.
+              </AgentSettingCard.Empty>
+            ) : (
+              connections.map((conn) => {
+                const label = conn.name ?? connector.label;
+                return (
+                  <AgentSettingCard.Item
+                    key={conn.id}
+                    testId="connection-row"
+                    icon={
+                      <ConnectorBrandIcon
+                        provider={connector.provider}
+                        className="size-3.5"
+                      />
+                    }
+                    title={label}
+                    trailing={
+                      <div className="flex items-center gap-1">
+                        <ConnectorToolPermissionsControl
+                          toolkit={connector.provider}
+                          providerLabel={connector.label}
+                          scope={scope}
+                          teamspaceId={teamspaceId}
+                          returnTo={returnTo}
+                          connectionId={conn.id}
+                        />
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <a
+                                href={href}
+                                className={buttonVariants({
+                                  variant: "ghost",
+                                  size: "icon-sm",
+                                  className: "text-muted-foreground",
+                                })}
+                                data-testid={`reconnect-${connector.provider}`}
+                                aria-label={`Reconnect ${label}`}
+                              />
+                            }
+                          >
+                            <ArrowClockwiseIcon className="size-4" aria-hidden />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={5}>
+                            Reconnect
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={isPending}
+                                className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                aria-label={`Disconnect ${label}`}
+                                onClick={() => disconnect(conn.id)}
+                              />
+                            }
+                          >
+                            <LinkBreakIcon className="size-4" aria-hidden />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={5}>
+                            Disconnect
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    }
+                  />
+                );
+              })
+            )}
+          </AgentSettingCard.Items>
+        </AgentSettingCard.Body>
+        <AgentSettingCard.Footer>
+          <a
+            className={buttonVariants({
+              variant: "secondary",
+              size: "sm",
+              className: "w-fit justify-start gap-2",
+            })}
+            href={href}
+            data-testid={`connect-${scope}-${connector.provider}`}
+          >
+            <PlusIcon className="size-4" />
+            {connected ? "Add connection" : "Connect"}
+          </a>
+        </AgentSettingCard.Footer>
+      </AgentSettingCard.Root>
     </div>
   );
 }

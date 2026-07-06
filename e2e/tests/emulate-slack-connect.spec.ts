@@ -31,7 +31,7 @@ test.describe("emulate-slack", () => {
     await expect(slack.getByTestId("connection-row")).toHaveCount(0);
 
     await page.getByTestId("connector-slack").click();
-    await page.getByTestId("connect-user-slack").click();
+    await page.getByTestId("connect-org-slack").click();
 
     await page.waitForURL(/\/oauth\/v2\/authorize/, { timeout: 30_000 });
 

@@ -13,6 +13,7 @@ import { ConnectorsContentLoading } from "@/components/console/browse-content-lo
 import { getConnectors } from "@/lib/connect/connectors";
 import { orgPath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
+import { mergeAgentToolsConnectionSeed } from "@/lib/console/agent-settings-connection-seed";
 import { getOrCreateProjectAccount } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -60,13 +61,15 @@ async function ConnectionsPageInner({
 
   const returnTo = orgPath(ctx, "connections");
 
+  const connections = mergeAgentToolsConnectionSeed({
+    user: userConns.filter((c) => c.active).map(toConnection),
+    org: orgConns.filter((c) => c.active).map(toConnection),
+  });
+
   return (
     <ConnectorsView
       connectors={connectors}
-      connections={{
-        user: userConns.filter((c) => c.active).map(toConnection),
-        org: orgConns.filter((c) => c.active).map(toConnection),
-      }}
+      connections={connections}
       teamspaceId={project.id}
       accountId={account.id}
       returnTo={returnTo}
