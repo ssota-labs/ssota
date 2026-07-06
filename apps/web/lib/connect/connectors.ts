@@ -85,7 +85,8 @@ const DESCRIPTIONS: Record<string, string> = {
 export function getConnectors(): ConnectorDef[] {
   // Server-only env read (this function is called from the server page). When
   // Composio is unconfigured every card renders as "not configured".
-  const composioOn = Boolean(process.env.COMPOSIO_API_KEY);
+  const composioOn =
+    Boolean(process.env.COMPOSIO_API_KEY) || process.env.CONNECT_STUB === "1";
   const authConfigs = resolveComposioAuthConfigs();
   return COMPOSIO_TOOLKITS.map((tk) => {
     // BYOA-only toolkits (e.g. X) can't be connected without their auth config,

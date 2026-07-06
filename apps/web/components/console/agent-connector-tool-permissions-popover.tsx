@@ -94,6 +94,13 @@ export function AgentConnectorToolPermissionsPopoverContent({
     onBindingChange(setBindingToolPermission(binding, slug, permission));
   };
 
+  const hasConnectionsDisabledTools =
+    !loading &&
+    !error &&
+    tools != null &&
+    tools.length > 0 &&
+    globalDisabled.length > 0;
+
   return (
     <div
       className="space-y-3"
@@ -106,6 +113,16 @@ export function AgentConnectorToolPermissionsPopoverContent({
           {binding.scope === "org" ? "Organization" : "Personal"}
         </p>
       </div>
+
+      {hasConnectionsDisabledTools ? (
+        <p
+          className="text-muted-foreground rounded-md border border-dashed border-border/80 bg-muted/20 px-2 py-1.5 text-xs"
+          data-testid="agent-tool-permissions-connections-hint"
+        >
+          Tools turned off in Connections stay blocked for every agent. Enable
+          them on the Connections page to change permissions here.
+        </p>
+      ) : null}
 
       {loading && !tools ? (
         <div
@@ -136,12 +153,22 @@ export function AgentConnectorToolPermissionsPopoverContent({
                 )}
                 data-testid={`agent-tool-permission-row-${tool.slug}`}
               >
-                <span
-                  className="min-w-0 truncate text-xs"
-                  title={`${tool.name} (${tool.slug})`}
-                >
-                  {tool.name}
-                </span>
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <span
+                    className="block truncate text-xs"
+                    title={`${tool.name} (${tool.slug})`}
+                  >
+                    {tool.name}
+                  </span>
+                  {globallyBlocked ? (
+                    <p
+                      className="text-muted-foreground text-[11px]"
+                      data-testid={`agent-tool-permission-connections-disabled-${tool.slug}`}
+                    >
+                      Disabled in Connections
+                    </p>
+                  ) : null}
+                </div>
                 <ToolPermissionTriState
                   value={effective}
                   disabled={globallyBlocked}
