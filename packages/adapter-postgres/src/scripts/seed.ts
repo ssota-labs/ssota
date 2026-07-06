@@ -16,6 +16,7 @@ import {
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedInboundChannelFixtures } from "./seed/inbound-channels.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
+import { seedWorkerFixtures } from "./seed/workers.js";
 import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
@@ -147,6 +148,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await seedGraphInstances(db, teamspaceId);
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
     await seedScheduleFixtures(db, teamspaceId);
+    await seedWorkerFixtures(db, teamspaceId);
     await seedInboundChannelFixtures(db, teamspaceId);
 
     const implementFeatureId = BUILTIN_AGENT_IDS.implementFeature;
