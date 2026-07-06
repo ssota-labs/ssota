@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CaretRightIcon, ClockIcon, TrashIcon } from "@phosphor-icons/react";
-import { Badge } from "@ssota/ui/components/ui/badge";
+import { ClockIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Switch } from "@ssota/ui/components/ui/switch";
-import { cn } from "@ssota/ui/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,13 +19,14 @@ import {
 import {
   cronToRecurrence,
   describeRecurrence,
-  nextOccurrence,
 } from "@/lib/schedules/recurrence";
 import {
   ScheduleSheet,
   type InstructionOption,
   type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
+import { ScheduleEditPopover } from "@/components/schedules/schedule-edit-popover";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 
@@ -64,32 +63,32 @@ export function SchedulesList({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<ScheduleEditTarget | null>(
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
     null,
   );
+  const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const ignoreNextScheduleRowPressRef = useRef(false);
 
   const instructionName = useMemo(() => {
     const map = new Map(instructions.map((i) => [i.id, i.name]));
     return (id: string) => map.get(id) ?? "Unknown agent";
   }, [instructions]);
 
-  function openCreateSheet() {
-    setEditingSchedule(null);
-    setSheetOpen(true);
-  }
+  const editingSchedule = editingScheduleId
+    ? schedules.find((s) => s.id === editingScheduleId)
+    : undefined;
 
-  function openEditSheet(schedule: ScheduleRow) {
-    setEditingSchedule({
-      id: schedule.id,
-      agentDefinitionId: schedule.agentDefinitionId,
-      targetType: schedule.targetType,
-      cronExpression: schedule.cronExpression,
-      timezone: schedule.timezone,
-      enabled: schedule.enabled,
-    });
-    setSheetOpen(true);
-  }
+  const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
+    ? {
+        id: editingSchedule.id,
+        agentDefinitionId: editingSchedule.agentDefinitionId,
+        targetType: editingSchedule.targetType,
+        cronExpression: editingSchedule.cronExpression,
+        timezone: editingSchedule.timezone,
+        enabled: editingSchedule.enabled,
+      }
+    : undefined;
 
   function toggleEnabled(schedule: ScheduleRow, enabled: boolean) {
     setError(null);
@@ -117,16 +116,15 @@ export function SchedulesList({
           { method: "DELETE" },
         );
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        if (editingScheduleId === schedule.id) {
+          setEditingScheduleId(null);
+        }
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete");
       }
     });
   }
-
-  useEffect(() => {
-    if (!sheetOpen) setEditingSchedule(null);
-  }, [sheetOpen]);
 
   return (
     <div
@@ -138,7 +136,7 @@ export function SchedulesList({
           title={t("nav.schedules")}
           description="Run agents on a recurring schedule. Each schedule only runs inside its window, so tokens aren't spent outside it."
           actions={
-            <Button size="sm" onClick={openCreateSheet}>
+            <Button size="sm" onClick={() => setCreateSheetOpen(true)}>
               Add trigger
             </Button>
           }
@@ -152,109 +150,109 @@ export function SchedulesList({
             schedule.
           </BrowseWorkspace.Empty>
         ) : (
-          <div
-            className="divide-y divide-border overflow-hidden rounded-lg border border-border"
-            data-testid="schedule-list"
-          >
-            {schedules.map((schedule) => {
-              const next = nextOccurrence(
-                schedule.cronExpression,
-                schedule.timezone,
-              );
-              return (
-                <div
-                  key={schedule.id}
-                  className={cn(
-                    "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 transition-colors",
-                  )}
-                  data-testid={`schedule-list-item-${schedule.id}`}
-                >
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                    onClick={() => openEditSheet(schedule)}
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="text-sm font-medium">
-                        {instructionName(schedule.agentDefinitionId)}
-                      </span>
-                      <p className="text-muted-foreground line-clamp-2 text-xs">
-                        {summarize(schedule.cronExpression, schedule.timezone)}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <Badge variant="outline" className="font-mono text-[10px]">
-                          {schedule.cronExpression}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {schedule.timezone}
-                        </Badge>
-                        <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                          <ClockIcon className="size-3" />
-                          {next
-                            ? next.toLocaleString("en-US", {
-                                timeZone: schedule.timezone,
-                              })
-                            : "—"}
-                        </span>
-                      </div>
-                    </div>
-                    <CaretRightIcon
-                      className="text-muted-foreground size-4 shrink-0"
-                      aria-hidden
-                    />
-                  </button>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Switch
-                      checked={schedule.enabled}
-                      onCheckedChange={(value) => toggleEnabled(schedule, value)}
-                      onClick={(event) => event.stopPropagation()}
-                      disabled={isPending}
-                      aria-label={`Toggle ${instructionName(schedule.agentDefinitionId)}`}
-                    />
-                    <AlertDialog>
-                      <AlertDialogTrigger
-                        render={
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            aria-label="Delete schedule"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <TrashIcon className="size-4" />
-                          </Button>
+          <AgentSettingCard.Root testId="schedule-list">
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+                {schedules.map((schedule) => {
+                  const label = summarize(
+                    schedule.cronExpression,
+                    schedule.timezone,
+                  );
+                  return (
+                    <AgentSettingCard.Item
+                      key={schedule.id}
+                      className="group"
+                      testId={`schedule-list-item-${schedule.id}`}
+                      onPress={(element) => {
+                        if (ignoreNextScheduleRowPressRef.current) {
+                          ignoreNextScheduleRowPressRef.current = false;
+                          return;
                         }
-                      />
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This stops the recurring run. This can&apos;t be
-                            undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => remove(schedule)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                        setEditingScheduleId((current) => {
+                          if (current === schedule.id) return null;
+                          schedulePopoverAnchorRef.current = element;
+                          return schedule.id;
+                        });
+                      }}
+                      icon={
+                        <ClockIcon className="size-3.5 text-muted-foreground" />
+                      }
+                      title={label}
+                      subtitle={instructionName(schedule.agentDefinitionId)}
+                      trailing={
+                        <div className="flex items-center gap-1">
+                          <Switch
+                            checked={schedule.enabled}
+                            onCheckedChange={(value) =>
+                              toggleEnabled(schedule, value)
+                            }
+                            disabled={isPending}
+                            aria-label={`Toggle ${label}`}
+                          />
+                          <AlertDialog>
+                            <AlertDialogTrigger
+                              render={
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  aria-label="Delete schedule"
+                                >
+                                  <TrashIcon className="size-4" />
+                                </Button>
+                              }
+                            />
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete schedule?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This stops the recurring run. This can&apos;t
+                                  be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => remove(schedule)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      }
+                    />
+                  );
+                })}
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
         )}
       </BrowseWorkspace.Frame>
 
-      <ScheduleSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+      <ScheduleEditPopover
+        open={editingScheduleId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingScheduleId(null);
+        }}
+        anchorRef={schedulePopoverAnchorRef}
+        schedule={scheduleEditTarget}
         teamspaceId={teamspaceId}
         accountId={accountId}
         instructions={instructions}
-        schedule={editingSchedule ?? undefined}
+        onDismissFromAnchor={() => {
+          ignoreNextScheduleRowPressRef.current = true;
+        }}
+      />
+
+      <ScheduleSheet
+        open={createSheetOpen}
+        onOpenChange={setCreateSheetOpen}
+        teamspaceId={teamspaceId}
+        accountId={accountId}
+        instructions={instructions}
       />
     </div>
   );

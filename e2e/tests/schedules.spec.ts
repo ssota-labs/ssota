@@ -34,17 +34,23 @@ test.describe("Schedules", () => {
     await expect(sheet).not.toBeVisible();
   });
 
-  test("opens edit sheet from schedule list row", async ({ page }) => {
+  test("opens edit popover from schedule list row", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "schedules");
 
     const firstItem = page
       .locator('[data-testid^="schedule-list-item-"]')
       .first();
-    await firstItem.getByRole("button").first().click();
+    await firstItem.click();
 
-    const sheet = page.getByTestId("schedule-sheet-panel");
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("heading", { name: "Edit trigger" })).toBeVisible();
+    const popover = page.getByTestId("schedule-edit-popover");
+    await expect(popover).toBeVisible();
+    await expect(
+      popover.getByRole("button", { name: "Save changes" }),
+    ).toBeVisible();
+    await expect(popover.getByLabel("Every")).toHaveValue("1");
+
+    await firstItem.click();
+    await expect(popover).not.toBeVisible();
   });
 });
