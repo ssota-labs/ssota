@@ -415,7 +415,11 @@ export function SkillsPageWorkspace({
           >
             <div className="space-y-4">
               {activeSkill.description.trim() ? (
-                <SkillDetailCard title="Description" testId="skill-detail-description">
+                <SkillDetailCard
+                  title="Description"
+                  testId="skill-detail-description"
+                  scrollable
+                >
                   <SkillMarkdownView
                     markdown={activeSkill.description}
                     viewKey={`${activeSkill.id}-description`}
@@ -424,7 +428,7 @@ export function SkillsPageWorkspace({
               ) : null}
 
               {skillBody.trim() ? (
-                <SkillDetailCard title="SKILL.md" testId="skill-detail-body">
+                <SkillDetailCard title="SKILL.md" testId="skill-detail-body" scrollable>
                   <SkillMarkdownView
                     markdown={skillBody}
                     viewKey={`${activeSkill.id}-body`}
