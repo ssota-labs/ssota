@@ -5,6 +5,7 @@ import {
   UpdateTeamspaceMainConfigInputSchema,
   DEFAULT_MAIN_TOOL_BUNDLES,
   DEFAULT_MAIN_RUN_POLICY,
+  normalizeLegacyToolBundles,
   textToBlockNoteContent,
   type TeamspaceMainConfig,
 } from "@ssota/contracts";
@@ -47,7 +48,7 @@ function mapRow(
     instructions: row.mainInstructions ?? [],
     toolBundles:
       Array.isArray(row.mainToolBundles) && row.mainToolBundles.length > 0
-        ? row.mainToolBundles
+        ? normalizeLegacyToolBundles(row.mainToolBundles as unknown[])
         : [...DEFAULT_MAIN_TOOL_BUNDLES],
     runPolicy: row.mainRunPolicy ?? {},
     updatedAt: row.createdAt.toISOString(),

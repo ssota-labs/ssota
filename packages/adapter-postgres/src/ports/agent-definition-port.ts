@@ -3,6 +3,7 @@ import type { ActionPortsScope, AgentDefinitionPort } from "@ssota/core";
 import {
   AgentDefinitionSchema,
   AgentDefinitionSeedSchema,
+  normalizeLegacyToolBundles,
   textToBlockNoteContent,
   type UpsertAgentDefinitionInput,
   type AgentDefinition,
@@ -22,7 +23,7 @@ function mapDefinition(row: DefinitionRow): AgentDefinition {
     name: row.name,
     description: row.description,
     instructions: row.instructions,
-    toolBundles: row.toolBundles,
+    toolBundles: normalizeLegacyToolBundles(row.toolBundles as unknown[]),
     nodeScopes: row.nodeScopes,
     runPolicy: row.runPolicy,
     createdAt: row.createdAt.toISOString(),
