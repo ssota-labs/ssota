@@ -708,15 +708,18 @@ export function WorkersWorkspace({
               />
             </div>
             {createKind === "sync" ? (
-              <div className="grid gap-2">
-                <Label>Schedule</Label>
-                <CronScheduleField
-                  value={createSyncSchedule}
-                  onSave={setCreateSyncSchedule}
-                  presentation="dialog"
-                  showEnabled={false}
-                  testId="worker-create-schedule"
-                />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Schedule</Label>
+                <AgentSettingCard.Root>
+                  <AgentSettingCard.Body className="py-1">
+                    <CronScheduleField
+                      value={createSyncSchedule}
+                      onSave={setCreateSyncSchedule}
+                      showEnabled={false}
+                      testId="worker-create-schedule"
+                    />
+                  </AgentSettingCard.Body>
+                </AgentSettingCard.Root>
               </div>
             ) : null}
             <div className="grid gap-2">
