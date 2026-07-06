@@ -20,10 +20,10 @@ import { ClientSiblingNav } from "@/components/console/page-sibling-nav";
 import {
   defaultSkillMdPath,
   SkillFileExplorer,
+  SkillFileExplorerSkeleton,
 } from "@/components/console/skill-file-explorer";
 import {
   SkillDetailCard,
-  SkillDetailCardSkeleton,
   SkillMarkdownView,
   SkillMdBodyEditor,
 } from "@/components/console/skill-detail-view";
@@ -180,6 +180,8 @@ export function SkillsPageWorkspace({
       setSelectedFilePath(null);
       return;
     }
+    setDetail(null);
+    setSelectedFilePath(null);
     loadDetail(activeId);
   }, [activeId, loadDetail]);
 
@@ -446,7 +448,11 @@ export function SkillsPageWorkspace({
                 </SkillDetailCard>
               ) : null}
 
-              {detail?.files.length ? (
+              {isDetailLoading ? (
+                <SkillDetailCard title="Files" testId="skill-detail-files" bodyClassName="p-0">
+                  <SkillFileExplorerSkeleton />
+                </SkillDetailCard>
+              ) : detail?.files.length ? (
                 <SkillDetailCard title="Files" testId="skill-detail-files" bodyClassName="p-0">
                   <SkillFileExplorer
                     files={detail.files}
@@ -455,11 +461,6 @@ export function SkillsPageWorkspace({
                     onSelectedPathChange={setSelectedFilePath}
                   />
                 </SkillDetailCard>
-              ) : isDetailLoading ? (
-                <SkillDetailCardSkeleton
-                  title="Files"
-                  testId="skill-detail-body-skeleton"
-                />
               ) : null}
 
               {tab === "library" &&

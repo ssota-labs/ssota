@@ -2,7 +2,7 @@
 
 import type { Block } from "@blocknote/core";
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   blockNoteContentToMarkdown,
   markdownToBlockNoteContent,
@@ -22,8 +22,28 @@ const SsotaBlockNoteEditor = dynamic(
 const DocumentViewEl = dynamic(
   () =>
     import("@/lib/page-runtime/catalog-document").then((m) => m.DocumentViewEl),
-  { ssr: false },
+  { ssr: false, loading: () => <SkillMarkdownSkeleton /> },
 );
+
+export function SkillMarkdownSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn("min-h-[10rem] space-y-2.5 py-1", className)}
+      data-testid="skill-markdown-skeleton"
+      aria-busy="true"
+      aria-label="Loading preview"
+    >
+      <Skeleton className="h-4 w-[88%] rounded-sm" />
+      <Skeleton className="h-3.5 w-full rounded-sm" />
+      <Skeleton className="h-3.5 w-[96%] rounded-sm" />
+      <Skeleton className="h-3.5 w-full rounded-sm" />
+      <Skeleton className="h-3.5 w-[72%] rounded-sm" />
+      <Skeleton className="h-5 w-[42%] rounded-sm" />
+      <Skeleton className="h-3.5 w-full rounded-sm" />
+      <Skeleton className="h-3.5 w-[90%] rounded-sm" />
+    </div>
+  );
+}
 
 export function SkillDetailCard({
   title,
@@ -163,10 +183,32 @@ export function SkillMarkdownView({
   viewKey: string;
 }) {
   const content = useMemo(() => markdownToBlockNoteContent(markdown), [markdown]);
+  const [editorReady, setEditorReady] = useState(false);
+
+  useEffect(() => {
+    setEditorReady(false);
+  }, [viewKey]);
+
+  const handleEditorReady = useCallback(() => {
+    setEditorReady(true);
+  }, []);
 
   return (
-    <div key={viewKey} data-testid="skill-markdown-view">
-      <DocumentViewEl content={content} compact />
+    <div
+      key={viewKey}
+      className="relative min-h-[10rem]"
+      data-testid="skill-markdown-view"
+    >
+      {!editorReady ? (
+        <SkillMarkdownSkeleton className="absolute inset-0 z-10 bg-card" />
+      ) : null}
+      <div className={cn(!editorReady && "invisible")} aria-hidden={!editorReady}>
+        <DocumentViewEl
+          content={content}
+          compact
+          onEditorReady={handleEditorReady}
+        />
+      </div>
     </div>
   );
 }

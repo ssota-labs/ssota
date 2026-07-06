@@ -3,7 +3,8 @@
 import { CaretDownIcon, CaretRightIcon, FileIcon, FolderIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@ssota/ui/lib/utils";
-import { SkillMarkdownView } from "@/components/console/skill-detail-view";
+import { SkillMarkdownSkeleton, SkillMarkdownView } from "@/components/console/skill-detail-view";
+import { Skeleton } from "@ssota/ui/components/ui/skeleton";
 
 export type SkillFileEntry = { path: string; contents: string };
 
@@ -209,6 +210,41 @@ function SkillFilePreview({
     <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
       {contents}
     </pre>
+  );
+}
+
+export function SkillFileExplorerSkeleton({
+  className,
+  previewTestId = "skill-detail-body-skeleton",
+}: {
+  className?: string;
+  previewTestId?: string;
+}) {
+  return (
+    <div
+      className={cn("flex min-h-0 flex-col sm:flex-row", className)}
+      data-testid="skill-file-explorer-skeleton"
+      aria-busy="true"
+      aria-label="Loading skill files"
+    >
+      <nav
+        className="shrink-0 space-y-1 border-b border-border bg-muted/15 p-1.5 sm:max-h-[min(24rem,45vh)] sm:w-[7.5rem] sm:border-b-0 sm:border-r"
+        aria-hidden
+      >
+        <Skeleton className="ml-2 h-3.5 w-[70%] rounded-sm" />
+        <Skeleton className="ml-2 h-3.5 w-[55%] rounded-sm" />
+        <Skeleton className="ml-5 h-3.5 w-[62%] rounded-sm" />
+      </nav>
+      <div
+        className="min-h-0 min-w-0 flex-1 px-3 py-2 sm:max-h-[min(24rem,45vh)]"
+        data-testid={previewTestId}
+      >
+        <div className="space-y-2">
+          <Skeleton className="h-2.5 w-16 rounded-sm" />
+          <SkillMarkdownSkeleton />
+        </div>
+      </div>
+    </div>
   );
 }
 
