@@ -541,6 +541,16 @@ export const en = {
       moreTools: " +{count} more",
       stubCallComplete: "Stub MCP call completed",
     },
+    toolGroup: {
+      edit: "{count} files edited",
+      read: "{count} read",
+      search: "{count} searches",
+      run: "{count} commands",
+      other: "{count} tasks",
+      fallback: "{count} tools",
+      errored: "{count} errors",
+      error: "error",
+    },
   },
   connections: {
     title: "Connections",
@@ -1454,6 +1464,16 @@ export const ko = {
       noConnectedTools: "연결된 도구 없음",
       moreTools: " 외 {count}개",
       stubCallComplete: "stub MCP 호출 완료",
+    },
+    toolGroup: {
+      edit: "파일 {count}개 수정",
+      read: "{count}개 읽기",
+      search: "검색 {count}회",
+      run: "명령 {count}회",
+      other: "작업 {count}개",
+      fallback: "도구 {count}개",
+      errored: "오류 {count}",
+      error: "오류",
     },
   },
   connections: {

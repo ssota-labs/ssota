@@ -490,6 +490,12 @@ test.describe("Connections + Chat", () => {
         `${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`,
       );
 
+      // Consecutive tool calls collapse into an accordion group; expand it to
+      // reveal the individual connection_search trace row.
+      await expect(page.getByTestId("tool-group").first()).toBeVisible({
+        timeout: 60_000,
+      });
+      await page.getByTestId("tool-group").first().click();
       await expect(
         page.getByTestId("tool-trace-connection_search"),
       ).toBeVisible({ timeout: 60_000 });
@@ -499,6 +505,7 @@ test.describe("Connections + Chat", () => {
 
       await page.reload();
       await expect(chatComposer(page)).toBeVisible();
+      await page.getByTestId("tool-group").first().click();
       await expect(
         page.getByTestId("tool-trace-connection_search"),
       ).toBeVisible({ timeout: 15_000 });
