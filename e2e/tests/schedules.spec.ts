@@ -10,7 +10,7 @@ test.describe("schedule-hub", () => {
     const hub = page.getByTestId("schedule-hub");
     await expect(hub).toBeVisible();
     await expect(
-      hub.getByRole("heading", { name: /^Schedule hub$|^스케줄 허브$/i }),
+      hub.getByRole("heading", { name: /^Schedules$|^스케줄$/i }),
     ).toBeVisible();
     await expect(hub.getByText(/^Agent triggers$|^에이전트 트리거$/i)).toBeVisible();
     await expect(hub.getByText(/^Worker sync$|^워커 sync$/i)).toBeVisible();
