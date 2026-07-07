@@ -132,7 +132,7 @@ test.describe("Agents", () => {
     const popover = page.getByTestId("schedule-edit-popover");
     await expect(popover).toBeVisible();
     await expect(
-      popover.getByRole("button", { name: "Save changes" }),
+      popover.getByRole("button", { name: "Save" }),
     ).toBeVisible();
     await expect(popover.getByLabel("Every")).toHaveValue("1");
 

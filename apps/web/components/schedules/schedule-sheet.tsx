@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { FloppyDiskIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@ssota/ui/components/ui/tooltip";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
@@ -294,27 +288,15 @@ export function ScheduleSheet({
   );
 
   const headerSaveButton = (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            type="submit"
-            form={formId}
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            disabled={isPending || Boolean(preview.error)}
-            aria-label="Save changes"
-            data-testid="schedule-save-trigger"
-          >
-            <FloppyDiskIcon className="size-4" aria-hidden />
-          </Button>
-        }
-      />
-      <TooltipContent side="top" sideOffset={5}>
-        Save changes
-      </TooltipContent>
-    </Tooltip>
+    <Button
+      type="submit"
+      form={formId}
+      size="sm"
+      disabled={isPending || Boolean(preview.error)}
+      data-testid="schedule-save-trigger"
+    >
+      Save
+    </Button>
   );
 
   const form = (
