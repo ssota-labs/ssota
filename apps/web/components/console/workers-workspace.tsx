@@ -119,7 +119,6 @@ export function WorkersWorkspace({
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const [createKind, setCreateKind] = useState<WorkerKind>("sync");
-  const [createKey, setCreateKey] = useState("");
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createScript, setCreateScript] = useState(DEFAULT_SCRIPT);
@@ -215,7 +214,6 @@ export function WorkersWorkspace({
 
   function resetCreateForm() {
     setCreateKind("sync");
-    setCreateKey("");
     setCreateName("");
     setCreateDescription("");
     setCreateScript(DEFAULT_SCRIPT);
@@ -223,7 +221,7 @@ export function WorkersWorkspace({
   }
 
   function handleCreate() {
-    if (!createKey.trim() || !createName.trim()) return;
+    if (!createName.trim()) return;
     startTransition(async () => {
       const kindConfig =
         createKind === "sync"
@@ -235,7 +233,6 @@ export function WorkersWorkspace({
           : { enabled: true, verification: "none" as const };
 
       const worker = await createWorkerAction(orgSlug, teamspaceSlug, teamspaceId, {
-        key: createKey.trim(),
         name: createName.trim(),
         description: createDescription.trim(),
         kind: createKind,
@@ -667,7 +664,7 @@ export function WorkersWorkspace({
               </Button>
               <Button
                 type="button"
-                disabled={isPending || !createKey.trim() || !createName.trim()}
+                disabled={isPending || !createName.trim()}
                 onClick={handleCreate}
                 data-testid="worker-create-submit"
               >
@@ -678,16 +675,6 @@ export function WorkersWorkspace({
         >
           <div className="grid gap-4" data-testid="workers-create-form">
             <p className="text-sm text-muted-foreground">{createSection.description}</p>
-            <div className="grid gap-2">
-              <Label htmlFor="worker-key">Key</Label>
-              <Input
-                id="worker-key"
-                value={createKey}
-                onChange={(e) => setCreateKey(e.target.value)}
-                placeholder="echo"
-                data-testid="worker-create-key"
-              />
-            </div>
             <div className="grid gap-2">
               <Label htmlFor="worker-name">Name</Label>
               <Input
@@ -708,15 +695,19 @@ export function WorkersWorkspace({
               />
             </div>
             {createKind === "sync" ? (
-              <div className="grid gap-2">
-                <Label>Schedule</Label>
-                <CronScheduleField
-                  value={createSyncSchedule}
-                  onSave={setCreateSyncSchedule}
-                  presentation="dialog"
-                  showEnabled={false}
-                  testId="worker-create-schedule"
-                />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Schedule</Label>
+                <AgentSettingCard.Root>
+                  <AgentSettingCard.Body className="py-1">
+                    <CronScheduleField
+                      value={createSyncSchedule}
+                      onSave={setCreateSyncSchedule}
+                      presentation="dialog"
+                      showEnabled={false}
+                      testId="worker-create-schedule"
+                    />
+                  </AgentSettingCard.Body>
+                </AgentSettingCard.Root>
               </div>
             ) : null}
             <div className="grid gap-2">

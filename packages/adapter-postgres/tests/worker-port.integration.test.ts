@@ -85,6 +85,20 @@ describe("worker port integration", () => {
     expect(await port.getById(created.id)).toBeNull();
   });
 
+  it("derives worker key from name when key is omitted", async () => {
+    if (skip) return;
+
+    const created = await port.createWorker({
+      name: "Frontend Worker",
+      description: "Auto key from title",
+      kind: "tool",
+      script: "export default async () => ({})",
+      inputSchema: {},
+    });
+    expect(created.key).toBe("frontend-worker");
+    await port.deleteWorker(created.id);
+  });
+
   it("rejects duplicate keys in the same teamspace", async () => {
     if (skip) return;
 

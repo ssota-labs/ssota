@@ -39,7 +39,7 @@ export const en = {
     chat: "Chat",
     connections: "Connections",
     channels: "Channels",
-    schedules: "Schedule hub",
+    schedules: "Schedules",
     sandbox: "Sandbox",
     templates: "Templates",
     workers: "Workers",
@@ -108,7 +108,7 @@ export const en = {
     nodeDetail: "Node",
   },
   scheduleHub: {
-    title: "Schedule hub",
+    title: "Schedules",
     description:
       "Cron schedules for agent runs and sync workers. Connection triggers stay in agent settings.",
     empty: "No scheduled automation yet. Add an agent trigger or create a sync worker.",
@@ -967,7 +967,7 @@ export const ko = {
     chat: "채팅",
     connections: "커넥션",
     channels: "채널",
-    schedules: "스케줄 허브",
+    schedules: "스케줄",
     sandbox: "샌드박스",
     templates: "템플릿",
     workers: "워커",
@@ -1036,7 +1036,7 @@ export const ko = {
     nodeDetail: "노드",
   },
   scheduleHub: {
-    title: "스케줄 허브",
+    title: "스케줄",
     description:
       "에이전트 실행과 sync 워커의 cron 스케줄을 한곳에서 봅니다. 커넥션 트리거는 에이전트 설정에 있습니다.",
     empty: "예약된 자동화가 없습니다. 에이전트 트리거를 추가하거나 sync 워커를 만드세요.",

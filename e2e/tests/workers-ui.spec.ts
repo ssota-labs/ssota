@@ -22,9 +22,10 @@ test.describe("workers-ui", () => {
       fullPage: true,
     });
 
-    const key = `e2e-sync-${Date.now()}`;
-    await page.getByTestId("worker-create-key").fill(key);
-    await page.getByTestId("worker-create-name").fill("E2E Sync");
+    const suffix = Date.now();
+    const name = `E2E Sync ${suffix}`;
+    const key = `e2e-sync-${suffix}`;
+    await page.getByTestId("worker-create-name").fill(name);
     await page.getByTestId("worker-create-submit").click();
 
     const card = page.getByTestId(`worker-card-${key}`);

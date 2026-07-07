@@ -54,7 +54,7 @@ export function ScheduleEditPopover({
         side="bottom"
         align="start"
         sideOffset={6}
-        className="w-[min(22rem,92vw)] max-h-[min(65vh,24rem)] overflow-y-auto p-3"
+        className="w-[min(22rem,92vw)] max-h-[min(65vh,24rem)] overflow-y-auto border border-border p-3"
         data-testid="schedule-edit-popover"
       >
         {schedule ? (

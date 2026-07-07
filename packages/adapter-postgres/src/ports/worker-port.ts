@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { ActionPortsScope, WorkerPort } from "@ssota/core";
+import { toWorkerKey, uniquifyWorkerKey } from "@ssota/core";
 import {
   CreateWorkerInputSchema,
   UpdateWorkerInputSchema,
@@ -16,6 +17,33 @@ import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 type WorkerRow = typeof schema.workers.$inferSelect;
+
+async function allocateUniqueWorkerKey(
+  db: Db,
+  teamspaceId: string,
+  accountId: string | null,
+  preferredKey: string,
+): Promise<string> {
+  const base = toWorkerKey(preferredKey);
+  const scope =
+    accountId === null
+      ? and(
+          eq(schema.workers.teamspaceId, teamspaceId),
+          isNull(schema.workers.accountId),
+        )
+      : and(
+          eq(schema.workers.teamspaceId, teamspaceId),
+          eq(schema.workers.accountId, accountId),
+        );
+  const rows = await db
+    .select({ key: schema.workers.key })
+    .from(schema.workers)
+    .where(scope);
+  return uniquifyWorkerKey(
+    base,
+    rows.map((row) => row.key),
+  );
+}
 
 function mapWorker(row: WorkerRow): Worker {
   return WorkerSchema.parse({
@@ -141,6 +169,14 @@ export function createWorkerPort(
 
     async createWorker(input: CreateWorkerInput) {
       const parsed = CreateWorkerInputSchema.parse(input);
+      const key =
+        parsed.key?.trim() ??
+        (await allocateUniqueWorkerKey(
+          db,
+          teamspaceId,
+          null,
+          parsed.name,
+        ));
       const kindConfig =
         parsed.kindConfig ?? defaultKindConfigForKind(parsed.kind);
       const [row] = await db
@@ -148,7 +184,7 @@ export function createWorkerPort(
         .values({
           teamspaceId,
           accountId: null,
-          key: parsed.key,
+          key,
           name: parsed.name,
           description: parsed.description,
           kind: parsed.kind,

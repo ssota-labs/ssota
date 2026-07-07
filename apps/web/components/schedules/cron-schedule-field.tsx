@@ -56,6 +56,12 @@ export function CronScheduleField({
     setOpen((current) => !current);
   }
 
+  function openDialog() {
+    setDraft(value);
+    setError(null);
+    setOpen(true);
+  }
+
   function handleSave(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -95,20 +101,23 @@ export function CronScheduleField({
     />
   );
 
+  const item = (
+    <AgentSettingCard.Item
+      testId={testId}
+      onPress={presentation === "dialog" ? openDialog : openEditor}
+      icon={<ClockIcon className="size-3.5 text-muted-foreground" />}
+      title={summary}
+      subtitle={
+        subtitle ??
+        `${value.timezone}${showEnabled && !value.enabled ? " · disabled" : ""}`
+      }
+    />
+  );
+
   if (presentation === "dialog" && open) {
     return (
       <>
-        <AgentSettingCard.Item
-          testId={testId}
-          onPress={() => {
-            setDraft(value);
-            setError(null);
-            setOpen(true);
-          }}
-          icon={<ClockIcon className="size-3.5 text-muted-foreground" />}
-          title={summary}
-          subtitle={subtitle ?? value.timezone}
-        />
+        {item}
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           role="dialog"
@@ -139,16 +148,7 @@ export function CronScheduleField({
 
   return (
     <>
-      <AgentSettingCard.Item
-        testId={testId}
-        onPress={openEditor}
-        icon={<ClockIcon className="size-3.5 text-muted-foreground" />}
-        title={summary}
-        subtitle={
-          subtitle ??
-          `${value.timezone}${showEnabled && !value.enabled ? " · disabled" : ""}`
-        }
-      />
+      {item}
       <CronSchedulePopover
         open={open}
         onOpenChange={setOpen}

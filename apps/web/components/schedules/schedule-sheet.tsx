@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
-import { Switch } from "@ssota/ui/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -134,40 +133,24 @@ export function ScheduleSheet({
     return defaultRecurrence(DEFAULT_TIMEZONE);
   }, [schedule]);
 
-  const initialAdvanced =
-    isEdit && schedule
-      ? cronToRecurrence(schedule.cronExpression, schedule.timezone) === null
-      : false;
-
-  const [advanced, setAdvanced] = useState(initialAdvanced);
   const [instructionId, setInstructionId] = useState(
     schedule?.agentDefinitionId ?? instructions[0]?.id ?? "",
   );
   const [rec, setRec] = useState<Recurrence>(initialRecurrence);
   const [timezone, setTimezone] = useState(initialTimezone);
-  const [rawCron, setRawCron] = useState(
-    schedule?.cronExpression ?? recurrenceToCron(initialRecurrence),
-  );
-  const [enabled, setEnabled] = useState(schedule?.enabled ?? true);
 
   useEffect(() => {
     if (!open) return;
-    setAdvanced(initialAdvanced);
     setInstructionId(
       schedule?.agentDefinitionId ?? instructions[0]?.id ?? "",
     );
     setRec(initialRecurrence);
     setTimezone(initialTimezone);
-    setRawCron(
-      schedule?.cronExpression ?? recurrenceToCron(initialRecurrence),
-    );
-    setEnabled(schedule?.enabled ?? true);
     setError(null);
   }, [
     open,
     schedule,
     instructions,
-    initialAdvanced,
     initialRecurrence,
     initialTimezone,
   ]);
@@ -185,9 +168,7 @@ export function ScheduleSheet({
     () => ({ ...rec, timezone }),
     [rec, timezone],
   );
-  const cronExpression = advanced
-    ? rawCron.trim()
-    : recurrenceToCron(recurrence);
+  const cronExpression = recurrenceToCron(recurrence);
 
   const tzOptions = useMemo(() => {
     const set = new Set([...TIMEZONES, timezone]);
@@ -201,10 +182,10 @@ export function ScheduleSheet({
     }
     return {
       error: null,
-      summary: advanced ? cronExpression : describeRecurrence(recurrence),
+      summary: describeRecurrence(recurrence),
       next: nextOccurrence(cronExpression, timezone),
     };
-  }, [cronExpression, timezone, advanced, recurrence]);
+  }, [cronExpression, timezone, recurrence]);
 
   const selectedInstruction = instructions.find(
     (entry) => entry.id === instructionId,
@@ -247,7 +228,7 @@ export function ScheduleSheet({
           targetType: inferTargetType(selected?.id),
           cronExpression,
           timezone,
-          enabled,
+          enabled: schedule?.enabled ?? true,
         };
         const res = await fetch(
           isEdit ? `/api/schedules/${schedule!.id}` : "/api/schedules",
@@ -286,6 +267,9 @@ export function ScheduleSheet({
       ? `schedule-sheet-form-${schedule.id}`
       : "schedule-sheet-form";
 
+  const useHeaderIconActions =
+    presentation === "inline" && compact && inlineSubmitPlacement === "header";
+
   const submitButton = (
     <Button
       type="submit"
@@ -293,16 +277,25 @@ export function ScheduleSheet({
       disabled={isPending || Boolean(preview.error)}
       className={cn(
         presentation === "sheet" ? "w-full" : undefined,
-        presentation === "inline" &&
-          compact &&
-          inlineSubmitPlacement === "header" &&
-          "h-8 px-3 text-xs",
+        useHeaderIconActions && "size-8",
       )}
       data-testid={
         presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
       }
     >
       {isEdit ? "Save changes" : "Add trigger"}
+    </Button>
+  );
+
+  const headerSaveButton = (
+    <Button
+      type="submit"
+      form={formId}
+      size="sm"
+      disabled={isPending || Boolean(preview.error)}
+      data-testid="schedule-save-trigger"
+    >
+      Save
     </Button>
   );
 
@@ -324,167 +317,149 @@ export function ScheduleSheet({
           </div>
         ) : null}
 
-        {!advanced && (
-          <>
-            <div className="flex items-end gap-2">
-              <div className="grid gap-2">
-                <Label htmlFor="schedule-every">Every</Label>
-                <Input
-                  id="schedule-every"
-                  type="number"
-                  min={1}
-                  className="w-20"
-                  value={rec.interval}
-                  onChange={(e) =>
-                    patch({ interval: Math.max(1, Number(e.target.value)) })
-                  }
-                  disabled={isPending}
-                />
-              </div>
-              <div className="grid flex-1 gap-2">
-                <Label htmlFor="schedule-frequency">Frequency</Label>
-                <Select
-                  value={rec.frequency}
-                  onValueChange={(value) =>
-                    value && patch({ frequency: value as Frequency })
-                  }
-                  disabled={isPending}
-                  items={FREQUENCIES}
-                  modal={false}
-                >
-                  <SelectTrigger id="schedule-frequency" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FREQUENCIES.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="flex items-end gap-2">
+          <div className="grid gap-2">
+            <Label htmlFor="schedule-every">Every</Label>
+            <Input
+              id="schedule-every"
+              type="number"
+              min={1}
+              className="w-20"
+              value={rec.interval}
+              onChange={(e) =>
+                patch({ interval: Math.max(1, Number(e.target.value)) })
+              }
+              disabled={isPending}
+            />
+          </div>
+          <div className="grid flex-1 gap-2">
+            <Label htmlFor="schedule-frequency">Frequency</Label>
+            <Select
+              value={rec.frequency}
+              onValueChange={(value) =>
+                value && patch({ frequency: value as Frequency })
+              }
+              disabled={isPending}
+              items={FREQUENCIES}
+              modal={false}
+            >
+              <SelectTrigger id="schedule-frequency" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FREQUENCIES.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {showAtTime && (
+          <div className="grid gap-2">
+            <Label>At</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                className="w-20"
+                value={rec.atHour}
+                onChange={(e) =>
+                  patch({
+                    atHour: Math.min(23, Math.max(0, Number(e.target.value))),
+                  })
+                }
+                disabled={isPending}
+              />
+              <span>:</span>
+              <Input
+                type="number"
+                min={0}
+                max={59}
+                className="w-20"
+                value={rec.atMinute}
+                onChange={(e) =>
+                  patch({
+                    atMinute: Math.min(
+                      59,
+                      Math.max(0, Number(e.target.value)),
+                    ),
+                  })
+                }
+                disabled={isPending}
+              />
             </div>
-
-            {showAtTime && (
-              <div className="grid gap-2">
-                <Label>At</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={23}
-                    className="w-20"
-                    value={rec.atHour}
-                    onChange={(e) =>
-                      patch({
-                        atHour: Math.min(23, Math.max(0, Number(e.target.value))),
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                  <span>:</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={59}
-                    className="w-20"
-                    value={rec.atMinute}
-                    onChange={(e) =>
-                      patch({
-                        atMinute: Math.min(
-                          59,
-                          Math.max(0, Number(e.target.value)),
-                        ),
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-            )}
-
-            {showWindow && (
-              <div className="grid gap-2">
-                <Label>Active window (hours)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={23}
-                    className="w-20"
-                    value={rec.windowStartHour ?? 0}
-                    onChange={(e) =>
-                      patch({
-                        windowStartHour: Math.min(
-                          23,
-                          Math.max(0, Number(e.target.value)),
-                        ),
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                  <span>to</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={23}
-                    className="w-20"
-                    value={rec.windowEndHour ?? 23}
-                    onChange={(e) =>
-                      patch({
-                        windowEndHour: Math.min(
-                          23,
-                          Math.max(0, Number(e.target.value)),
-                        ),
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-            )}
-
-            {showDays && (
-              <div className="grid gap-2">
-                <Label>On days</Label>
-                <div className="flex flex-wrap gap-1">
-                  {DAYS.map((d) => {
-                    const active = (rec.daysOfWeek ?? []).includes(d.value);
-                    return (
-                      <Button
-                        key={d.value}
-                        type="button"
-                        size="sm"
-                        variant={active ? "default" : "outline"}
-                        className={cn(
-                          "px-0",
-                          compact ? "h-7 w-9" : "h-8 w-10",
-                        )}
-                        onClick={() => toggleDay(d.value)}
-                        disabled={isPending}
-                      >
-                        {d.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
 
-        {advanced && (
+        {showWindow && (
           <div className="grid gap-2">
-            <Label htmlFor="schedule-raw-cron">Cron expression</Label>
-            <Input
-              id="schedule-raw-cron"
-              value={rawCron}
-              onChange={(e) => setRawCron(e.target.value)}
-              placeholder="*/10 9-14 * * 1-5"
-              disabled={isPending}
-              className="font-mono"
-            />
+            <Label>Active window (hours)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                className="w-20"
+                value={rec.windowStartHour ?? 0}
+                onChange={(e) =>
+                  patch({
+                    windowStartHour: Math.min(
+                      23,
+                      Math.max(0, Number(e.target.value)),
+                    ),
+                  })
+                }
+                disabled={isPending}
+              />
+              <span>to</span>
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                className="w-20"
+                value={rec.windowEndHour ?? 23}
+                onChange={(e) =>
+                  patch({
+                    windowEndHour: Math.min(
+                      23,
+                      Math.max(0, Number(e.target.value)),
+                    ),
+                  })
+                }
+                disabled={isPending}
+              />
+            </div>
+          </div>
+        )}
+
+        {showDays && (
+          <div className="grid gap-2">
+            <Label>On days</Label>
+            <div className="flex flex-wrap gap-1">
+              {DAYS.map((d) => {
+                const active = (rec.daysOfWeek ?? []).includes(d.value);
+                return (
+                  <Button
+                    key={d.value}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className={cn(
+                      "px-0",
+                      compact ? "h-7 w-9" : "h-8 w-10",
+                    )}
+                    onClick={() => toggleDay(d.value)}
+                    disabled={isPending}
+                  >
+                    {d.label}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -508,16 +483,6 @@ export function ScheduleSheet({
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="schedule-enabled">Enabled</Label>
-          <Switch
-            id="schedule-enabled"
-            checked={enabled}
-            onCheckedChange={setEnabled}
-            disabled={isPending}
-          />
         </div>
 
         <div
@@ -544,14 +509,6 @@ export function ScheduleSheet({
           )}
         </div>
 
-        <button
-          type="button"
-          className="text-left text-xs text-muted-foreground underline"
-          onClick={() => setAdvanced((v) => !v)}
-        >
-          {advanced ? "Use the visual builder" : "Advanced: edit cron directly"}
-        </button>
-
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
   );
@@ -563,7 +520,9 @@ export function ScheduleSheet({
         {inlineSubmitPlacement === "header" ? (
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold leading-none">{title}</h3>
-            {submitButton}
+            <div className="flex shrink-0 items-center gap-1">
+              {isEdit && useHeaderIconActions ? headerSaveButton : submitButton}
+            </div>
           </div>
         ) : null}
         {form}
