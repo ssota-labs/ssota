@@ -22,7 +22,6 @@ import {
 } from "@ssota/ui/components/ui/alert-dialog";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
-import { Switch } from "@ssota/ui/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -156,7 +155,6 @@ export function ScheduleSheet({
   );
   const [rec, setRec] = useState<Recurrence>(initialRecurrence);
   const [timezone, setTimezone] = useState(initialTimezone);
-  const [enabled, setEnabled] = useState(schedule?.enabled ?? true);
 
   useEffect(() => {
     if (!open) return;
@@ -165,7 +163,6 @@ export function ScheduleSheet({
     );
     setRec(initialRecurrence);
     setTimezone(initialTimezone);
-    setEnabled(schedule?.enabled ?? true);
     setError(null);
   }, [
     open,
@@ -273,7 +270,7 @@ export function ScheduleSheet({
           targetType: inferTargetType(selected?.id),
           cronExpression,
           timezone,
-          enabled,
+          enabled: schedule?.enabled ?? true,
         };
         const res = await fetch(
           isEdit ? `/api/schedules/${schedule!.id}` : "/api/schedules",
@@ -576,16 +573,6 @@ export function ScheduleSheet({
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="schedule-enabled">Enabled</Label>
-          <Switch
-            id="schedule-enabled"
-            checked={enabled}
-            onCheckedChange={setEnabled}
-            disabled={isPending}
-          />
         </div>
 
         <div
