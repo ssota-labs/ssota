@@ -7,6 +7,8 @@
  * catalog component.
  */
 
+import { z } from "zod";
+import { getNodePropertiesSchema, isKnownNodeType } from "@ssota/contracts";
 import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts/catalog";
 import type { ErdColumn, ErdModel, ErdRelation, ErdTable } from "@/lib/page-runtime/erd-model";
 import type { FlowColorToken } from "@/lib/page-runtime/flow-tokens";
@@ -87,6 +89,89 @@ function propertySchemaColumns(schema: unknown): ErdColumn[] {
   }));
 }
 
+/** Peels ZodOptional/ZodDefault/ZodNullable/ZodEffects wrappers off a field. */
+function unwrapZodField(schema: z.ZodTypeAny): { inner: z.ZodTypeAny; optional: boolean } {
+  let inner: z.ZodTypeAny = schema;
+  let optional = false;
+  for (;;) {
+    if (inner instanceof z.ZodOptional) {
+      optional = true;
+      inner = inner.unwrap();
+      continue;
+    }
+    if (inner instanceof z.ZodDefault) {
+      optional = true;
+      inner = inner.removeDefault();
+      continue;
+    }
+    if (inner instanceof z.ZodNullable) {
+      inner = inner.unwrap();
+      continue;
+    }
+    if (inner instanceof z.ZodEffects) {
+      inner = inner.innerType();
+      continue;
+    }
+    break;
+  }
+  return { inner, optional };
+}
+
+/** Short type label for an ERD column — nested objects/records stay one level deep. */
+function zodTypeLabel(schema: z.ZodTypeAny): string {
+  const { inner } = unwrapZodField(schema);
+  if (inner instanceof z.ZodString) {
+    if (inner.isUUID) return "uuid";
+    if (inner.isDatetime) return "datetime";
+    return "string";
+  }
+  if (inner instanceof z.ZodNumber) return "number";
+  if (inner instanceof z.ZodBoolean) return "boolean";
+  if (inner instanceof z.ZodEnum) return "enum";
+  if (inner instanceof z.ZodLiteral) return String(inner.value);
+  if (inner instanceof z.ZodArray) return `${zodTypeLabel(inner.element)}[]`;
+  if (inner instanceof z.ZodRecord) return "record";
+  if (inner instanceof z.ZodObject) return "object";
+  if (inner instanceof z.ZodUnion) {
+    return inner.options.map((o: z.ZodTypeAny) => zodTypeLabel(o)).join("|");
+  }
+  return "unknown";
+}
+
+/** Explicit predicate — bare `instanceof ZodObject` narrows `.shape` to `unknown` since `T` has no default. */
+function isZodObject(schema: z.ZodTypeAny): schema is z.ZodObject<z.ZodRawShape> {
+  return schema instanceof z.ZodObject;
+}
+
+/**
+ * Real per-node-type property columns, introspected from the code-level Zod
+ * schema (`NODE_PROPERTY_SCHEMAS` behind `getNodePropertiesSchema`) rather
+ * than the DB `node_catalog.property_schema` jsonb column — which today is
+ * just the placeholder `{ type: "object" }` for every seeded row. Only the
+ * top-level shape is walked; nested objects/records show as a single column.
+ */
+function zodSchemaColumns(schema: z.ZodTypeAny): ErdColumn[] {
+  const { inner } = unwrapZodField(schema);
+  if (!isZodObject(inner)) return [];
+  return Object.entries(inner.shape).map(([name, field]) => ({
+    name,
+    type: zodTypeLabel(field),
+    notNull: !unwrapZodField(field).optional,
+  }));
+}
+
+/** Real Zod schema columns when the node type is known; DB jsonb as fallback. */
+function columnsForNode(node: NodeCatalogRow): ErdColumn[] {
+  if (isKnownNodeType(node.key)) {
+    const schema = getNodePropertiesSchema(node.key);
+    if (schema) {
+      const columns = zodSchemaColumns(schema);
+      if (columns.length > 0) return columns;
+    }
+  }
+  return propertySchemaColumns(node.propertySchema);
+}
+
 export type GraphSchemaGroup = {
   key: string;
   title: string;
@@ -111,7 +196,7 @@ export function buildGraphSchemaModel(
     id: node.id,
     name: node.label,
     note: node.key,
-    columns: propertySchemaColumns(node.propertySchema),
+    columns: columnsForNode(node),
     color: TABLE_COLOR_CYCLE[index % TABLE_COLOR_CYCLE.length],
   }));
 

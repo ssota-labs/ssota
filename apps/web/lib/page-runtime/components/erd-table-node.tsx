@@ -28,10 +28,19 @@ import {
 export type ErdTableNodePayload = {
   table: ErdTable;
   color: FlowColorToken;
+  /**
+   * Handle ids (see `erdHandleId`) that an edge actually attaches to — shown
+   * as a small solid dot. Every other anchor stays an invisible connection
+   * point, same as before. Omit to keep every handle invisible (the original
+   * ErdDiagram catalog widget's behaviour).
+   */
+  activeHandleIds?: ReadonlySet<string>;
 };
 
 /** Tiny, near-invisible connection point — the FK line is what the user sees. */
 const HANDLE_CLASS = "!h-1.5 !w-1.5 !min-w-0 !border-0 !bg-transparent";
+/** A handle an edge actually connects to — small solid dot so the join point reads clearly. */
+const ACTIVE_HANDLE_CLASS = "!h-2 !w-2 !min-w-0 !rounded-full !border !border-background !bg-muted-foreground";
 
 /** Both source + target handles for one anchor, on one side, at a given y. */
 function SideHandles({
@@ -39,28 +48,32 @@ function SideHandles({
   position,
   side,
   top,
+  activeHandleIds,
 }: {
   anchorKey: string;
   position: Position;
   side: "l" | "r";
   top: number;
+  activeHandleIds?: ReadonlySet<string>;
 }) {
   const style: React.CSSProperties = { top };
+  const sourceId = erdHandleId(anchorKey, side, "s");
+  const targetId = erdHandleId(anchorKey, side, "t");
   return (
     <>
       <Handle
         type="source"
-        id={erdHandleId(anchorKey, side, "s")}
+        id={sourceId}
         position={position}
-        className={HANDLE_CLASS}
+        className={cn(HANDLE_CLASS, activeHandleIds?.has(sourceId) && ACTIVE_HANDLE_CLASS)}
         style={style}
         isConnectable={false}
       />
       <Handle
         type="target"
-        id={erdHandleId(anchorKey, side, "t")}
+        id={targetId}
         position={position}
-        className={HANDLE_CLASS}
+        className={cn(HANDLE_CLASS, activeHandleIds?.has(targetId) && ACTIVE_HANDLE_CLASS)}
         style={style}
         isConnectable={false}
       />
@@ -108,7 +121,7 @@ function ColumnRow({ column }: { column: ErdColumn }) {
 }
 
 function ErdTableNodeComponent({ data, selected }: NodeProps) {
-  const { table, color } = data as unknown as ErdTableNodePayload;
+  const { table, color, activeHandleIds } = data as unknown as ErdTableNodePayload;
   const colors = flowColorClasses(color);
 
   return (
@@ -140,12 +153,14 @@ function ErdTableNodeComponent({ data, selected }: NodeProps) {
         ) : null}
       </div>
 
-      {/* Columns */}
-      <div className="py-1">
-        {table.columns.map((col) => (
-          <ColumnRow key={col.name} column={col} />
-        ))}
-      </div>
+      {/* Columns — omitted entirely when the table has none, so there's no dead strip below the header. */}
+      {table.columns.length > 0 ? (
+        <div className="py-1">
+          {table.columns.map((col) => (
+            <ColumnRow key={col.name} column={col} />
+          ))}
+        </div>
+      ) : null}
 
       {/* Table-level anchors (relations without a column) — vertically centered. */}
       <SideHandles
@@ -153,12 +168,14 @@ function ErdTableNodeComponent({ data, selected }: NodeProps) {
         position={Position.Left}
         side="l"
         top={ERD_HEADER_HEIGHT / 2}
+        activeHandleIds={activeHandleIds}
       />
       <SideHandles
         anchorKey={erdAnchorKey()}
         position={Position.Right}
         side="r"
         top={ERD_HEADER_HEIGHT / 2}
+        activeHandleIds={activeHandleIds}
       />
 
       {/* Per-column anchors, aligned to each row's vertical center. */}
@@ -167,8 +184,20 @@ function ErdTableNodeComponent({ data, selected }: NodeProps) {
         const key = erdAnchorKey(col.name);
         return (
           <React.Fragment key={col.name}>
-            <SideHandles anchorKey={key} position={Position.Left} side="l" top={top} />
-            <SideHandles anchorKey={key} position={Position.Right} side="r" top={top} />
+            <SideHandles
+              anchorKey={key}
+              position={Position.Left}
+              side="l"
+              top={top}
+              activeHandleIds={activeHandleIds}
+            />
+            <SideHandles
+              anchorKey={key}
+              position={Position.Right}
+              side="r"
+              top={top}
+              activeHandleIds={activeHandleIds}
+            />
           </React.Fragment>
         );
       })}

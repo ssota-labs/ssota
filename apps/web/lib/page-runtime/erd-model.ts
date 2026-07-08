@@ -206,7 +206,9 @@ export function erdTableSize(table: ErdTable): {
     Math.max(ERD_MIN_WIDTH, longest * CHAR_WIDTH + ROW_SLACK),
   );
   const height =
-    ERD_HEADER_HEIGHT + table.columns.length * ERD_ROW_HEIGHT + ERD_BODY_PAD;
+    table.columns.length > 0
+      ? ERD_HEADER_HEIGHT + table.columns.length * ERD_ROW_HEIGHT + ERD_BODY_PAD
+      : ERD_HEADER_HEIGHT;
   return { width, height };
 }
 
