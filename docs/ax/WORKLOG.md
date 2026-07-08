@@ -8,7 +8,14 @@
 
 ## ⬛ 현재 상태 (2026-07-08, 한 줄)
 
-**S1·S2 슬라이스 종료(MCP+스킬+검증+피드백).** 다음: **S3(agents) 착수** — agent-runtime `tools/agent-definitions.ts` `write_agent_definition`(→`upsertDefinition`) 미러 + 리치화(toolBundles/runPolicy 트리거·모델) → apps/mcp. 그다음 스킬 S3 조각 → 서브에이전트 HR 에이전트 저작 → 평가.
+**S1·S2·S3 슬라이스 종료(MCP+스킬+검증+피드백).** 다음: **S4(schedules) — 마지막 슬라이스.** `createSchedulePort`(create/list/get/update/delete, `{agentDefinitionId, cronExpression, timezone, enabled?}`) 미러 → apps/mcp `create_schedule`/`list_schedules`. 그다음 스킬 S4 조각 → 서브에이전트 스케줄 저작 + **heartbeat 발화 확인**(환경이 스스로 굴러가는지).
+
+### S3 루프 종료 요약
+- **S3 MCP**(커밋 이후): `create_agent`(upsert agent_definition: name/description/body(md)/toolBundles/runPolicy(allowedTriggers·model·maxSteps)/linkedWorkerAgentIds). agent-runtime `write_agent_definition`보다 리치(툴·트리거·조직링크). test 6/6(create+reject). end-to-end 브리지: specialist+orchestrator(linked)+spawn_task 성공(UNKNOWN_AGENT_DEFINITION 벽 제거).
+- **S3 스킬-테스트 PASS**: 서브에이전트가 3 specialist + 1 orchestrator(3개 링크) 저작, 실제 catalog/page 참조 플레이북, spawn_task 디스패치 성공.
+- **피드백 반영(스킬 doc)**: `spawn_task.contextRefs`는 배열 아니라 **객체** `{nodeIds,edgeIds,taskIds}`(예시 추가); 워크드 예제 anomaly agent `["schedule"]`→`["task","schedule"]`(디스패치 대상은 지금 `task` 필요); create_agent 스코프 note.
+- **follow-up(비차단)**: `list_agents`를 allowedTriggers+linkedWorkerAgentIds 포함으로 리치화(조직도 1콜 검증).
+- 커밋: `[mcp] S3 create_agent`, `[infra] AX skill S3`(대기).
 
 ### S2 루프 종료 요약
 - **S2 MCP**(커밋 `17ae5835`): `create_page`/`update_page`/`read_page`/`list_pages` + **`list_page_components`/`get_page_component`**(46 컴포넌트 progressive-disclosure). spec 안전성(unknown component/dangling ref reject). page-services test 5/5. agent-runtime `tools/pages.ts` 미러.

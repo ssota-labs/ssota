@@ -13,7 +13,7 @@ An environment is four layers, authored bottom-up:
 
 1. **Catalog** — the node TYPES (entities) and edge TYPES (relationships) of the domain. *(this skill — catalog authoring)*
 2. **Pages** — human-approvable dashboards (json-render) that bind to the catalog. *(this skill — page authoring)*
-3. **Agents** — definitions that do the recurring work; often an orchestrator that dispatches to specialists. *(upcoming)*
+3. **Agents** — definitions that do the recurring work; often an orchestrator that dispatches to specialists. *(this skill — agent authoring)*
 4. **Schedules** — cron cadences so the environment runs itself. *(upcoming)*
 
 Instances (the actual records — a specific employee, a specific leave request) are created **later**, by users or the environment's own agents, ON TOP of the catalog. Do not conflate "set up the environment" with "enter data".
@@ -34,8 +34,9 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 4. **Author the pages** — the human-approval dashboards that bind to the catalog. See `references/page-authoring.md`:
    - **Discover components first** with `list_page_components` → `get_page_component` (progressive disclosure — don't hold all 46 in mind; fetch the few you'll use).
    - Compose a `spec` (`{root, elements}`) of those components; wire data with `bindings` (query the catalog), mutations with `actions`; `create_page` (it validates the spec).
-5. **Verify** — `list_node_types`/`list_edge_types`/`search_catalog` for the catalog; `list_pages`/`read_page` for pages.
-6. **(Agents, schedules, and instances follow.)**
+5. **Author the agents** — the recurring workers, and (if useful) an orchestrator that schedules & dispatches to them. See `references/agent-authoring.md`: `create_agent` with a markdown playbook `body`, `toolBundles` (capabilities), `allowedTriggers` (`task`/`schedule`/`chat`…). Link an orchestrator to its specialists via `linkedWorkerAgentIds`.
+6. **Verify** — catalog via `list_*_types`; pages via `list_pages`; agents via `list_agents` (dispatch with `spawn_task`).
+7. **(Schedules and instances follow.)**
 
 ## Rules — catalog authoring
 
@@ -54,7 +55,16 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 - **Pages are the human-approval surface.** Include the review/approve views a person needs (e.g. a pending-requests table + an approve action), not just read-only lists.
 - **Tree with `parentId`.** Nest detail pages under a hub; use `appliesToNodeType` for a per-record drill-in template.
 
+## Rules — agent authoring
+
+- **`description` is a routing line.** Write it as "use when …" — the main agent routes by it, so vague descriptions mean bad routing.
+- **`body` is the playbook** — a clear, step-by-step markdown process that names the catalog types and pages the agent works on.
+- **Give it the tools + triggers it needs.** `toolBundles` = capabilities (`graph.read`/`graph.write`/`tasks.manage`/`pages.author`/`connectors`/`delegate`/`workers`/`skills.read`/`sandbox.code`); `allowedTriggers` = how it runs (`task` for dispatched work, `schedule`/`heartbeat` for automated cadence, `chat` for conversational). An agent with no trigger never runs.
+- **Orchestrator is a preferred pattern, not required.** For a domain that should run itself, add ONE orchestrator (`tasks.manage`+`delegate`, `schedule`/`heartbeat` triggers) whose playbook spawns tasks to specialists (list their ids in `linkedWorkerAgentIds`). Simple domains may need only a specialist or two. Orchestrators can nest.
+- **Not the main agent.** You author domain agents (`agent_definitions`); the platform's user-facing main agent is separate — don't try to replace it.
+
 ## Load on demand (progressive disclosure)
 
 - `references/catalog-authoring.md` — `create_node_type` / `create_edge_type` field-by-field, `propertySchema` conventions, worked HR catalog example.
 - `references/page-authoring.md` — `create_page`/`update_page`, the `spec`/`bindings`/`actions` shape, component discovery, and a worked HR page example.
+- `references/agent-authoring.md` — `create_agent` fields, tool-bundle & trigger vocab, the orchestrator/specialist pattern, and a worked HR agent org-chart.
