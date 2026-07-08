@@ -71,7 +71,7 @@ The table *is* the page. Search + typed, editable columns + a primary "New" + ro
     "elements": {
       "page": { "type": "Stack", "props": { "gap": "md" }, "children": ["table"] },
       "table": { "type": "DataTable", "props": {
-        "binding": "deals", "title": "딜", "searchColumn": "title", "rowHref": "/deals/:id",
+        "binding": "deals", "title": "딜", "rowHref": "/deals/:id",
         "addAction": "createDeal", "addLabel": "딜 만들기", "setAction": "editDeal",
         "columns": [
           { "key": "title",     "header": "딜",       "type": "text",   "editable": true },
@@ -90,7 +90,7 @@ The table *is* the page. Search + typed, editable columns + a primary "New" + ro
   }
 }
 ```
-Why it's good: `searchColumn` gives find-as-you-type; `set_node_property` (one action) handles every editable column; typed columns render correctly; primary action is the add button; `rowHref` wires the List→Detail pair. Empty: DataTable shows its "no rows" state with the add button still present (the CTA).
+Why it's good: the DataTable's built-in filter/search gives find-as-you-type (no `searchColumn` prop — it's automatic); `set_node_property` (one action) handles every editable column; typed columns render correctly; primary action is the add button; `rowHref` wires the List→Detail pair. Empty: DataTable shows its "no rows" state with the add button still present (the CTA).
 
 ## Golden 3 — Inbox / Queue (human decision surface)
 
