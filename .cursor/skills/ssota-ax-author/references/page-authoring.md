@@ -2,6 +2,17 @@
 
 A page is a **JSON-render dashboard** (a row in the `pages` table), NOT a node. It places catalog UI components and loads graph data through `bindings`. Pages are the **human-approval surface** of the environment; they render in the web app for people to review and act on.
 
+## Author for SaaS quality — the method (do this BEFORE the mechanics below)
+
+The mechanics below make a page *valid*. They do not make it *good*. Because the design system is already baked into the components, your leverage is 100% product-design judgment: right page shape, one clear primary action, all states, typed data, a linked nav graph. Follow this method — it's what separates a SaaS-grade page from a form dump:
+
+1. **Derive the page manifest from the schema.** Read your S1 types back and list which pages must exist (entity → List+Detail, `status` field → Board, `date` → Calendar/Timeline, approval → Inbox, metrics → Dashboard). → `page-archetypes.md` §Step 0.
+2. **Pick an archetype per page, then fill its slots.** Never free-compose from the component list; each archetype hands you structure + required states + the right hero component. → `page-archetypes.md`.
+3. **Copy a golden spec and adapt it.** Known-good Dashboard/List/Inbox specs (correct bindings, typed columns, empty states, nav) — swap in your catalogKeys/props without regressing the quality. → `page-golden-specs.md`.
+4. **Run the self-review gate before `create_page`.** A 9-point checklist + adversarial pass + render-and-look. → `page-review.md`.
+
+Also apply the **data→component semantic mapping** and **microcopy/hierarchy** rules in `page-archetypes.md` (status→token badge, date→relative+absolute, money→currency; exactly one primary action; verbs on buttons; designed empty states). The mechanics below are the reference for the *how*.
+
 ## The `create_page` call
 
 `create_page` args: `title` (required), `spec` (required), `bindings?`, `actions?`, `parentId?` (nest under a hub), `subjectNodeId?` (anchor for `subject` binding), `appliesToNodeType?` (per-record drill-in template), `slug?`, `icon?`. Store-managed fields (`id`, `position`) are assigned for you. `update_page` takes `id` + any of those fields. On a validation error the tool returns a Zod issue naming the offending path — fix that field and re-call.
@@ -101,9 +112,11 @@ One `setAction: "edit"` then handles every editable column (the `setAction` payl
 
 After `create_page`, `list_pages` shows the tree and `read_page` returns the stored spec — the human-approval surface is ready; agents (next layer) will populate and drive it.
 
-## Anti-patterns
+## Anti-patterns (spec-level)
+
+These reject the spec or break the mechanics. The **quality** anti-patterns (테이블 벽, raw data, no empty state, orphan pages, ad-hoc status colors, placeholder copy…) live in `page-golden-specs.md`, and the gate that catches them is `page-review.md`.
 
 - Inventing component keys or binding kinds instead of discovering them.
-- A read-only page with no action where the workflow needs a human decision (approve/reject).
-- Referencing a binding you forgot to define (spec rejected).
+- Referencing a binding/action you forgot to define (spec rejected).
 - Authoring pages before the catalog types they bind to exist.
+- A read-only page with no action where the workflow needs a human decision (approve/reject).
