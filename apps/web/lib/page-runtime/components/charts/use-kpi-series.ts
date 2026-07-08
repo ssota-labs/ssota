@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { isCapturedAtInPeriod } from "../../period-preset";
 import { usePeriodFilter } from "../../period-filter-context";
 import type { RenderNode } from "../../types";
-import type { KpiSeriesPoint } from "./chart-types";
+import { aggregateSeries } from "./chart-aggregate";
+import type { ChartAgg, KpiSeriesPoint } from "./chart-types";
 
 function readSnapshots(
   node: RenderNode | undefined,
@@ -44,6 +45,7 @@ export function useKpiSeries(
   options: {
     snapshotProperty: string;
     respectPeriodFilter: boolean;
+    agg?: ChartAgg;
   },
 ): {
   kpi: RenderNode | undefined;
@@ -53,8 +55,11 @@ export function useKpiSeries(
   const { range } = usePeriodFilter();
   const kpi = nodes[0];
   const filterRange = options.respectPeriodFilter ? range : null;
+  const groupBy = options.agg?.groupBy;
+  const valueField = options.agg?.valueField;
+  const aggKind = options.agg?.aggregate;
 
-  const data = useMemo(() => {
+  const snapshotData = useMemo(() => {
     const snapshots = readSnapshots(kpi, options.snapshotProperty)
       .filter((snapshot) =>
         isCapturedAtInPeriod(snapshot.captured_at, filterRange),
@@ -74,8 +79,16 @@ export function useKpiSeries(
     }));
   }, [filterRange, kpi, options.snapshotProperty]);
 
+  // Aggregation mode (groupBy) reduces the whole binding; otherwise fall back to
+  // the single-node KPI snapshot series. Both memos run to keep hook order stable.
+  const aggregatedData = useMemo(
+    () => (groupBy ? aggregateSeries(nodes, { groupBy, valueField, aggregate: aggKind }) : null),
+    [nodes, groupBy, valueField, aggKind],
+  );
+
+  const data = aggregatedData ?? snapshotData;
   return {
-    kpi,
+    kpi: aggregatedData ? undefined : kpi,
     data,
     isEmpty: data.length === 0,
   };

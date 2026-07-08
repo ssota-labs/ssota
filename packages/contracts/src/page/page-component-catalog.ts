@@ -774,6 +774,56 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  Timeline: {
+    key: "Timeline",
+    category: "data",
+    description:
+      "A vertical, time-ordered activity feed: each bound node is a rail entry with a status-colored dot, title, optional description + actor, and a timestamp (absolute + relative). Newest-first by default with a direction toggle and optional day grouping. Read-mostly — audit logs, change history, activity streams. Undated nodes sort last; empty state is customizable.",
+    children: false,
+    props: {
+      binding: binding("A multi-node binding (e.g. a `query`) of the events/changes."),
+      timeField: {
+        type: "string",
+        description: 'Node property holding the timestamp used to order the feed. Default "createdAt".',
+      },
+      titleField: {
+        type: "string",
+        description: 'Node property for the entry title. Default "title".',
+      },
+      descriptionField: {
+        type: "string",
+        description: "Optional property rendered as a secondary description line.",
+      },
+      byField: {
+        type: "string",
+        description: "Optional property naming the actor (rendered with an initials chip).",
+      },
+      statusField: {
+        type: "string",
+        description:
+          "Optional property mapped to the rail dot + a chip via the shared flow-token map.",
+      },
+      groupByDay: {
+        type: "boolean",
+        description: "Group entries under day headers. Default false.",
+      },
+      emptyLabel: {
+        type: "string",
+        description: "Empty-state title when there is no activity.",
+      },
+    },
+    example: {
+      type: "Timeline",
+      props: {
+        binding: "revisions",
+        timeField: "createdAt",
+        titleField: "note",
+        byField: "editor",
+        statusField: "stage",
+        groupByDay: true,
+      },
+    },
+  },
   SchemaDisplay: {
     key: "SchemaDisplay",
     category: "data",
@@ -1323,6 +1373,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         type: "boolean",
         description: "When true, slice snapshots by URL ?period= preset (default true).",
       },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: {
       type: "ChartLine",
@@ -1340,6 +1400,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       title: { type: "string", description: "Card title above the chart." },
       snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
       respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: { type: "ChartBar", props: { binding: "kpiWorkspace", height: 128 } },
   },
@@ -1354,6 +1424,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       title: { type: "string", description: "Card title above the chart." },
       snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
       respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: { type: "ChartArea", props: { binding: "kpiWorkspace", height: 128 } },
   },
@@ -1368,6 +1448,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       title: { type: "string", description: "Card title above the chart." },
       snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
       respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: { type: "ChartPie", props: { binding: "kpiWorkspace", height: 128 } },
   },
@@ -1382,6 +1472,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       title: { type: "string", description: "Card title above the chart." },
       snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
       respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: { type: "ChartRadar", props: { binding: "kpiWorkspace", height: 128 } },
   },
@@ -1396,6 +1496,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       title: { type: "string", description: "Card title above the chart." },
       snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
       respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+      groupBy: {
+        type: "string",
+        description:
+          "Aggregation mode: group the bound nodes by this property and plot one point per group — no KPI snapshot needed. Omit for the snapshot series.",
+      },
+      valueField: { type: "string", description: "Property reduced per group with `aggregate`. Omit to count nodes." },
+      aggregate: {
+        type: "string",
+        description: '"count" | "sum" | "avg" over valueField per group. Default: valueField ⇒ sum, else count.',
+      },
     },
     example: { type: "ChartRadial", props: { binding: "kpiWorkspace", height: 128 } },
   },

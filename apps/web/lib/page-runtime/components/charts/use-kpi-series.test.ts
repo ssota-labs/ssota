@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RenderNode } from "../../types";
+import { aggregateSeries } from "./chart-aggregate";
 
 // Mirror readSnapshots shape handling for graph-backed snapshot rows.
 function readSnapshots(
@@ -50,5 +51,42 @@ describe("KPI snapshot rows", () => {
     expect(readSnapshots(kpi, "snapshots")).toEqual([
       { value: 12, captured_at: "2026-04-05T00:00:00.000Z" },
     ]);
+  });
+});
+
+describe("aggregateSeries (A4 chart aggregation)", () => {
+  const expenses: RenderNode[] = [
+    { id: "1", catalogKey: "expense", title: "AWS", properties: { category: "Cloud", amount: 5200 } },
+    { id: "2", catalogKey: "expense", title: "Vercel", properties: { category: "Cloud", amount: 1800 } },
+    { id: "3", catalogKey: "expense", title: "급여", properties: { category: "Payroll", amount: 4800 } },
+  ];
+
+  it("sums a valueField grouped by a field", () => {
+    expect(
+      aggregateSeries(expenses, { groupBy: "category", valueField: "amount", aggregate: "sum" }),
+    ).toEqual([
+      { label: "Cloud", value: 7000, capturedAt: "" },
+      { label: "Payroll", value: 4800, capturedAt: "" },
+    ]);
+  });
+
+  it("counts rows per group when no valueField", () => {
+    expect(aggregateSeries(expenses, { groupBy: "category" }).map((p) => [p.label, p.value])).toEqual([
+      ["Cloud", 2],
+      ["Payroll", 1],
+    ]);
+  });
+
+  it("averages numeric values per group", () => {
+    expect(
+      aggregateSeries(expenses, { groupBy: "category", valueField: "amount", aggregate: "avg" }),
+    ).toEqual([
+      { label: "Cloud", value: 3500, capturedAt: "" },
+      { label: "Payroll", value: 4800, capturedAt: "" },
+    ]);
+  });
+
+  it("returns [] without a groupBy (falls back to snapshot mode)", () => {
+    expect(aggregateSeries(expenses, {})).toEqual([]);
   });
 });

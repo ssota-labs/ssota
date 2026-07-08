@@ -2190,6 +2190,168 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       })),
     },
   },
+  {
+    id: "data-calendar",
+    category: "data",
+    title: "CalendarView (month calendar)",
+    description:
+      "A month calendar placing nodes on their date: event chips colored from a token field, today highlighted, per-day overflow, prev/next navigation. Opens on July 2026 where the sample events live.",
+    components: ["Section", "CalendarView"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "진료 일정", subtitle: "예약을 날짜에 배치 — 상태 색상 + 클릭 선택" },
+          children: ["cal"],
+        },
+        cal: {
+          type: "CalendarView",
+          props: {
+            binding: "appointments",
+            dateField: "startAt",
+            titleField: "title",
+            colorField: "color",
+            initialMonth: "2026-07",
+          },
+        },
+      },
+    },
+    bindingData: {
+      appointments: [
+        { id: "a9900000-0000-4000-8000-000000000001", catalogKey: "appointment", title: "김민준 초진 09:00", properties: { startAt: "2026-07-03", color: "blue" } },
+        { id: "a9900000-0000-4000-8000-000000000002", catalogKey: "appointment", title: "이서연 재진 10:30", properties: { startAt: "2026-07-03", color: "green" } },
+        { id: "a9900000-0000-4000-8000-000000000003", catalogKey: "appointment", title: "박도윤 시술 14:00", properties: { startAt: "2026-07-03", color: "amber" } },
+        { id: "a9900000-0000-4000-8000-000000000004", catalogKey: "appointment", title: "최지우 상담 11:00", properties: { startAt: "2026-07-10", color: "green" } },
+        { id: "a9900000-0000-4000-8000-000000000005", catalogKey: "appointment", title: "정하준 노쇼", properties: { startAt: "2026-07-18", color: "red" } },
+        { id: "a9900000-0000-4000-8000-000000000006", catalogKey: "appointment", title: "강서준 재진 16:00", properties: { startAt: "2026-07-24", color: "blue" } },
+      ],
+    },
+  },
+  {
+    id: "data-record",
+    category: "data",
+    title: "RecordView (record detail)",
+    description:
+      "A single-node full record: header (title + status badge + actions), typed property sections, and related-record sections resolved from separate bindings. The Detail archetype.",
+    components: ["RecordView"],
+    spec: {
+      root: "record",
+      elements: {
+        record: {
+          type: "RecordView",
+          props: {
+            binding: "deal",
+            statusField: "stage",
+            sections: [
+              {
+                title: "세부",
+                fields: [
+                  { key: "title", label: "딜" },
+                  { key: "amount", label: "금액", type: "number" },
+                  { key: "closeDate", label: "예상 마감", type: "date" },
+                  { key: "owner", label: "담당" },
+                ],
+              },
+            ],
+            relations: [
+              { title: "관련 견적", binding: "quotes" },
+              { title: "활동", binding: "activity" },
+            ],
+            actions: [
+              { label: "성사 처리", action: "win", variant: "default" },
+              { label: "실패 처리", action: "lose", variant: "outline" },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      deal: {
+        id: "d1100000-0000-4000-8000-000000000001",
+        catalogKey: "deal",
+        title: "Acme 연간 계약",
+        properties: { stage: "proposal", amount: 48000, closeDate: "2026-08-15", owner: "김지원" },
+      },
+      quotes: [
+        { id: "d1100000-0000-4000-8000-000000000010", catalogKey: "quote", title: "Acme Q3 견적", properties: { status: "approved", amount: 48000 } },
+        { id: "d1100000-0000-4000-8000-000000000011", catalogKey: "quote", title: "Acme 파일럿 견적", properties: { status: "rejected", amount: 12000 } },
+      ],
+      activity: [
+        { id: "d1100000-0000-4000-8000-000000000020", catalogKey: "event", title: "제안서 발송", properties: {} },
+        { id: "d1100000-0000-4000-8000-000000000021", catalogKey: "event", title: "데모 미팅 완료", properties: {} },
+      ],
+    },
+  },
+  {
+    id: "data-timeline",
+    category: "data",
+    title: "Timeline (activity feed)",
+    description:
+      "A vertical, time-ordered feed: status-colored rail dots, title + actor + relative time, newest-first with a direction toggle and day grouping. Read-mostly (audit / change history).",
+    components: ["Section", "Timeline"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "변경 이력", subtitle: "최신순 · 상태별 색상 · 일자별 그룹" },
+          children: ["feed"],
+        },
+        feed: {
+          type: "Timeline",
+          props: {
+            binding: "revisions",
+            timeField: "createdAt",
+            titleField: "note",
+            byField: "editor",
+            statusField: "stage",
+            groupByDay: true,
+          },
+        },
+      },
+    },
+    bindingData: {
+      revisions: [
+        { id: "e2200000-0000-4000-8000-000000000001", catalogKey: "revision", title: "", properties: { note: "초안 작성", editor: "Felix Han", stage: "drafting", createdAt: "2026-07-01" } },
+        { id: "e2200000-0000-4000-8000-000000000002", catalogKey: "revision", title: "", properties: { note: "1차 리뷰 반영", editor: "Joowhan Yohn", stage: "review", createdAt: "2026-07-01" } },
+        { id: "e2200000-0000-4000-8000-000000000003", catalogKey: "revision", title: "", properties: { note: "편집장 승인", editor: "Felix Han", stage: "scheduled", createdAt: "2026-07-04" } },
+        { id: "e2200000-0000-4000-8000-000000000004", catalogKey: "revision", title: "", properties: { note: "발행 완료", editor: "Joowhan Yohn", stage: "published", createdAt: "2026-07-08" } },
+      ],
+    },
+  },
+  {
+    id: "charts-aggregate",
+    category: "chart",
+    title: "ChartBar (aggregation)",
+    description:
+      "Aggregation mode: group a node binding by a field and sum/count/avg another — no KPI-snapshot needed. Here: total spend grouped by category.",
+    components: ["Section", "ChartBar"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "카테고리별 지출", subtitle: "expenses를 category로 그룹 + amount 합계" },
+          children: ["chart"],
+        },
+        chart: {
+          type: "ChartBar",
+          props: { binding: "expenses", groupBy: "category", valueField: "amount", aggregate: "sum", height: 220 },
+        },
+      },
+    },
+    bindingData: {
+      expenses: [
+        { id: "f3300000-0000-4000-8000-000000000001", catalogKey: "expense", title: "AWS", properties: { category: "Cloud", amount: 5200 } },
+        { id: "f3300000-0000-4000-8000-000000000002", catalogKey: "expense", title: "Vercel", properties: { category: "Cloud", amount: 1800 } },
+        { id: "f3300000-0000-4000-8000-000000000003", catalogKey: "expense", title: "급여 A", properties: { category: "Payroll", amount: 4800 } },
+        { id: "f3300000-0000-4000-8000-000000000004", catalogKey: "expense", title: "급여 B", properties: { category: "Payroll", amount: 5100 } },
+        { id: "f3300000-0000-4000-8000-000000000005", catalogKey: "expense", title: "Figma", properties: { category: "Tooling", amount: 720 } },
+        { id: "f3300000-0000-4000-8000-000000000006", catalogKey: "expense", title: "Linear", properties: { category: "Tooling", amount: 480 } },
+      ],
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {

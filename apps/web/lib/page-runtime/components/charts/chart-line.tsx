@@ -14,7 +14,7 @@ import {
 import { boundNodes } from "../../bindings";
 import type { CatalogComponent } from "../../types";
 import { ChartShell } from "./chart-shell";
-import { parseChartProps } from "./chart-types";
+import { parseChartProps, type ChartAgg } from "./chart-types";
 import { useKpiSeries } from "./use-kpi-series";
 
 function ChartLineEl({
@@ -23,16 +23,19 @@ function ChartLineEl({
   title,
   snapshotProperty,
   respectPeriodFilter,
+  agg,
 }: {
   nodes: ReturnType<typeof boundNodes>;
   height: number;
   title?: string;
   snapshotProperty: string;
   respectPeriodFilter: boolean;
+  agg: ChartAgg;
 }) {
   const { data, isEmpty } = useKpiSeries(nodes, {
     snapshotProperty,
     respectPeriodFilter,
+    agg,
   });
 
   return (
@@ -74,6 +77,7 @@ export const chartLineComponent: CatalogComponent = ({ props, bindingData }) => 
       title={parsed.title}
       snapshotProperty={parsed.snapshotProperty}
       respectPeriodFilter={parsed.respectPeriodFilter}
+      agg={parsed.agg}
     />
   );
 };
