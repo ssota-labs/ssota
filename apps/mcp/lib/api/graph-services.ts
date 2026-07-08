@@ -98,7 +98,11 @@ export async function listNodeTypesForMcp(teamspaceId: string) {
   return rows.map((entry) => {
     const meta = getNodeTypeEntry(entry.key);
     return {
+      // Identifier is exposed as both `catalogKey` (matches create_node /
+      // get_node_type params) and `key` (matches create_node_type /
+      // search_catalog output) so either projection works.
       catalogKey: entry.key,
+      key: entry.key,
       label: entry.label,
       description: entry.description,
       mutability: meta?.mutability ?? "living",
@@ -117,6 +121,7 @@ export async function getNodeTypeForMcp(
   const meta = getNodeTypeEntry(catalogKey);
   return {
     catalogKey: row.key,
+    key: row.key,
     label: row.label,
     description: row.description,
     keywords: row.keywords,
@@ -135,6 +140,7 @@ export async function getEdgeTypeForMcp(
   if (!row) return null;
   return {
     catalogKey: row.key,
+    key: row.key,
     label: row.label,
     description: row.description,
     keywords: row.keywords,
@@ -148,6 +154,7 @@ export async function listEdgeTypesForMcp(teamspaceId: string) {
   const rows = await catalog.listEdgeCatalog();
   return rows.map((entry) => ({
     catalogKey: entry.key,
+    key: entry.key,
     label: entry.label,
   }));
 }
@@ -162,13 +169,14 @@ export async function createNodeTypeForMcp(
   input: Record<string, unknown>,
 ) {
   const writePort = getCatalogWritePort(teamspaceId);
-  return writePort.upsertNodeCatalog({
+  const row = await writePort.upsertNodeCatalog({
     key: String(input.key),
     label: String(input.label),
     description: input.description as string | undefined,
     keywords: input.keywords as string[] | undefined,
     propertySchema: (input.propertySchema as Record<string, unknown>) ?? {},
   });
+  return { ...row, catalogKey: row.key };
 }
 
 /**
@@ -181,9 +189,9 @@ export async function createEdgeTypeForMcp(
   input: Record<string, unknown>,
 ) {
   const { catalog } = getGraphPorts(teamspaceId);
-  const resolveKeys = async (keys: unknown): Promise<string[]> => {
+  const resolveKeys = async (keys: string[]): Promise<string[]> => {
     const ids: string[] = [];
-    for (const key of (keys as string[] | undefined) ?? []) {
+    for (const key of keys) {
       const nodeType = await catalog.getNodeCatalogByKey(key);
       if (!nodeType) {
         throw new Error(
@@ -194,18 +202,23 @@ export async function createEdgeTypeForMcp(
     }
     return ids;
   };
+  const domainKeys = (input.domainKeys as string[] | undefined) ?? [];
+  const rangeKeys = (input.rangeKeys as string[] | undefined) ?? [];
   const writePort = getCatalogWritePort(teamspaceId);
-  return writePort.upsertEdgeCatalog({
+  const row = await writePort.upsertEdgeCatalog({
     key: String(input.key),
     label: String(input.label),
     description: input.description as string | undefined,
     keywords: input.keywords as string[] | undefined,
-    domainCatalogIds: await resolveKeys(input.domainKeys),
-    rangeCatalogIds: await resolveKeys(input.rangeKeys),
+    domainCatalogIds: await resolveKeys(domainKeys),
+    rangeCatalogIds: await resolveKeys(rangeKeys),
     propertySchema:
       (input.propertySchema as Record<string, unknown> | null | undefined) ??
       null,
   });
+  // Echo the resolved domain/range back as keys so authors can verify the
+  // mapping without a second lookup.
+  return { ...row, catalogKey: row.key, domainKeys, rangeKeys };
 }
 
 /**
