@@ -8,7 +8,15 @@
 
 ## ⬛ 현재 상태 (2026-07-08, 한 줄)
 
-**S1 MCP 구현·검증 완료(end-to-end).** 빈 org에서 baseline이 막혔던 3중 벽이 전부 열림. 다음: **S1 슬라이스 마무리 = AX 스킬 S1 조각 작성 + 서브에이전트(=유저 CC)가 스킬+MCP로 HR catalog 저작 → 내 평가**. 그 후 S2(pages) MCP.
+**S1 슬라이스 완전 종료(MCP+스킬+검증+피드백반영).** 다음: **S2(pages) 착수** — agent-runtime `tools/pages.ts`(create_page/update_page/read_page/list_pages + **list_page_components/get_page_component** progressive-disclosure) 미러 → apps/mcp. 그다음 스킬 S2 조각 → 서브에이전트 HR 페이지 저작 → 평가.
+
+### S1 루프 종료 요약
+- **S1 스킬-테스트 PASS**: 빈 컨텍스트 서브에이전트가 스킬만 읽고(progressive disclosure 작동) HR catalog **7 node + 7 edge**를 일관되게 저작·검증. (1차 실행은 stream watchdog flake로 stall → 2차 성공.)
+- **피드백 반영**:
+  - MCP: `list_*_types`/`get_*_type`/`create_*_type`가 `key`+`catalogKey` 둘 다 노출(이전 list는 catalogKey만 → `.key` 투영 시 null 함정). `create_edge_type`가 domainKeys/rangeKeys echo. 테스트 6/6 유지, typecheck 그린.
+  - 스킬: verify 단계에 `list_edge_types` 추가, identifier 필드 네이밍 문서화, worked example의 minimal-vs-upper 트림 가이드.
+- 스킬 미러 5곳 동기화, `harness:mirrors` 통과(lock 경고는 기존 전역 이슈).
+- 커밋: `[mcp] S1 polish`, `[infra] AX skill S1`.
 
 ### S1 end-to-end 검증 (브리지, dev/ax-hr-sandbox)
 - `list_node_types` 빈 org → **0** (이전 39 phantom에서 수정, DB-backed) ✅
@@ -46,6 +54,10 @@
 - **테스트**: `graph-services.test.ts`를 DB-backed로 재작성(agent-services 패턴, DB 없으면 graceful skip). 6/6 통과(읽기·쓰기·거부케이스 포함, DATABASE_URL=54322). `pnpm --filter mcp typecheck` 그린.
 - **contracts/core/adapter 변경 0** — 이미 존재하는 포트 재사용.
 - 다음: MCP 서버 재기동(구 코드 kill) → 브리지로 end-to-end 검증(create_node_type→create_edge_type→create_node 인스턴스).
+- S1 커밋 2개: `549d2c00`[infra] 문서, `5743a229`[mcp] S1 catalog write.
+- **AX 스킬 S1 조각 작성**: `plugins/ssota-plugin/skills/ssota-ax-author/`(SKILL.md + references/catalog-authoring.md). ssota-mcp 위에 얹음, 미러 5곳(.agents/.cursor/skills + 3 plugin dirs), lock 불필요(첫파티는 lock 없음).
+- 샌드박스 리셋(org dev catalog+인스턴스 0) → **S1 스킬-테스트 서브에이전트 실행**(HR catalog 저작, 스킬 직접 읽기=progressive disclosure 검증). 평가 대기.
+- **S2/S3/S4 prep 발견**: agent-runtime `tools/pages.ts`에 `create_page`/`update_page`, `write_agent_definition` 툴 이미 존재 → **S2·S3·S4도 S1처럼 agent-runtime→apps/mcp 미러 잡**. PagePort/createPagePort 존재. S2 추가분 = UI 카탈로그 progressive-disclosure read 툴(list_ui_components/get_ui_component, PAGE_COMPONENT_CATALOG 기반).
 
 ### 🔎 핵심 발견 — 계층 벽 (브리지로 실증, org `dev`/`ax-hr-sandbox`)
 - **Wall A (MCP 입력 enum)**: `create_node` catalogKey는 하드코딩 39-enum만 허용. 새 타입 `employee` → `-32602 invalid_enum_value`.
