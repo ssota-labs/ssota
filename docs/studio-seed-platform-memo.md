@@ -3,6 +3,7 @@
 > 상태: draft · 2026-07-07  
 > 목적: 지금까지 논의한 "Studio Seed" 카테고리, 차별점, 도메인 후보, 보호/유통 방식,
 > 그리고 CLI-first에서 자체 플랫폼 에이전트까지 가는 로드맵을 한 문서로 정리한다.
+> 관련 관점 문서: [SSOTA, Template, Studio Seed perspective](ssota-template-studio-seed-perspective.md)
 
 ## 1. 한 줄 정의
 
