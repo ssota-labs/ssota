@@ -12,6 +12,7 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
+import type { ElkNode } from "elkjs/lib/elk-api";
 import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts/catalog";
 import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/components/flow-toolbar";
 import { ErdTableNode } from "@/lib/page-runtime/components/erd-table-node";
@@ -22,11 +23,10 @@ import {
   erdHandleId,
   erdTableColor,
   erdTableSize,
-  erdToFlowModel,
   type ErdModel,
+  type ErdRelation,
   type ErdTable,
 } from "@/lib/page-runtime/erd-model";
-import { layoutFlow, type Positioned } from "@/lib/page-runtime/flow-layout";
 import { buildGraphSchemaModel, type GraphSchemaGroup } from "./graph-schema-model";
 
 /**
@@ -35,12 +35,13 @@ import { buildGraphSchemaModel, type GraphSchemaGroup } from "./graph-schema-mod
  * line per edge type's domain→range pairing. This is a console-only screen
  * (not a page-runtime catalog component), so it owns its own ReactFlow
  * assembly rather than depending on the ErdDiagram widget; it reuses that
- * widget's table/edge renderers and ELK layout as shared visual primitives.
+ * widget's table/edge renderers as shared visual primitives.
  *
  * Node types are additionally clustered into labeled group boxes (workflow
- * phase — see `graph-schema-model.ts`) so the diagram reads as a hierarchy
- * instead of a flat card wall: each group is laid out independently with
- * ELK, then the group boxes themselves are packed into rows.
+ * phase — see `graph-schema-model.ts`). Layout is a two-level ELK pass: each
+ * group's own cards flow top-to-bottom (`layered`, direction DOWN) sized by
+ * its internal relations, then the group containers themselves are tiled
+ * left-to-right (`box` packing) since most groups don't reference each other.
  */
 
 // NOTE: "group" is a reserved built-in React Flow node type (parent/child
@@ -60,11 +61,14 @@ const DIAGRAM_HEIGHT = 640;
 const FIT_VIEW_PADDING = 0.12;
 const FIT_VIEW_MIN_ZOOM = 0.1;
 
-const GROUP_HEADER_HEIGHT = 40;
-const GROUP_PADDING = 20;
-const GROUP_GAP = 56;
+const ELK_NODE_SPACING = 56;
+const ELK_LAYER_SPACING = 90;
+const GROUP_PADDING_TOP = 40;
+const GROUP_PADDING_SIDE = 20;
+const GROUP_PADDING_BOTTOM = 20;
 const GROUP_MIN_WIDTH = 220;
-const GROUP_MAX_ROW_WIDTH = 1400;
+
+type Positioned = Record<string, { x: number; y: number }>;
 
 type GroupBox = {
   key: string;
@@ -102,76 +106,106 @@ function GraphGroupNode({ data }: NodeProps) {
   );
 }
 
-/** Left-to-right row packing with wraparound — groups have no cross-edges to route, so a simple bin-pack reads just as well as a general layout engine here. */
-function packGroups(
-  boxes: Array<Omit<GroupBox, "x" | "y">>,
-  maxRowWidth: number,
-): GroupBox[] {
-  const placed: GroupBox[] = [];
-  let cursorX = 0;
-  let cursorY = 0;
-  let rowHeight = 0;
-  for (const box of boxes) {
-    if (cursorX > 0 && cursorX + box.width > maxRowWidth) {
-      cursorX = 0;
-      cursorY += rowHeight + GROUP_GAP;
-      rowHeight = 0;
-    }
-    placed.push({ ...box, x: cursorX, y: cursorY });
-    cursorX += box.width + GROUP_GAP;
-    rowHeight = Math.max(rowHeight, box.height);
-  }
-  return placed;
-}
-
-/** Lays out each group's tables independently (ELK), then packs the group boxes. */
+/**
+ * Groups flow left-to-right, packed by ELK's `box` algorithm; each group's
+ * own tables flow top-to-bottom via ELK `layered` (direction DOWN), sized by
+ * that group's internal relations only.
+ */
 async function layoutGroupedSchema(
   model: ErdModel,
   groups: GraphSchemaGroup[],
 ): Promise<GroupLayout> {
   const tablesById = new Map(model.tables.map((t) => [t.id, t]));
-  const localByGroup = new Map<string, Positioned>();
-  const rawBoxes: Array<Omit<GroupBox, "x" | "y">> = [];
-
+  const groupKeyByTable = new Map<string, string>();
   for (const group of groups) {
-    const idSet = new Set(group.tableIds);
-    const tables = group.tableIds
-      .map((id) => tablesById.get(id))
-      .filter((t): t is ErdTable => t !== undefined);
-    if (tables.length === 0) continue;
-    const relations = model.relations.filter(
-      (r) => idSet.has(r.source) && idSet.has(r.target),
-    );
-    const local = await layoutFlow(erdToFlowModel({ tables, relations }), "LR");
-    localByGroup.set(group.key, local);
-
-    let maxX = 0;
-    let maxY = 0;
-    for (const table of tables) {
-      const pos = local[table.id] ?? { x: 0, y: 0 };
-      const size = erdTableSize(table);
-      maxX = Math.max(maxX, pos.x + size.width);
-      maxY = Math.max(maxY, pos.y + size.height);
-    }
-    rawBoxes.push({
-      key: group.key,
-      title: group.title,
-      count: tables.length,
-      width: Math.max(GROUP_MIN_WIDTH, maxX + GROUP_PADDING * 2),
-      height: maxY + GROUP_HEADER_HEIGHT + GROUP_PADDING,
-    });
+    for (const id of group.tableIds) groupKeyByTable.set(id, group.key);
   }
 
-  const groupBoxes = packGroups(rawBoxes, GROUP_MAX_ROW_WIDTH);
+  // Only relations fully inside one group feed that group's own ELK pass —
+  // the root packer (below) is edge-less "box" packing, so cross-group
+  // relations don't influence layout; they still render fine as plain lines
+  // between whatever absolute positions the two groups end up at.
+  const internalRelations = new Map<string, ErdRelation[]>();
+  for (const rel of model.relations) {
+    const sourceGroup = groupKeyByTable.get(rel.source);
+    const targetGroup = groupKeyByTable.get(rel.target);
+    if (sourceGroup && sourceGroup === targetGroup) {
+      const list = internalRelations.get(sourceGroup) ?? [];
+      list.push(rel);
+      internalRelations.set(sourceGroup, list);
+    }
+  }
+
+  const groupNodes: ElkNode[] = groups
+    .map((group): ElkNode | null => {
+      const tables = group.tableIds
+        .map((id) => tablesById.get(id))
+        .filter((t): t is ErdTable => t !== undefined);
+      if (tables.length === 0) return null;
+      const relations = internalRelations.get(group.key) ?? [];
+      return {
+        id: `group:${group.key}`,
+        layoutOptions: {
+          "elk.algorithm": "layered",
+          "elk.direction": "DOWN",
+          "elk.spacing.nodeNode": String(ELK_NODE_SPACING),
+          "elk.layered.spacing.nodeNodeBetweenLayers": String(ELK_LAYER_SPACING),
+          "elk.padding": `[top=${GROUP_PADDING_TOP},left=${GROUP_PADDING_SIDE},bottom=${GROUP_PADDING_BOTTOM},right=${GROUP_PADDING_SIDE}]`,
+          "elk.nodeSize.constraints": "MINIMUM_SIZE",
+          "elk.nodeSize.minimum": `(${GROUP_MIN_WIDTH}, 0)`,
+        },
+        children: tables.map((table) => {
+          const size = erdTableSize(table);
+          return { id: table.id, width: size.width, height: size.height };
+        }),
+        edges: relations.map((rel) => ({
+          id: rel.id,
+          sources: [rel.source],
+          targets: [rel.target],
+        })),
+      };
+    })
+    .filter((g): g is ElkNode => g !== null);
+
+  // "layered" at the root stacks disconnected groups into one tall column
+  // (most groups share no edges, so they all land in layer 0). "box" is ELK's
+  // dedicated packer for edge-less collections — it tiles the group
+  // containers left-to-right, wrapping into new rows, which is what we want
+  // for groups that mostly don't reference each other.
+  const root: ElkNode = {
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "box",
+      "elk.aspectRatio": "1.8",
+      "elk.spacing.nodeNode": String(ELK_NODE_SPACING),
+    },
+    children: groupNodes,
+  };
+
+  const Elk = (await import("elkjs/lib/elk.bundled.js")).default;
+  const elk = new Elk();
+  const laidOut = await elk.layout(root);
 
   const positions: Positioned = {};
-  for (const box of groupBoxes) {
-    const local = localByGroup.get(box.key) ?? {};
-    for (const [id, pos] of Object.entries(local)) {
-      positions[id] = {
-        x: box.x + GROUP_PADDING + pos.x,
-        y: box.y + GROUP_HEADER_HEIGHT + pos.y,
-      };
+  const groupBoxes: GroupBox[] = [];
+  const groupsByKey = new Map(groups.map((g) => [g.key, g]));
+  for (const child of laidOut.children ?? []) {
+    const groupKey = child.id.startsWith("group:") ? child.id.slice("group:".length) : null;
+    const group = groupKey ? groupsByKey.get(groupKey) : undefined;
+    if (!group || child.x == null || child.y == null) continue;
+    groupBoxes.push({
+      key: group.key,
+      title: group.title,
+      count: child.children?.length ?? 0,
+      x: child.x,
+      y: child.y,
+      width: child.width ?? GROUP_MIN_WIDTH,
+      height: child.height ?? GROUP_PADDING_TOP,
+    });
+    for (const grandchild of child.children ?? []) {
+      if (grandchild.x != null && grandchild.y != null) {
+        positions[grandchild.id] = { x: child.x + grandchild.x, y: child.y + grandchild.y };
+      }
     }
   }
 
@@ -215,28 +249,6 @@ function GraphSchemaCanvas({
 
   const ready = layout.groupBoxes.length > 0;
 
-  const rfNodes = React.useMemo<Node[]>(() => {
-    if (!ready) return [];
-    const groupNodes: Node[] = layout.groupBoxes.map((box) => ({
-      id: `group:${box.key}`,
-      type: "schemaGroup",
-      position: { x: box.x, y: box.y },
-      data: { title: box.title, count: box.count, width: box.width, height: box.height },
-      draggable: false,
-      selectable: false,
-      focusable: false,
-      zIndex: 0,
-    }));
-    const tableNodes: Node[] = model.tables.map((table) => ({
-      id: table.id,
-      type: "table",
-      position: layout.positions[table.id] ?? { x: 0, y: 0 },
-      data: { table, color: erdTableColor(table) },
-      zIndex: 1,
-    }));
-    return [...groupNodes, ...tableNodes];
-  }, [model.tables, layout, ready]);
-
   // Pick the side (left/right) for each relation end from the laid-out centers,
   // so a line leaves the right of the left-most card and enters the left of the
   // right-most one — clean horizontal routing with no diagonal crossings.
@@ -270,6 +282,51 @@ function GraphSchemaCanvas({
       };
     });
   }, [model.relations, model.tables, layout, ready]);
+
+  // Handle ids that an edge actually attaches to, per table — lets the table
+  // node light up only the connection points that are actually in use.
+  const activeHandlesByTable = React.useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const edge of rfEdges) {
+      if (edge.sourceHandle) {
+        const set = map.get(edge.source) ?? new Set<string>();
+        set.add(edge.sourceHandle);
+        map.set(edge.source, set);
+      }
+      if (edge.targetHandle) {
+        const set = map.get(edge.target) ?? new Set<string>();
+        set.add(edge.targetHandle);
+        map.set(edge.target, set);
+      }
+    }
+    return map;
+  }, [rfEdges]);
+
+  const rfNodes = React.useMemo<Node[]>(() => {
+    if (!ready) return [];
+    const groupNodes: Node[] = layout.groupBoxes.map((box) => ({
+      id: `group:${box.key}`,
+      type: "schemaGroup",
+      position: { x: box.x, y: box.y },
+      data: { title: box.title, count: box.count, width: box.width, height: box.height },
+      draggable: false,
+      selectable: false,
+      focusable: false,
+      zIndex: 0,
+    }));
+    const tableNodes: Node[] = model.tables.map((table) => ({
+      id: table.id,
+      type: "table",
+      position: layout.positions[table.id] ?? { x: 0, y: 0 },
+      data: {
+        table,
+        color: erdTableColor(table),
+        activeHandleIds: activeHandlesByTable.get(table.id),
+      },
+      zIndex: 1,
+    }));
+    return [...groupNodes, ...tableNodes];
+  }, [model.tables, layout, ready, activeHandlesByTable]);
 
   return (
     <div
