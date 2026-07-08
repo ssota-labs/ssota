@@ -246,35 +246,71 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeList: {
     key: "NodeList",
     category: "data",
-    description: "Renders a bound set of nodes as a simple list.",
+    description:
+      "Card-style list of bound nodes: each row links (rowHref), shows a status badge and its catalogKey. Renders an empty state (icon + message + optional CTA) when the binding is empty.",
     children: false,
     props: {
       binding: binding("A multi-node binding (e.g. a `query`)."),
       title: { type: "string", description: "Optional list title." },
+      statusField: {
+        type: "string",
+        description:
+          'Node property read for the per-row status badge (default "lifecycleStatus").',
+      },
+      rowHref: {
+        type: "string",
+        description:
+          "Optional row link path segment (row → `{basePath}/{rowHref}/{id}`).",
+      },
+      emptyLabel: {
+        type: "string",
+        description: "Optional description shown in the empty state.",
+      },
+      emptyAction: action("Dispatched with {} from the empty-state CTA button."),
+      emptyActionLabel: {
+        type: "string",
+        description: "Label for the empty-state CTA (requires `emptyAction`).",
+      },
     },
-    example: { type: "NodeList", props: { binding: "customers", title: "Customers" } },
+    example: {
+      type: "NodeList",
+      props: {
+        binding: "customers",
+        title: "Customers",
+        statusField: "lifecycleStatus",
+        rowHref: "customers",
+      },
+    },
   },
   NodeTable: {
     key: "NodeTable",
     category: "data",
-    description: "Renders a bound set of nodes as a table.",
+    description:
+      "Bound nodes as a table on the shared Table primitive: click a header to sort, typed cells (type text|badge|date → text / status badge / formatted date), optional row links, and an empty state.",
     children: false,
     props: {
       binding: binding("A multi-node binding (e.g. a `query`)."),
       columns: {
-        type: "{ key, header }[]",
-        description: "Columns; `key` reads node title/properties.",
+        type: "{ key, header, type? }[]",
+        description:
+          "Columns; `key` reads node title/properties. `type` = text|badge|date (default text) drives cell rendering + sort.",
       },
-      rowHref: { type: "string", description: "Optional row link template." },
+      rowHref: { type: "string", description: "Optional row link path segment." },
       title: { type: "string", description: "Optional table title." },
+      emptyLabel: {
+        type: "string",
+        description: "Optional description shown in the empty state.",
+      },
     },
     example: {
       type: "NodeTable",
       props: {
         binding: "customers",
+        rowHref: "customers",
         columns: [
           { key: "title", header: "Name" },
-          { key: "email", header: "Email" },
+          { key: "lifecycleStatus", header: "Status", type: "badge" },
+          { key: "updatedAt", header: "Updated", type: "date" },
         ],
       },
     },
@@ -395,7 +431,8 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeField: {
     key: "NodeField",
     category: "data",
-    description: "A read-only label/value pair from a static value or bound node field.",
+    description:
+      "A label/value pair from a static value or bound node field, with a copy-to-clipboard button.",
     children: false,
     props: {
       label: { type: "string", description: "Field label.", required: true },
@@ -404,6 +441,10 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       field: {
         type: "string",
         description: 'Node property key (or "title"). Requires `binding`.',
+      },
+      copyable: {
+        type: "boolean",
+        description: "Show the copy button (default true).",
       },
     },
     example: {
@@ -414,10 +455,187 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeDocument: {
     key: "NodeDocument",
     category: "data",
-    description: "Placeholder document preview.",
+    description:
+      'Renders a bound node\'s `content` (BlockNote → markdown) as read text, or an explicit "내용 없음" empty state.',
     children: false,
-    props: {},
-    example: { type: "NodeDocument" },
+    props: {
+      binding: binding("Single-node binding whose `content` property is rendered."),
+      title: { type: "string", description: "Optional heading above the content." },
+    },
+    example: {
+      type: "NodeDocument",
+      props: { binding: "subject", title: "Overview" },
+    },
+  },
+  ApprovalInbox: {
+    key: "ApprovalInbox",
+    category: "data",
+    description:
+      'Approval queue. Renders each bound node as a row (title + meta + a status chip) with Approve / Reject buttons that dispatch their action as { nodeId, value: "approved" | "rejected" } — wire to update_node / set_node_property reading {$input:"nodeId"} and {$input:"value"}. Encapsulates the editable-status-badge + action pattern agents hand-assemble today. Status chip color comes from the shared flow-token map; shows a real empty state when nothing is pending.',
+    children: false,
+    props: {
+      binding: binding("A multi-node binding of pending items (e.g. a `query`)."),
+      titleField: {
+        type: "string",
+        description: 'Node property (or "title") used as the row title. Default "title".',
+      },
+      metaFields: {
+        type: "string[]",
+        description: "Node properties shown as secondary meta text (joined by ·).",
+      },
+      statusField: {
+        type: "string",
+        description:
+          'Node property read for the status chip (colored via the shared flow-token map). Default "status".',
+      },
+      approveAction: action('Dispatched with { nodeId, value: "approved" } when Approve is clicked.'),
+      rejectAction: action('Dispatched with { nodeId, value: "rejected" } when Reject is clicked.'),
+      approveLabel: {
+        type: "string",
+        description: 'Approve button label. Default "승인".',
+      },
+      rejectLabel: {
+        type: "string",
+        description: 'Reject button label. Default "반려".',
+      },
+    },
+    example: {
+      type: "ApprovalInbox",
+      props: {
+        binding: "pending",
+        titleField: "title",
+        metaFields: ["requester", "amount"],
+        statusField: "status",
+        approveAction: "approveRequest",
+        rejectAction: "rejectRequest",
+      },
+    },
+  },
+  KanbanBoard: {
+    key: "KanbanBoard",
+    category: "data",
+    description:
+      "Status-column board: nodes grouped into columns by a status property; drag a card to another column to change that property (optimistic move + moveAction dispatch). Column headers show a flow-token color dot and a live count; empty columns show a placeholder and items whose status isn't a column are surfaced as hidden.",
+    children: false,
+    props: {
+      binding: binding("A multi-node binding (e.g. a `query`)."),
+      groupField: {
+        type: "string",
+        description:
+          'Node property that holds the card\'s column/status value. Default "status".',
+      },
+      columns: {
+        type: "{ value, label, color? }[]",
+        description:
+          "Ordered status columns. `value` is stored on the node, `label` is the header text, `color` is a flow color token (red|orange|amber|green|blue|purple|pink|gray).",
+        required: true,
+      },
+      titleField: {
+        type: "string",
+        description: 'Node property for the card title. Default "title".',
+      },
+      metaField: {
+        type: "string",
+        description:
+          "Optional node property rendered as a muted secondary line on each card.",
+      },
+      moveAction: action(
+        "Dispatched with { nodeId, field: <groupField>, value: <newColumnValue> } when a card is dropped into a different column (wire to set_node_property).",
+      ),
+    },
+    example: {
+      type: "KanbanBoard",
+      props: {
+        binding: "rows",
+        groupField: "status",
+        moveAction: "moveCard",
+        columns: [
+          { value: "todo", label: "To do", color: "gray" },
+          { value: "doing", label: "In progress", color: "amber" },
+          { value: "done", label: "Done", color: "green" },
+        ],
+      },
+    },
+  },
+  StatTile: {
+    key: "StatTile",
+    category: "data",
+    description:
+      "A single KPI dashboard tile: a big aggregated value + label, an optional delta chip (▲ up = green / ▼ down = red) and an inline sparkline. Value comes from a graph binding — a multi-node `query` to aggregate, or a single `node`/`singleton`. Handles empty and loading states.",
+    children: false,
+    props: {
+      binding: binding("A multi-node `query` to aggregate, or a single `node`/`singleton`."),
+      label: { type: "string", description: "KPI label shown above the value.", required: true },
+      valueField: {
+        type: "string",
+        description: "Node property to aggregate. Omit to count the bound nodes.",
+      },
+      aggregate: {
+        type: "string",
+        description:
+          '"count" | "sum" | "avg" over valueField across the bound nodes. Default: valueField present ⇒ "sum", otherwise "count".',
+      },
+      format: {
+        type: "string",
+        description: '"number" | "currency" | "percent". Default "number".',
+      },
+      currency: {
+        type: "string",
+        description: 'ISO 4217 code used when format="currency". Default "USD".',
+      },
+      unit: {
+        type: "string",
+        description: 'Suffix appended to number values (e.g. "pts", "req/s").',
+      },
+      deltaField: {
+        type: "string",
+        description: "Node property holding the prior-period delta (read from the first bound node).",
+      },
+      deltaValue: {
+        type: "number",
+        description:
+          "Explicit prior-period delta (overrides deltaField). Positive ⇒ green ▲, negative ⇒ red ▼.",
+      },
+      sparklineField: {
+        type: "string",
+        description: "Array property (numbers or `{ value }` rows) on the first node for the sparkline.",
+      },
+      sparkline: {
+        type: "number[]",
+        description:
+          "Explicit sparkline series (overrides sparklineField). Falls back to the valueField distribution across a multi-node binding.",
+      },
+      loading: { type: "boolean", description: "Render a skeleton instead of the value." },
+    },
+    example: {
+      type: "StatTile",
+      props: {
+        binding: "expenses",
+        label: "Total spend",
+        valueField: "amount",
+        aggregate: "sum",
+        format: "currency",
+        deltaValue: -4.2,
+      },
+    },
+  },
+  StatRow: {
+    key: "StatRow",
+    category: "data",
+    description:
+      "A responsive grid wrapper for StatTile children — 2-up on small screens, up to 4-up on large. Use it as the KPI strip at the top of a dashboard.",
+    children: true,
+    props: {
+      columns: {
+        type: "number",
+        description: "Large-screen column count (2 | 3 | 4). Default: responsive 2 → 4.",
+      },
+    },
+    example: {
+      type: "StatRow",
+      props: {},
+      children: ["kpiSpend", "kpiTickets", "kpiWinRate"],
+    },
   },
   SchemaDisplay: {
     key: "SchemaDisplay",
@@ -516,7 +734,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Field",
     category: "forms",
     description:
-      "A typed, labeled input inside a Form; its value is collected by `name`. Supports text/email/number/date/textarea/select/checkbox/switch via inputType.",
+      'A typed, labeled input inside a Form; its value is collected by `name`. Supports text/email/number/date/textarea/select/checkbox/switch/relation via inputType. inputType:"relation" renders a searchable combobox over candidate nodes (from optionsBinding, else inline options) and stores the picked nodeId(s) — enabling form-driven create_edge that reads the id as { $input: "<name>" }.',
     children: false,
     props: {
       name: { type: "string", description: "Field name in the submitted payload." },
@@ -524,11 +742,20 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       inputType: {
         type: "string",
         description:
-          'Input type: "text" | "email" | "number" | "date" | "textarea" | "select" | "checkbox" | "switch". Default "text". number stores a Number; checkbox/switch store a boolean.',
+          'Input type: "text" | "email" | "number" | "date" | "textarea" | "select" | "checkbox" | "switch" | "relation". Default "text". number stores a Number; checkbox/switch store a boolean; relation stores the picked nodeId (or nodeId[] when multiple).',
       },
       options: {
         type: "string[]",
-        description: 'Choices for inputType:"select".',
+        description:
+          'Choices for inputType:"select". Also an inline fallback for inputType:"relation" (strings or { id, title } objects) when optionsBinding is absent.',
+      },
+      optionsBinding: binding(
+        'Candidate nodes for inputType:"relation" (resolved via boundNodes). Takes precedence over inline options.',
+      ),
+      multiple: {
+        type: "boolean",
+        description:
+          'For inputType:"relation": allow selecting multiple nodes; stores an array of nodeIds.',
       },
       placeholder: { type: "string", description: "Placeholder text." },
       required: {
@@ -538,7 +765,12 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     },
     example: {
       type: "Field",
-      props: { name: "amount", label: "금액", inputType: "number" },
+      props: {
+        name: "blockedBy",
+        label: "차단 이슈",
+        inputType: "relation",
+        optionsBinding: "openIssues",
+      },
     },
   },
   Button: {
@@ -619,15 +851,17 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   TokenList: {
     key: "TokenList",
     category: "tokens",
-    description: "A grid of token editors that save a node property via an action.",
+    description:
+      "A responsive grid of typed design-token editors that saves a node property (debounced) via an action. Renders a dedicated control per token kind on @ssota/ui primitives.",
     children: false,
     props: {
       binding: binding("A single-node binding."),
       field: { type: "string", description: 'Node property holding tokens (default "tokens").' },
-      action: action("Dispatched (debounced) with { tokens }."),
+      action: action("Dispatched (debounced 500ms) with the full token map as { tokens }."),
       manifest: {
-        type: "{ name, label?, kind?, options? }[]",
-        description: "Token definitions; kind = color|length|font|select.",
+        type: "{ name, label?, kind?, options?, min?, max?, step?, unit? }[]",
+        description:
+          "Token definitions. kind = color (swatch + hex/oklch Input) | select (NativeSelect over options) | length (Slider using min/max/step/unit) | font (NativeSelect of font stacks) | number (number Input) | text (Input, default). length reads min/max/step/unit; select/font read options.",
         required: true,
       },
     },
@@ -635,8 +869,14 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "TokenList",
       props: {
         binding: "theme",
+        field: "tokens",
         action: "saveTheme",
-        manifest: [{ name: "primary", label: "Primary", kind: "color" }],
+        manifest: [
+          { name: "--primary", label: "Primary", kind: "color" },
+          { name: "--radius", label: "Radius", kind: "length", min: 0, max: 24, step: 1, unit: "px" },
+          { name: "--font-sans", label: "Body font", kind: "font" },
+          { name: "--density", label: "Density", kind: "select", options: ["compact", "comfortable"] },
+        ],
       },
     },
   },
