@@ -138,12 +138,24 @@ export async function getEdgeTypeForMcp(
   const { catalog } = getGraphPorts(teamspaceId);
   const row = await catalog.getEdgeCatalogByKey(catalogKey);
   if (!row) return null;
+  // Resolve domain/range catalog ids back to node-type KEYS so authors can
+  // verify edge wiring without a separate id->key lookup.
+  const idsToKeys = async (ids: string[]): Promise<string[]> => {
+    const keys: string[] = [];
+    for (const id of ids) {
+      const node = await catalog.getNodeCatalogById(id);
+      if (node) keys.push(node.key);
+    }
+    return keys;
+  };
   return {
     catalogKey: row.key,
     key: row.key,
     label: row.label,
     description: row.description,
     keywords: row.keywords,
+    domainKeys: await idsToKeys(row.domainCatalogIds),
+    rangeKeys: await idsToKeys(row.rangeCatalogIds),
     domainCatalogIds: row.domainCatalogIds,
     rangeCatalogIds: row.rangeCatalogIds,
   };

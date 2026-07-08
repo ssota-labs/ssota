@@ -17,22 +17,42 @@ export interface AgentSummary {
   id: string;
   name: string;
   description: string;
+  toolBundles: ToolBundle[];
+  allowedTriggers: AgentTrigger[];
+  linkedWorkerAgentIds: string[];
 }
 
 function serializeAgentSummary(
   entry: AgentDefinition | AgentDefinitionIndex,
 ): AgentSummary {
+  // Surface capabilities/triggers/org-chart links so authors can verify the
+  // agent org-chart from list_agents/get_agent (not only the create echo).
+  const e = entry as {
+    toolBundles?: ToolBundle[];
+    runPolicy?: RunPolicy;
+  };
   return {
     id: entry.id,
     name: entry.name,
     description: entry.description,
+    toolBundles: e.toolBundles ?? [],
+    allowedTriggers: e.runPolicy?.allowedTriggers ?? [],
+    linkedWorkerAgentIds: e.runPolicy?.linkedWorkerAgentIds ?? [],
   };
 }
 
 export async function listAgentsForMcp(db: Db, teamspaceId: string) {
   const port = createAgentDefinitionPort(db, { teamspaceId });
-  const items = await port.listDefinitions();
-  return { agents: items.map(serializeAgentSummary) };
+  const index = await port.listDefinitions();
+  // listDefinitions returns a thin index (no runPolicy); fetch full defs so the
+  // org-chart (triggers + links) is visible from list_agents, not just get_agent.
+  const agents = await Promise.all(
+    index.map(async (item) => {
+      const full = await port.getById(item.id);
+      return serializeAgentSummary(full ?? item);
+    }),
+  );
+  return { agents };
 }
 
 export async function getAgentForMcp(
@@ -49,6 +69,9 @@ export async function getAgentForMcp(
     id: builtin.id,
     name: builtin.title,
     description: builtin.description,
+    toolBundles: builtin.toolBundles ?? [],
+    allowedTriggers: builtin.runPolicy?.allowedTriggers ?? [],
+    linkedWorkerAgentIds: builtin.runPolicy?.linkedWorkerAgentIds ?? [],
   };
 }
 
