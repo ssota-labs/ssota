@@ -501,23 +501,45 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   Form: {
     key: "Form",
     category: "forms",
-    description: "Form container; collects child Field values for a Button action.",
+    description:
+      "Form container; collects child Field values for a Button action. Set columns:2 for a two-column layout.",
     children: true,
-    props: {},
+    props: {
+      columns: {
+        type: "number",
+        description: "Layout columns (1 or 2). Default 1.",
+      },
+    },
     example: { type: "Form", children: [] },
   },
   Field: {
     key: "Field",
     category: "forms",
-    description: "A labeled text input inside a Form (value collected by name).",
+    description:
+      "A typed, labeled input inside a Form; its value is collected by `name`. Supports text/email/number/date/textarea/select/checkbox/switch via inputType.",
     children: false,
     props: {
       name: { type: "string", description: "Field name in the submitted payload." },
       label: { type: "string", description: "Field label." },
+      inputType: {
+        type: "string",
+        description:
+          'Input type: "text" | "email" | "number" | "date" | "textarea" | "select" | "checkbox" | "switch". Default "text". number stores a Number; checkbox/switch store a boolean.',
+      },
+      options: {
+        type: "string[]",
+        description: 'Choices for inputType:"select".',
+      },
       placeholder: { type: "string", description: "Placeholder text." },
-      inputType: { type: "string", description: 'HTML input type, e.g. "text", "email".' },
+      required: {
+        type: "boolean",
+        description: "Marks the field required (shows *).",
+      },
     },
-    example: { type: "Field", props: { name: "email", label: "Email", inputType: "email" } },
+    example: {
+      type: "Field",
+      props: { name: "amount", label: "금액", inputType: "number" },
+    },
   },
   Button: {
     key: "Button",
@@ -527,6 +549,10 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     props: {
       action: action("Dispatched on click."),
       label: { type: "string", description: "Button text." },
+      variant: {
+        type: "string",
+        description: '"default" | "secondary" | "outline". Default "default".',
+      },
     },
     example: { type: "Button", props: { label: "Save", action: "saveCustomer" } },
   },

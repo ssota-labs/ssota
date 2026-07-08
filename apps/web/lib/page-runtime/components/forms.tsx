@@ -1,59 +1,178 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { FormValuesContext, useAction, useFormValues } from "../context";
 import { boundNode } from "../bindings";
 import type { CatalogComponent, CatalogRenderArgs } from "../types";
 
-function FormEl({ children }: { children: React.ReactNode }) {
+/** A form: collects its Field values and hands them to a Button's action. */
+function FormEl({
+  columns,
+  children,
+}: {
+  columns?: number;
+  children: ReactNode;
+}) {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const setValue = (name: string, value: unknown) =>
     setValues((prev) => ({ ...prev, [name]: value }));
+  const layout =
+    columns === 2 ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-3";
   return (
     <FormValuesContext.Provider value={{ values, setValue }}>
-      <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+      <form className={layout} onSubmit={(e) => e.preventDefault()}>
         {children}
       </form>
     </FormValuesContext.Provider>
   );
 }
 
-/** A form field that writes into the enclosing Form's collected values. */
+type FieldType =
+  | "text"
+  | "email"
+  | "number"
+  | "date"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "switch";
+
+/** A typed form field that writes its value into the enclosing Form. */
 function FieldEl({
   name,
   label,
   placeholder,
   inputType,
+  options,
+  required,
 }: {
   name: string;
   label?: string;
   placeholder?: string;
   inputType?: string;
+  options?: string[];
+  required?: boolean;
 }) {
   const form = useFormValues();
-  const value = (form?.values[name] ?? "") as string;
-  return (
-    <label className="block space-y-1 text-sm">
-      {label ? <span className="text-muted-foreground">{label}</span> : null}
-      <input
-        type={inputType ?? "text"}
+  const raw = form?.values[name];
+  const setVal = (v: unknown) => form?.setValue(name, v);
+  const type = (inputType ?? "text") as FieldType;
+
+  const labelEl = label ? (
+    <Label htmlFor={name}>
+      {label}
+      {required ? <span className="text-destructive"> *</span> : null}
+    </Label>
+  ) : null;
+
+  // Boolean controls render inline with their label.
+  if (type === "checkbox" || type === "switch") {
+    const checked = Boolean(raw);
+    const control =
+      type === "switch" ? (
+        <Switch
+          id={name}
+          checked={checked}
+          onCheckedChange={(c) => setVal(Boolean(c))}
+        />
+      ) : (
+        <Checkbox
+          id={name}
+          checked={checked}
+          onCheckedChange={(c) => setVal(Boolean(c))}
+        />
+      );
+    return (
+      <div className="flex items-center gap-2">
+        {control}
+        {label ? <Label htmlFor={name}>{label}</Label> : null}
+      </div>
+    );
+  }
+
+  let control: ReactNode;
+  if (type === "textarea") {
+    control = (
+      <Textarea
+        id={name}
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => form?.setValue(name, e.target.value)}
-        className="border-border w-full rounded-md border px-2 py-1.5 text-sm"
+        value={String(raw ?? "")}
+        onChange={(e) => setVal(e.target.value)}
       />
-    </label>
+    );
+  } else if (type === "select") {
+    control = (
+      <NativeSelect
+        id={name}
+        className="w-full"
+        value={String(raw ?? "")}
+        onChange={(e) => setVal(e.target.value)}
+      >
+        <NativeSelectOption value="">
+          {placeholder ?? "선택…"}
+        </NativeSelectOption>
+        {(options ?? []).map((o) => (
+          <NativeSelectOption key={o} value={o}>
+            {o}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+    );
+  } else {
+    // text | email | number | date
+    control = (
+      <Input
+        id={name}
+        type={type}
+        placeholder={placeholder}
+        value={raw == null ? "" : String(raw)}
+        onChange={(e) =>
+          setVal(
+            type === "number"
+              ? e.target.value === ""
+                ? ""
+                : Number(e.target.value)
+              : e.target.value,
+          )
+        }
+      />
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      {labelEl}
+      {control}
+    </div>
   );
 }
 
-function ButtonEl({ actionKey, label }: { actionKey?: string; label: string }) {
+function ButtonEl({
+  actionKey,
+  label,
+  variant,
+}: {
+  actionKey?: string;
+  label: string;
+  variant?: "default" | "secondary" | "outline" | "ghost" | "destructive";
+}) {
   const onAction = useAction();
   const form = useFormValues();
   const [pending, setPending] = useState(false);
   const disabled = !onAction || !actionKey || pending;
   return (
-    <button
+    <Button
       type="button"
+      variant={variant ?? "default"}
       disabled={disabled}
       onClick={async () => {
         if (!onAction || !actionKey) return;
@@ -64,10 +183,9 @@ function ButtonEl({ actionKey, label }: { actionKey?: string; label: string }) {
           setPending(false);
         }
       }}
-      className="bg-primary text-primary-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50"
     >
       {pending ? "…" : label}
-    </button>
+    </Button>
   );
 }
 
@@ -92,21 +210,19 @@ function ActionFieldEl({
   const commit = (v: string) => {
     if (onAction && actionKey) void onAction(actionKey, { value: v });
   };
-  const cls = "border-border w-full rounded-md border px-2 py-1.5 text-sm";
   return (
-    <label className="block space-y-1 text-sm">
-      {label ? <span className="text-muted-foreground">{label}</span> : null}
+    <div className="space-y-1.5">
+      {label ? <Label>{label}</Label> : null}
       {kind === "textarea" ? (
-        <textarea
-          className={cls}
+        <Textarea
           value={value}
           placeholder={placeholder}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => commit(value)}
         />
       ) : kind === "select" ? (
-        <select
-          className={cls}
+        <NativeSelect
+          className="w-full"
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -114,21 +230,20 @@ function ActionFieldEl({
           }}
         >
           {(options ?? []).map((o) => (
-            <option key={o} value={o}>
+            <NativeSelectOption key={o} value={o}>
               {o}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
       ) : (
-        <input
-          className={cls}
+        <Input
           value={value}
           placeholder={placeholder}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => commit(value)}
         />
       )}
-    </label>
+    </div>
   );
 }
 
@@ -161,19 +276,32 @@ function actionField(kind: "input" | "textarea" | "select"): CatalogComponent {
 
 /** Input / action components. */
 export const formComponents: Record<string, CatalogComponent> = {
-  Form: ({ children }) => <FormEl>{children}</FormEl>,
+  Form: ({ props, children }) => (
+    <FormEl columns={typeof props.columns === "number" ? props.columns : undefined}>
+      {children}
+    </FormEl>
+  ),
   Field: ({ elementId, props }) => (
     <FieldEl
       name={String(props.name ?? elementId)}
       label={props.label ? String(props.label) : undefined}
       placeholder={props.placeholder ? String(props.placeholder) : undefined}
       inputType={props.inputType ? String(props.inputType) : undefined}
+      options={
+        Array.isArray(props.options) ? (props.options as string[]) : undefined
+      }
+      required={props.required === true}
     />
   ),
   Button: ({ props }) => (
     <ButtonEl
       actionKey={typeof props.action === "string" ? props.action : undefined}
       label={String(props.label ?? "Submit")}
+      variant={
+        typeof props.variant === "string"
+          ? (props.variant as "default" | "secondary" | "outline")
+          : undefined
+      }
     />
   ),
   Input: actionField("input"),

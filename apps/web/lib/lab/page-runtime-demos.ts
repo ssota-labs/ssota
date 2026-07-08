@@ -736,7 +736,8 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     id: "forms-create",
     category: "forms",
     title: "Form · Field · Button",
-    description: "Collect multiple values and submit via a single action.",
+    description:
+      "Typed fields (text/number/date/select/switch/textarea) in a two-column Form, submitted via a single action.",
     components: ["Card", "Form", "Field", "Button"],
     spec: {
       root: "card",
@@ -748,7 +749,16 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
         },
         form: {
           type: "Form",
-          children: ["titleField", "submit"],
+          props: { columns: 2 },
+          children: [
+            "titleField",
+            "priorityField",
+            "pointsField",
+            "dueField",
+            "billableField",
+            "notesField",
+            "submit",
+          ],
         },
         titleField: {
           type: "Field",
@@ -756,6 +766,37 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             name: "title",
             label: "Title",
             placeholder: "e.g. Console v2.7 graph UI",
+            required: true,
+          },
+        },
+        priorityField: {
+          type: "Field",
+          props: {
+            name: "priority",
+            label: "Priority",
+            inputType: "select",
+            options: ["low", "medium", "high"],
+          },
+        },
+        pointsField: {
+          type: "Field",
+          props: { name: "points", label: "Story points", inputType: "number" },
+        },
+        dueField: {
+          type: "Field",
+          props: { name: "due_date", label: "Due date", inputType: "date" },
+        },
+        billableField: {
+          type: "Field",
+          props: { name: "billable", label: "Billable", inputType: "switch" },
+        },
+        notesField: {
+          type: "Field",
+          props: {
+            name: "notes",
+            label: "Notes",
+            inputType: "textarea",
+            placeholder: "Context, links…",
           },
         },
         submit: {
