@@ -637,6 +637,98 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       children: ["kpiSpend", "kpiTickets", "kpiWinRate"],
     },
   },
+  CalendarView: {
+    key: "CalendarView",
+    category: "data",
+    description:
+      'A month calendar that places bound nodes on their date. 6-week grid with today highlighted, event chips colored from a status/enum field, per-day overflow ("+N"), and a prev/next month header. Clicking an event selects it (url_selection) and/or dispatches selectAction. Nodes with a missing/invalid date are counted separately, not dropped.',
+    children: false,
+    props: {
+      binding: binding("A query/collection binding of the nodes to place."),
+      dateField: {
+        type: "string",
+        description: 'Node property holding the start date/timestamp (default "date").',
+      },
+      endField: {
+        type: "string",
+        description: "Optional property for a span's end date (multi-day events).",
+      },
+      titleField: {
+        type: "string",
+        description: 'Node property for the event label (default "title").',
+      },
+      colorField: {
+        type: "string",
+        description:
+          "Optional property whose value maps to a shared status token color (e.g. status/stage).",
+      },
+      selectAction: action("Optional — dispatched with { nodeId } when an event is clicked."),
+      initialMonth: {
+        type: "string",
+        description:
+          'Optional "YYYY-MM" to open on; defaults to the current month (or the first event\'s month).',
+      },
+    },
+    example: {
+      type: "CalendarView",
+      props: {
+        binding: "appointments",
+        dateField: "startAt",
+        endField: "endAt",
+        titleField: "title",
+        colorField: "status",
+        selectAction: "openAppointment",
+      },
+    },
+  },
+  RecordView: {
+    key: "RecordView",
+    category: "data",
+    description:
+      "A single-node full record page: a header (title + status badge via shared tokens + action buttons), grouped property sections with typed value rendering, and related-record sections resolved from traverse/query bindings. The Detail archetype — pair with a List's rowHref, or an appliesToNodeType drill-in with a subject binding. Empty subject → a clear empty state.",
+    children: false,
+    props: {
+      binding: binding("A single-node binding (subject/node/singleton) = the record."),
+      statusField: {
+        type: "string",
+        description: 'Node property shown as the header status badge (default "lifecycleStatus").',
+      },
+      sections: {
+        type: "{ title, fields: [{ key, label?, type? }] }[]",
+        description:
+          'Grouped property display. field.type = text|badge|date|number (typed rendering); key is a property name or "title".',
+      },
+      relations: {
+        type: "{ title, binding }[]",
+        description:
+          "Related-record groups; each binding (a traverse/query key) resolves to a compact list of linked nodes.",
+      },
+      actions: {
+        type: "{ label, action?, variant?, field?, property?, value? }[]",
+        description:
+          "Header buttons. Each dispatches { nodeId, … } to an EXISTING action (update_node/set_node_property/create_edge/delete_edge/delete_node). variant = default|secondary|outline|ghost|destructive.",
+      },
+    },
+    example: {
+      type: "RecordView",
+      props: {
+        binding: "subject",
+        statusField: "status",
+        sections: [
+          {
+            title: "세부",
+            fields: [
+              { key: "title", label: "제목" },
+              { key: "amount", label: "금액", type: "number" },
+              { key: "closeDate", label: "예상 마감", type: "date" },
+            ],
+          },
+        ],
+        relations: [{ title: "관련 활동", binding: "activity" }],
+        actions: [{ label: "승인", action: "approve", variant: "default" }],
+      },
+    },
+  },
   SchemaDisplay: {
     key: "SchemaDisplay",
     category: "data",

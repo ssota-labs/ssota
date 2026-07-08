@@ -22,6 +22,8 @@ import { chartComponents } from "./components/charts";
 import { approvalComponents } from "./components/approval-inbox";
 import { kanbanComponents } from "./components/kanban-board";
 import { statComponents } from "./components/stat-tile";
+import { calendarComponents } from "./components/calendar-view";
+import { recordComponents } from "./components/record-view";
 
 /**
  * The JSON-render catalog: a registry of component type → renderer. Adding a
@@ -52,6 +54,8 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...approvalComponents,
   ...kanbanComponents,
   ...statComponents,
+  ...calendarComponents,
+  ...recordComponents,
 };
 
 export const UI_CATALOG_COMPONENTS = Object.keys(CATALOG);
