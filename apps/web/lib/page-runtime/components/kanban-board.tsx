@@ -10,8 +10,9 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from "@/components/kibo-ui/kanban";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useAction } from "../context";
+import { useAction, useBasePath } from "../context";
 import { boundNodes } from "../bindings";
 import { flowColorClasses } from "../flow-tokens";
 import type { CatalogComponent, RenderNode } from "../types";
@@ -107,6 +108,8 @@ function KanbanBoardEl({
   titleField,
   metaField,
   moveAction,
+  cardHref,
+  emptyLabel,
 }: {
   nodes: RenderNode[];
   columns: KanbanColumnDef[];
@@ -114,8 +117,11 @@ function KanbanBoardEl({
   titleField: string;
   metaField?: string;
   moveAction?: string;
+  cardHref?: string;
+  emptyLabel?: string;
 }) {
   const onAction = useAction();
+  const basePath = useBasePath();
 
   const cols = columns.filter(
     (c): c is KanbanColumnDef =>
@@ -258,9 +264,18 @@ function KanbanBoardEl({
                       name={item.name}
                     >
                       <div className="flex flex-col gap-1 text-left">
-                        <p className="m-0 text-sm font-medium leading-snug">
-                          {item.name}
-                        </p>
+                        {cardHref ? (
+                          <Link
+                            href={`${basePath}/${cardHref}/${item.id}`}
+                            className="m-0 text-sm font-medium leading-snug hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                        ) : (
+                          <p className="m-0 text-sm font-medium leading-snug">
+                            {item.name}
+                          </p>
+                        )}
                         {item.meta ? (
                           <span className="text-muted-foreground text-xs">
                             {item.meta}
@@ -272,7 +287,7 @@ function KanbanBoardEl({
                 </KanbanCards>
                 {count === 0 ? (
                   <p className="text-muted-foreground p-3 text-center text-xs">
-                    No items
+                    {emptyLabel ?? "No items"}
                   </p>
                 ) : null}
               </KanbanBoard>
@@ -305,6 +320,8 @@ export const kanbanComponents: Record<string, CatalogComponent> = {
       moveAction={
         typeof props.moveAction === "string" ? props.moveAction : undefined
       }
+      cardHref={typeof props.cardHref === "string" ? props.cardHref : undefined}
+      emptyLabel={typeof props.emptyLabel === "string" ? props.emptyLabel : undefined}
     />
   ),
 };

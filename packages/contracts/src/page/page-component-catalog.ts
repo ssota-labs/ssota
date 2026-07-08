@@ -342,6 +342,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         description: 'Footer add-row button label. Default "New row".',
       },
       deleteAction: action("Dispatched with { nodeId } when a row is deleted."),
+      emptyLabel: {
+        type: "string",
+        description:
+          'Message shown when there are no rows (default "No rows"). Use it to distinguish first-run vs no-results copy.',
+      },
     },
     example: {
       type: "DataTable",
@@ -471,7 +476,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "ApprovalInbox",
     category: "data",
     description:
-      'Approval queue. Renders each bound node as a row (title + meta + a status chip) with Approve / Reject buttons that dispatch their action as { nodeId, value: "approved" | "rejected" } — wire to update_node / set_node_property reading {$input:"nodeId"} and {$input:"value"}. Encapsulates the editable-status-badge + action pattern agents hand-assemble today. Status chip color comes from the shared flow-token map; shows a real empty state when nothing is pending.',
+      'Approval queue. Renders each bound node as a row (title + meta + a status chip) with Approve / Reject buttons that dispatch their action as { nodeId, value } — where value is `approveValue`/`rejectValue` (default "approved"/"rejected"; SET THESE to values in your own status enum so the write is valid). Wire to update_node / set_node_property reading {$input:"nodeId"} and {$input:"value"}. Status chip color comes from the shared flow-token map; shows a customizable empty state when nothing is pending.',
     children: false,
     props: {
       binding: binding("A multi-node binding of pending items (e.g. a `query`)."),
@@ -488,8 +493,8 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         description:
           'Node property read for the status chip (colored via the shared flow-token map). Default "status".',
       },
-      approveAction: action('Dispatched with { nodeId, value: "approved" } when Approve is clicked.'),
-      rejectAction: action('Dispatched with { nodeId, value: "rejected" } when Reject is clicked.'),
+      approveAction: action("Dispatched with { nodeId, value: approveValue } when Approve is clicked."),
+      rejectAction: action("Dispatched with { nodeId, value: rejectValue } when Reject is clicked."),
       approveLabel: {
         type: "string",
         description: 'Approve button label. Default "승인".',
@@ -497,6 +502,23 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       rejectLabel: {
         type: "string",
         description: 'Reject button label. Default "반려".',
+      },
+      approveValue: {
+        type: "string",
+        description:
+          'Value dispatched (and written) on Approve. Default "approved" — set to a value in YOUR status enum (e.g. "reviewed"/"scheduled") so the write passes validation.',
+      },
+      rejectValue: {
+        type: "string",
+        description: 'Value dispatched on Reject. Default "rejected".',
+      },
+      emptyLabel: {
+        type: "string",
+        description: 'Empty-state title when the queue is clear (e.g. "모두 처리됨").',
+      },
+      emptyDescription: {
+        type: "string",
+        description: "Empty-state description line under the title.",
       },
     },
     example: {
@@ -542,6 +564,15 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       moveAction: action(
         "Dispatched with { nodeId, field: <groupField>, value: <newColumnValue> } when a card is dropped into a different column (wire to set_node_property).",
       ),
+      cardHref: {
+        type: "string",
+        description:
+          'Optional path segment; makes each card title a link to `<basePath>/<cardHref>/<nodeId>` (opens the record). Dragging still moves the card. e.g. "tickets".',
+      },
+      emptyLabel: {
+        type: "string",
+        description: 'Placeholder text shown in an empty column. Default "No items".',
+      },
     },
     example: {
       type: "KanbanBoard",
@@ -606,6 +637,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
           "Explicit sparkline series (overrides sparklineField). Falls back to the valueField distribution across a multi-node binding.",
       },
       loading: { type: "boolean", description: "Render a skeleton instead of the value." },
+      href: {
+        type: "string",
+        description:
+          'Optional path segment; makes the tile a link to `<basePath>/<href>` (e.g. "deals" → the deals List) so a dashboard KPI drills into its records.',
+      },
     },
     example: {
       type: "StatTile",
@@ -667,6 +703,15 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         type: "string",
         description:
           'Optional "YYYY-MM" to open on; defaults to the current month (or the first event\'s month).',
+      },
+      eventHref: {
+        type: "string",
+        description:
+          'Optional path segment; makes each event a link to `<basePath>/<eventHref>/<nodeId>` (opens the record). Takes precedence over selectAction. e.g. "appointments".',
+      },
+      emptyLabel: {
+        type: "string",
+        description: "Empty-state title when there are no events to place.",
       },
     },
     example: {

@@ -109,6 +109,10 @@ function ApprovalInboxEl({
   rejectAction,
   approveLabel,
   rejectLabel,
+  approveValue,
+  rejectValue,
+  emptyLabel,
+  emptyDescription,
 }: {
   nodes: RenderNode[];
   titleField: string;
@@ -118,6 +122,10 @@ function ApprovalInboxEl({
   rejectAction?: string;
   approveLabel: string;
   rejectLabel: string;
+  approveValue: string;
+  rejectValue: string;
+  emptyLabel?: string;
+  emptyDescription?: string;
 }) {
   const onAction = useAction();
   const [busy, setBusy] = useState<Busy | null>(null);
@@ -126,7 +134,7 @@ function ApprovalInboxEl({
     node: RenderNode,
     kind: "approve" | "reject",
     actionKey: string | undefined,
-    value: "approved" | "rejected",
+    value: string,
   ) => {
     if (!onAction || !actionKey) return;
     setBusy({ id: node.id, kind });
@@ -144,9 +152,10 @@ function ApprovalInboxEl({
           <EmptyMedia variant="icon">
             <TrayIcon className="size-5" />
           </EmptyMedia>
-          <EmptyTitle>승인 대기 항목이 없습니다</EmptyTitle>
+          <EmptyTitle>{emptyLabel ?? "승인 대기 항목이 없습니다"}</EmptyTitle>
           <EmptyDescription>
-            새 요청이 들어오면 여기에서 승인하거나 반려할 수 있습니다.
+            {emptyDescription ??
+              "새 요청이 들어오면 여기에서 승인하거나 반려할 수 있습니다."}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -195,7 +204,7 @@ function ApprovalInboxEl({
                 variant="outline"
                 disabled={!canReject || rowBusy}
                 onClick={() =>
-                  void dispatch(node, "reject", rejectAction, "rejected")
+                  void dispatch(node, "reject", rejectAction, rejectValue)
                 }
               >
                 {rowBusy && busy?.kind === "reject" ? (
@@ -210,7 +219,7 @@ function ApprovalInboxEl({
                 size="sm"
                 disabled={!canApprove || rowBusy}
                 onClick={() =>
-                  void dispatch(node, "approve", approveAction, "approved")
+                  void dispatch(node, "approve", approveAction, approveValue)
                 }
               >
                 {rowBusy && busy?.kind === "approve" ? (
@@ -261,6 +270,16 @@ export const approvalComponents: Record<string, CatalogComponent> = {
       }
       rejectLabel={
         typeof props.rejectLabel === "string" ? props.rejectLabel : "반려"
+      }
+      approveValue={
+        typeof props.approveValue === "string" ? props.approveValue : "approved"
+      }
+      rejectValue={
+        typeof props.rejectValue === "string" ? props.rejectValue : "rejected"
+      }
+      emptyLabel={typeof props.emptyLabel === "string" ? props.emptyLabel : undefined}
+      emptyDescription={
+        typeof props.emptyDescription === "string" ? props.emptyDescription : undefined
       }
     />
   ),

@@ -16,7 +16,8 @@ import {
   EmptyTitle,
 } from "@ssota/ui/components/ui/empty";
 import { cn } from "@ssota/ui/lib/utils";
-import { useAction } from "../context";
+import Link from "next/link";
+import { useAction, useBasePath } from "../context";
 import { useSelection } from "../selection-context";
 import { boundNodes } from "../bindings";
 import { asColorToken, flowColorClasses, type FlowColorToken } from "../flow-tokens";
@@ -107,13 +108,41 @@ function EventChip({
   token,
   selected,
   onSelect,
+  href,
 }: {
   title: string;
   token: FlowColorToken;
   selected: boolean;
   onSelect: () => void;
+  href?: string;
 }) {
   const classes = flowColorClasses(token);
+  const chipClass = cn(
+    "block w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+    selected && "ring-2 ring-ring ring-offset-1 ring-offset-background",
+  );
+  const badge = (
+    <Badge
+      variant="outline"
+      className={cn(
+        "w-full justify-start gap-1 truncate border px-1.5 py-0 text-[11px] font-medium",
+        classes.surface,
+        classes.border,
+        classes.text,
+      )}
+    >
+      <span className="truncate">{title || "제목 없음"}</span>
+    </Badge>
+  );
+  // eventHref → navigate to the record; otherwise the chip selects (url_selection
+  // / selectAction). Navigation wins when both are configured.
+  if (href) {
+    return (
+      <Link href={href} title={title} className={chipClass} onClick={(e) => e.stopPropagation()}>
+        {badge}
+      </Link>
+    );
+  }
   return (
     <button
       type="button"
@@ -123,23 +152,9 @@ function EventChip({
         e.stopPropagation();
         onSelect();
       }}
-      className={cn(
-        "block w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-        selected &&
-          "ring-2 ring-ring ring-offset-1 ring-offset-background",
-      )}
+      className={chipClass}
     >
-      <Badge
-        variant="outline"
-        className={cn(
-          "w-full justify-start gap-1 truncate border px-1.5 py-0 text-[11px] font-medium",
-          classes.surface,
-          classes.border,
-          classes.text,
-        )}
-      >
-        <span className="truncate">{title || "제목 없음"}</span>
-      </Badge>
+      {badge}
     </button>
   );
 }
@@ -152,6 +167,8 @@ function CalendarViewEl({
   colorField,
   selectAction,
   initialMonth,
+  eventHref,
+  emptyLabel,
 }: {
   nodes: RenderNode[];
   dateField: string;
@@ -160,9 +177,12 @@ function CalendarViewEl({
   colorField?: string;
   selectAction?: string;
   initialMonth?: string;
+  eventHref?: string;
+  emptyLabel?: string;
 }) {
   const onAction = useAction();
   const selection = useSelection();
+  const basePath = useBasePath();
   const [cursor, setCursor] = useState<MonthCursor>(() =>
     resolveInitialCursor(initialMonth),
   );
@@ -242,7 +262,7 @@ function CalendarViewEl({
           <EmptyMedia variant="icon">
             <CalendarBlankIcon className="size-5" />
           </EmptyMedia>
-          <EmptyTitle>표시할 일정이 없습니다</EmptyTitle>
+          <EmptyTitle>{emptyLabel ?? "표시할 일정이 없습니다"}</EmptyTitle>
           <EmptyDescription>
             {dateField} 값이 있는 항목을 추가하면 이 달력에 배치됩니다.
           </EmptyDescription>
@@ -344,6 +364,9 @@ function CalendarViewEl({
                     token={event.token}
                     selected={event.node.id === selectedId}
                     onSelect={() => selectEvent(event.node)}
+                    href={
+                      eventHref ? `${basePath}/${eventHref}/${event.node.id}` : undefined
+                    }
                   />
                 ))}
                 {overflow > 0 ? (
@@ -399,6 +422,8 @@ export const calendarComponents: Record<string, CatalogComponent> = {
       initialMonth={
         typeof props.initialMonth === "string" ? props.initialMonth : undefined
       }
+      eventHref={typeof props.eventHref === "string" ? props.eventHref : undefined}
+      emptyLabel={typeof props.emptyLabel === "string" ? props.emptyLabel : undefined}
     />
   ),
 };

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Card } from "@ssota/ui/components/ui/card";
 import { cn } from "@ssota/ui/lib/utils";
 import { boundNodes } from "../bindings";
+import { useBasePath } from "../context";
 import { flowColorClasses } from "../flow-tokens";
 import type { CatalogComponent, RenderNode } from "../types";
 
@@ -191,6 +193,7 @@ function StatTileEl({
   sparklineField,
   sparkline,
   loading,
+  href,
 }: {
   label: string;
   nodes: RenderNode[];
@@ -204,7 +207,9 @@ function StatTileEl({
   sparklineField?: string;
   sparkline?: unknown[];
   loading: boolean;
+  href?: string;
 }) {
+  const basePath = useBasePath();
   const kind: StatAggregate = aggregate ?? (valueField ? "sum" : "count");
   const value = aggregateValue(nodes, valueField, kind);
   const series = resolveSparkline(nodes, sparklineField, sparkline, valueField);
@@ -250,8 +255,11 @@ function StatTileEl({
     );
   }
 
-  return (
-    <Card data-testid="stat-tile" className="gap-2 p-4">
+  const tile = (
+    <Card
+      data-testid="stat-tile"
+      className={cn("gap-2 p-4", href && "transition-colors hover:border-ring")}
+    >
       {labelEl}
       <div className="flex items-baseline gap-2">
         <span className="text-foreground text-2xl font-semibold tabular-nums">
@@ -280,6 +288,13 @@ function StatTileEl({
       ) : null}
     </Card>
   );
+  return href ? (
+    <Link href={`${basePath}/${href}`} className="block">
+      {tile}
+    </Link>
+  ) : (
+    tile
+  );
 }
 
 /** KPI stat-tile catalog components (hook-free fns → `<StatTileEl/>` / grid). */
@@ -300,6 +315,7 @@ export const statComponents: Record<string, CatalogComponent> = {
       }
       sparkline={Array.isArray(props.sparkline) ? props.sparkline : undefined}
       loading={props.loading === true}
+      href={typeof props.href === "string" ? props.href : undefined}
     />
   ),
   StatRow: ({ props, children }) => {
