@@ -4,6 +4,7 @@ import {
   createDb,
   createDbCatalogWritePort,
   createPagePort,
+  createSchedulePort,
   createTaskPort,
   createAgentDefinitionPort,
   registerTeamspaceOrganization,
@@ -33,6 +34,11 @@ export function getAgentDefinitionPort(teamspaceId: string) {
 /** Page store (json-render dashboards). Builder scope = no accountId. */
 export function getPagePort(teamspaceId: string, accountId?: string) {
   return createPagePort(getDb(), { teamspaceId, accountId });
+}
+
+/** Schedule store (cron cadences firing agent runs). Builder scope. */
+export function getSchedulePort(teamspaceId: string, accountId?: string) {
+  return createSchedulePort(getDb(), { teamspaceId, accountId });
 }
 
 /** @deprecated Use getAgentDefinitionPort */
