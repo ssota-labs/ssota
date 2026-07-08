@@ -3,7 +3,6 @@ import { GraphWorkspace } from "@/components/console/graph-workspace";
 import { GraphContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
-import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts/catalog";
 
 export default function GraphPage({
   params,
@@ -31,16 +30,5 @@ async function GraphPageInner({
     catalog.listEdgeCatalog(),
   ]);
 
-  return (
-    <GraphWorkspace
-      nodeTypes={nodeCatalog.map((row: NodeCatalogRow) => ({
-        key: row.key,
-        title: row.label,
-      }))}
-      edgeTypes={edgeCatalog.map((row: EdgeCatalogRow) => ({
-        key: row.key,
-        title: row.label,
-      }))}
-    />
-  );
+  return <GraphWorkspace nodeTypes={nodeCatalog} edgeTypes={edgeCatalog} />;
 }
