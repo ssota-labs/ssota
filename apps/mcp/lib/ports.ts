@@ -3,6 +3,7 @@ import {
   createGraphPorts,
   createDb,
   createDbCatalogWritePort,
+  createPagePort,
   createTaskPort,
   createAgentDefinitionPort,
   registerTeamspaceOrganization,
@@ -27,6 +28,11 @@ export function getTaskPort(teamspaceId: string) {
 
 export function getAgentDefinitionPort(teamspaceId: string) {
   return createAgentDefinitionPort(getDb(), { teamspaceId });
+}
+
+/** Page store (json-render dashboards). Builder scope = no accountId. */
+export function getPagePort(teamspaceId: string, accountId?: string) {
+  return createPagePort(getDb(), { teamspaceId, accountId });
 }
 
 /** @deprecated Use getAgentDefinitionPort */
