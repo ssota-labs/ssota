@@ -8,7 +8,14 @@
 
 ## ⬛ 현재 상태 (2026-07-08, 한 줄)
 
-**S1 슬라이스 완전 종료(MCP+스킬+검증+피드백반영).** 다음: **S2(pages) 착수** — agent-runtime `tools/pages.ts`(create_page/update_page/read_page/list_pages + **list_page_components/get_page_component** progressive-disclosure) 미러 → apps/mcp. 그다음 스킬 S2 조각 → 서브에이전트 HR 페이지 저작 → 평가.
+**S1·S2 슬라이스 종료(MCP+스킬+검증+피드백).** 다음: **S3(agents) 착수** — agent-runtime `tools/agent-definitions.ts` `write_agent_definition`(→`upsertDefinition`) 미러 + 리치화(toolBundles/runPolicy 트리거·모델) → apps/mcp. 그다음 스킬 S3 조각 → 서브에이전트 HR 에이전트 저작 → 평가.
+
+### S2 루프 종료 요약
+- **S2 MCP**(커밋 `17ae5835`): `create_page`/`update_page`/`read_page`/`list_pages` + **`list_page_components`/`get_page_component`**(46 컴포넌트 progressive-disclosure). spec 안전성(unknown component/dangling ref reject). page-services test 5/5. agent-runtime `tools/pages.ts` 미러.
+- **S2 스킬-테스트 PASS**: 서브에이전트가 스킬만으로 HR **4페이지 트리**(허브+근태현황+승인큐+신청서) 저작. progressive disclosure 2계층(스킬 파일 + 컴포넌트 카탈로그) 작동. 승인 액션=DataTable editable badge + `setAction`→`update_node`.
+- **피드백 반영(스킬 doc 버그 수정)**: `filter`는 객체가 아니라 **배열** `[{key,op,value}]`(op=`eq|neq|exists`), 승인패턴은 per-row Button 아니라 **editable column+setAction**(value-ref `$input:"nodeId"`/`"value"`), traverse direction `out|in`, `create_page` arg envelope 문서화. (스키마·실제 저작 페이지로 ground-truth 검증.)
+- **미완**: 라이브 web 렌더 데모(사람 승인 화면) — auth-gated, 최종 consolidated 검증에서 한 번에. spec은 validate+round-trip 확인됨.
+- S2 subagent 산출 페이지는 dev/ax-hr-sandbox에 남아있음(S3 에이전트가 소유/구동할 대상).
 
 ### S1 루프 종료 요약
 - **S1 스킬-테스트 PASS**: 빈 컨텍스트 서브에이전트가 스킬만 읽고(progressive disclosure 작동) HR catalog **7 node + 7 edge**를 일관되게 저작·검증. (1차 실행은 stream watchdog flake로 stall → 2차 성공.)
