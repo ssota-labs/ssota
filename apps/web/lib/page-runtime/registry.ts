@@ -19,6 +19,9 @@ import { figmaEmbedComponents } from "./components/figma-embed";
 import { mediaEmbedComponents } from "./components/media-embed";
 import { periodSelectComponents } from "./components/period-select";
 import { chartComponents } from "./components/charts";
+import { approvalComponents } from "./components/approval-inbox";
+import { kanbanComponents } from "./components/kanban-board";
+import { statComponents } from "./components/stat-tile";
 
 /**
  * The JSON-render catalog: a registry of component type → renderer. Adding a
@@ -46,6 +49,9 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...mediaEmbedComponents,
   ...periodSelectComponents,
   ...chartComponents,
+  ...approvalComponents,
+  ...kanbanComponents,
+  ...statComponents,
 };
 
 export const UI_CATALOG_COMPONENTS = Object.keys(CATALOG);

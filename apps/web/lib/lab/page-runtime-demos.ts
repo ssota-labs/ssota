@@ -1990,6 +1990,206 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
   },
+  {
+    id: "forms-relation",
+    category: "forms",
+    title: "Form · Relation Field",
+    description:
+      "Relation Fields pick existing nodes from a query binding via a searchable combobox; the picked nodeId is submitted so a create_edge action can link records. Second field shows the multi-select variant.",
+    components: ["Card", "Form", "Field", "Button"],
+    spec: {
+      root: "card",
+      elements: {
+        card: {
+          type: "Card",
+          props: { title: "Link a dependency" },
+          children: ["form"],
+        },
+        form: {
+          type: "Form",
+          children: ["blockedByField", "relatedField", "submit"],
+        },
+        blockedByField: {
+          type: "Field",
+          props: {
+            name: "blockedBy",
+            label: "차단 이슈 (Blocked by)",
+            inputType: "relation",
+            optionsBinding: "openIssues",
+            placeholder: "이슈 검색…",
+            required: true,
+          },
+        },
+        relatedField: {
+          type: "Field",
+          props: {
+            name: "related",
+            label: "관련 이슈 (multi)",
+            inputType: "relation",
+            optionsBinding: "openIssues",
+            multiple: true,
+            placeholder: "여러 개 선택…",
+          },
+        },
+        submit: {
+          type: "Button",
+          props: { action: "linkDependency", label: "링크 생성" },
+        },
+      },
+    },
+    bindingData: {
+      openIssues: [
+        { id: "aaaaaaa1-0000-4000-8000-000000000001", catalogKey: "issue", title: "Graph write port rejects cross-org edges", properties: { status: "todo" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000002", catalogKey: "issue", title: "Combobox filter is case-insensitive", properties: { status: "doing" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000003", catalogKey: "issue", title: "Relation field empty-state copy", properties: { status: "todo" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000004", catalogKey: "issue", title: "End-user app 404 when app_enabled=false", properties: { status: "review" } },
+      ],
+    },
+  },
+  {
+    id: "data-approval-inbox",
+    category: "data",
+    title: "ApprovalInbox",
+    description:
+      "Pending-approval queue: each row shows title + meta + a status chip and Approve / Reject buttons that dispatch { nodeId, value }. Real empty state when nothing is pending.",
+    components: ["Section", "ApprovalInbox"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Approvals", subtitle: "승인 대기 큐 — 각 행에서 승인/반려" },
+          children: ["inbox"],
+        },
+        inbox: {
+          type: "ApprovalInbox",
+          props: {
+            binding: "rows",
+            titleField: "title",
+            metaFields: ["requester", "amount"],
+            statusField: "status",
+            approveAction: "approveRequest",
+            rejectAction: "rejectRequest",
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc01", catalogKey: "approval_request", title: "출장비 정산 — 부산 고객 미팅", properties: { requester: "김지원", amount: "₩482,000", status: "pending" } },
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc02", catalogKey: "approval_request", title: "PR #412 — 그래프 쓰기 포트 검증", properties: { requester: "이도현", amount: "3 files", status: "review" } },
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc03", catalogKey: "approval_request", title: "연차 신청 — 7/14 ~ 7/16", properties: { requester: "박서연", amount: "3 days", status: "submitted" } },
+      ],
+    },
+  },
+  {
+    id: "data-kanban",
+    category: "data",
+    title: "KanbanBoard",
+    description:
+      "Status-column board on the shared kibo kanban primitive: drag a card to another column to change its `status` (optimistic move + set_node_property). Column headers show a color dot + live count; the empty column shows a placeholder.",
+    components: ["Section", "KanbanBoard"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Sprint board", subtitle: "Drag a card between columns to change its status" },
+          children: ["board"],
+        },
+        board: {
+          type: "KanbanBoard",
+          props: {
+            binding: "rows",
+            groupField: "status",
+            titleField: "title",
+            metaField: "owner",
+            moveAction: "moveCard",
+            columns: [
+              { value: "todo", label: "To do", color: "gray" },
+              { value: "doing", label: "In progress", color: "amber" },
+              { value: "review", label: "In review", color: "blue" },
+              { value: "done", label: "Done", color: "green" },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        { id: "c1a70000-0000-4000-8000-000000000001", catalogKey: "task", title: "Draft Q3 product roadmap", properties: { status: "todo", owner: "Felix Han" } },
+        { id: "c1a70000-0000-4000-8000-000000000002", catalogKey: "task", title: "Wire up MCP consent scopes", properties: { status: "todo", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000003", catalogKey: "task", title: "Kanban board on tasks page", properties: { status: "doing", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000004", catalogKey: "task", title: "Render agent markdown blocks", properties: { status: "doing", owner: "Felix Han" } },
+        { id: "c1a70000-0000-4000-8000-000000000005", catalogKey: "task", title: "Ship chat history sidebar", properties: { status: "done", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000006", catalogKey: "task", title: "Seed dogfood roadmap node", properties: { status: "done", owner: "Felix Han" } },
+      ],
+    },
+  },
+  {
+    id: "data-stat-tiles",
+    category: "data",
+    title: "StatTile / StatRow (KPI strip)",
+    description:
+      "A dashboard KPI strip: StatRow grids StatTiles that aggregate a graph binding (sum / count / avg), show a prior-period delta chip (▲ green up, ▼ red down), and an inline sparkline.",
+    components: ["Section", "StatRow", "StatTile"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Revenue KPIs", subtitle: "Aggregated from graph bindings — sum, count, avg + deltas & sparklines" },
+          children: ["kpis"],
+        },
+        kpis: {
+          type: "StatRow",
+          props: {},
+          children: ["spend", "tickets", "winrate", "deals"],
+        },
+        spend: {
+          type: "StatTile",
+          props: { binding: "expenses", label: "Total spend", valueField: "amount", aggregate: "sum", format: "currency", deltaValue: -4.2 },
+        },
+        tickets: {
+          type: "StatTile",
+          props: { binding: "tickets", label: "Open tickets", deltaValue: 8 },
+        },
+        winrate: {
+          type: "StatTile",
+          props: { binding: "winRate", label: "Win rate", valueField: "rate", format: "percent", deltaField: "delta", sparklineField: "trend" },
+        },
+        deals: {
+          type: "StatTile",
+          props: { binding: "deals", label: "Avg deal size", valueField: "value", aggregate: "avg", format: "currency" },
+        },
+      },
+    },
+    bindingData: {
+      expenses: [
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000001", catalogKey: "expense", title: "Cloud", properties: { amount: 5200 } },
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000002", catalogKey: "expense", title: "Salaries", properties: { amount: 4800 } },
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000003", catalogKey: "expense", title: "Tooling", properties: { amount: 2480 } },
+      ],
+      tickets: Array.from({ length: 24 }, (_, i) => ({
+        id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(i + 1).padStart(12, "0")}`,
+        catalogKey: "ticket",
+        title: `Ticket ${i + 1}`,
+        properties: {},
+      })),
+      winRate: {
+        id: "dddddddd-dddd-4ddd-8ddd-000000000001",
+        catalogKey: "metric",
+        title: "Win rate",
+        properties: { rate: 62, delta: 5.5, trend: [48, 51, 50, 55, 58, 60, 62] },
+      },
+      deals: [12000, 8000, 9500, 5500].map((value, i) => ({
+        id: `bbbbbbbb-bbbb-4bbb-8bbb-${String(i + 1).padStart(12, "0")}`,
+        catalogKey: "deal",
+        title: `Deal ${i + 1}`,
+        properties: { value },
+      })),
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {
