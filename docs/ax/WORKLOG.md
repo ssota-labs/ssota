@@ -8,7 +8,17 @@
 
 ## ⬛ 현재 상태 (2026-07-08, 한 줄)
 
-**S1·S2·S3 슬라이스 종료(MCP+스킬+검증+피드백).** 다음: **S4(schedules) — 마지막 슬라이스.** `createSchedulePort`(create/list/get/update/delete, `{agentDefinitionId, cronExpression, timezone, enabled?}`) 미러 → apps/mcp `create_schedule`/`list_schedules`. 그다음 스킬 S4 조각 → 서브에이전트 스케줄 저작 + **heartbeat 발화 확인**(환경이 스스로 굴러가는지).
+**S1–S4 전 슬라이스 완료 + CAPSTONE PASS.** AX 능력(MCP S1–S4 + `ssota-ax-author` 스킬) 완성. 빈 컨텍스트 에이전트가 **한 줄 입력 → 개인재무 환경 전체(catalog 8+7, page 4, agent 5, schedule 2)** 를 스킬만으로 저작(Task 3 개인재무 케이스 사실상 완료). 다음 후보: (a) 라이브 web 렌더 데모(consolidated), (b) Task 2(SWDL MCP 저작 실증), (c) list_agents/edge domain-range enrich 등 마이너 follow-up, (d) 코드 템플릿 캡처(선택).
+
+### CAPSTONE (개인재무, axfin/main, blank agent, skill-only) — PASS
+- catalog 8 node + 7 edge, pages 4(hub+검토큐+투자+부채, approve/create 액션 round-trip), agents 5(4 specialist + orchestrator linked), schedules 2(daily+monthly, orchestrator). 의존순서 준수, 인스턴스 0. progressive disclosure(SKILL+4 refs+컴포넌트 카탈로그) 작동.
+- **결론: "한 줄 입력 → 자율 운영 환경 전체 MCP 저작" 입증.**
+- 피드백 반영: **`set_node_property` 다중 editable-column 액션 예시**를 page-authoring에 추가(주요 gap), list_* 반환 envelope(array vs `{components}`/`{agents}`) SKILL verify에 명시.
+- 마이너 follow-up(미반영): create_page `slug` echo null, list_edge_types가 domain/range 미포함(get_edge_type만), propertySchema required는 instance-time 검증 명시.
+
+### S4 루프 종료 요약
+- **S4 MCP**(커밋 `ff4c2f9e`): `create_schedule`/`list_schedules`(schedule port). 가드: agent 존재 확인(Unknown agentDefinitionId), cron 5/6필드(Invalid cronExpression). test 3/3. end-to-end 브리지 OK(orchestrator daily 09:00). heartbeat 실발화는 런타임/배포 관심사(범위 밖).
+- **S4 스킬 조각** + capstone 피드백 반영 후 커밋(대기).
 
 ### S3 루프 종료 요약
 - **S3 MCP**(커밋 이후): `create_agent`(upsert agent_definition: name/description/body(md)/toolBundles/runPolicy(allowedTriggers·model·maxSteps)/linkedWorkerAgentIds). agent-runtime `write_agent_definition`보다 리치(툴·트리거·조직링크). test 6/6(create+reject). end-to-end 브리지: specialist+orchestrator(linked)+spawn_task 성공(UNKNOWN_AGENT_DEFINITION 벽 제거).

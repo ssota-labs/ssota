@@ -75,6 +75,17 @@ A map `actionKey → { kind, … }`. Kinds: `create_node`, `update_node` (`merge
 
 So "approve/reject" is an **editable status badge** column, not a per-row button (tables expose `setAction`/`deleteAction`, not a row-button prop). A `Form`'s submit `Button` instead dispatches its field values by name — wire a `create_node` action reading them via `$input:"<fieldName>"` (e.g. filing a new `leave_request` with `status:"pending"`).
 
+**Multiple editable columns in one table** — `update_node` above hardcodes which property changes, so it only fits a single editable column. When several columns are editable, use **`set_node_property`**, which takes the field name from the payload too:
+
+```json
+"edit": { "kind": "set_node_property",
+          "nodeId": { "$input": "nodeId" },
+          "field":  { "$input": "field" },
+          "value":  { "$input": "value" } }
+```
+
+One `setAction: "edit"` then handles every editable column (the `setAction` payload is `{nodeId, field, value}`). Prefer `set_node_property` for a general editable grid; keep `update_node` for a single fixed status column.
+
 ## Rules & gotchas
 
 - Every `binding`/`action` an element references MUST be defined, or `create_page` rejects the spec (`references unknown binding '<k>'`).
