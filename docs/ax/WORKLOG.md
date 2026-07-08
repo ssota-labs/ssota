@@ -8,7 +8,18 @@
 
 ## ⬛ 현재 상태 (2026-07-08, 한 줄)
 
-**S1–S4 전 슬라이스 완료 + CAPSTONE PASS.** AX 능력(MCP S1–S4 + `ssota-ax-author` 스킬) 완성. 빈 컨텍스트 에이전트가 **한 줄 입력 → 개인재무 환경 전체(catalog 8+7, page 4, agent 5, schedule 2)** 를 스킬만으로 저작(Task 3 개인재무 케이스 사실상 완료). 다음 후보: (a) 라이브 web 렌더 데모(consolidated), (b) Task 2(SWDL MCP 저작 실증), (c) list_agents/edge domain-range enrich 등 마이너 follow-up, (d) 코드 템플릿 캡처(선택).
+**Task 1·2·3 완료 — AX 능력 + 3도메인 실증(HR·개인재무·SWDL) + 반복 friction 수정까지.** 남은 후보: 라이브 web 렌더 데모, 코드 템플릿 캡처(선택), PR.
+
+### Task 2 (SWDL 3번째 도메인) — PASS + MCP enrich
+- 빈 에이전트가 axswdl/main에 SWDL 환경 from-scratch: catalog 10+10(roadmap→objective→initiative→prd→feature→story→task/sprint + research/design), pages 6(hub+Gantt roadmap+delivery board+discovery+backlog Form+**initiative 드릴인 template subject+traverse**), agents 5(4 specialist+orchestrator), schedules 3. 우리 손설계 시드의 핵심 패턴(SDLC 체인 + per-initiative 드릴인)을 독립 재현.
+- **3도메인 대조(HR·재무·SWDL) 통과 → 스킬 도메인 불문 입증.**
+- **반복 friction 수정(3회째 지적 → MCP fix)**: `list_agents`/`get_agent`가 toolBundles+allowedTriggers+linkedWorkerAgentIds 포함(list는 full def fetch), `get_edge_type`가 domain/range를 **키로** 반환. + 스킬 doc: get_agent 읽기 param=`agentDefinitionId`, Gantt엔 start/end date.
+- 커밋: `[mcp] enrich agent/edge reads`, `[infra] skill S4+capstone+SWDL fixes` 등.
+
+### 실증 도메인 3개 (라이브 로컬 DB, 브리지로 저작)
+- org `dev`/teamspace `ax-hr-sandbox` — HR 근태·휴가 (catalog+pages+agents; S1–S3 슬라이스 테스트 누적).
+- org `axfin`/`main` — 개인재무 (catalog 8+7, page 4, agent 5, schedule 2 — capstone).
+- org `axswdl`/`main` — 소프트웨어 개발 (catalog 10+10, page 6, agent 5, schedule 3).
 
 ### CAPSTONE (개인재무, axfin/main, blank agent, skill-only) — PASS
 - catalog 8 node + 7 edge, pages 4(hub+검토큐+투자+부채, approve/create 액션 round-trip), agents 5(4 specialist + orchestrator linked), schedules 2(daily+monthly, orchestrator). 의존순서 준수, 인스턴스 0. progressive disclosure(SKILL+4 refs+컴포넌트 카탈로그) 작동.

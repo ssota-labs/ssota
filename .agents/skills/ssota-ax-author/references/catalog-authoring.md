@@ -56,6 +56,7 @@ A JSON-Schema-like object. Keep it focused on the fields that pages/agents will 
 Notes:
 - Node **body/content** (long text) and **lifecycleStatus** are handled by `create_node` (`content`, `lifecycleStatus`) — don't model them as properties.
 - Prefer explicit `enum`s for status-like fields (pages render them as badges/filters).
+- If a page will render a type on a **timeline/`Gantt`**, give the type `start_date`/`end_date` (`format:"date"`) fields — Gantt needs a start and end per row.
 
 ## Worked example — HR attendance & leave
 

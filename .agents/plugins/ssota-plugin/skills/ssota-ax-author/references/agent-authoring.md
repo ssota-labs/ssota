@@ -18,6 +18,8 @@ Agents are `agent_definitions` — the "employees" that operate the environment:
 
 Returns `{id, name, description, toolBundles, runPolicy}`. Bad enum values (unknown bundle/trigger) are rejected. (Every call also needs the project scope `orgSlug`+`teamspaceSlug`, per the `ssota-mcp` connection.)
 
+**Reading agents back.** `list_agents` → `{agents:[…]}` and `get_agent {agentDefinitionId}` (the read param is `agentDefinitionId`, not `id`) both return `{id, name, description, toolBundles, allowedTriggers, linkedWorkerAgentIds}` — enough to verify the org-chart. `get_agent_instruction {agentDefinitionId}` returns the playbook text.
+
 ### `toolBundles` vocab
 `graph.read`, `graph.write`, `tasks.manage`, `pages.author`, `connectors`, `delegate`, `workers`, `skills.read`, `sandbox.code`. (A few defaults — `graph.read`, `tasks.manage`, `connectors`, `workers` — are merged in at runtime; still set what the agent clearly needs.)
 
