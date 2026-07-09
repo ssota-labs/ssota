@@ -2,6 +2,7 @@ import { Chat } from "chat";
 import { createSlackAdapter } from "@chat-adapter/slack";
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
+import { createKakaoAdapter } from "./kakao";
 import { createMigrationBackedPostgresState } from "./postgres-state";
 import {
   createVercelOidcVerifier,
@@ -287,6 +288,13 @@ async function handleInboundMessage(
     workspaceKey,
   );
 
+  if (thread.id.startsWith("kakao:")) {
+    // Kakao gets exactly one post() per turn (sync response or a one-shot
+    // callback) — post+edit streaming isn't possible, so always collect first.
+    await postCollectedAgentReply(thread, run, stream);
+    return;
+  }
+
   if (workspaceKey && !isEmulateEnabled()) {
     await getSlackBotTokenForInstallation(workspaceKey);
   }
@@ -331,6 +339,9 @@ export function getBot(): Chat {
           : {}),
         ...(process.env.TELEGRAM_BOT_TOKEN
           ? { telegram: createTelegramAdapter() }
+          : {}),
+        ...(process.env.KAKAO_SKILL_ENABLED === "1"
+          ? { kakao: createKakaoAdapter() }
           : {}),
       },
       state: createMigrationBackedPostgresState({

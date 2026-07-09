@@ -1,9 +1,11 @@
 /**
  * Inbound chat channels (Slack, Discord) use Vercel Connect — separate from Composio
- * tool connections on the Connections page.
+ * tool connections on the Connections page. Kakao has no OAuth (no `/`
+ * connectorUid, so `canConnect` is false) — its workspace is linked by
+ * manually entering the Kakao Open Builder bot id instead.
  */
 
-export type InboundChannelPlatform = "slack" | "discord";
+export type InboundChannelPlatform = "slack" | "discord" | "kakao";
 
 export type InboundChannelWorkspaceLinkStatus = "linked" | "credential_only";
 
@@ -56,6 +58,10 @@ function resolveInboundConnectorUid(
       "slack"
     );
   }
+  if (platform === "kakao") {
+    // No `/` — keeps isVercelConnectChannelUid() false (no OAuth for Kakao).
+    return "kakao";
+  }
   return (
     process.env.DISCORD_CONNECT_CONNECTOR ??
     process.env.DISCORD_MCP_CONNECTOR ??
@@ -77,6 +83,11 @@ const INBOUND_CHANNEL_COPY: Record<
     description:
       "Receive messages and post replies in your Discord server (inbound bot).",
   },
+  kakao: {
+    label: "Kakao",
+    description:
+      "Auto-reply from a Kakao Channel via an Open Builder fallback-block skill (no OAuth — link your bot id manually).",
+  },
 };
 
 export function isVercelConnectChannelUid(connectorUid: string): boolean {
@@ -89,7 +100,9 @@ export function providerOfInboundChannel(connectorUid: string): string {
 
 /** Inbound platforms exposed on the Channels page. */
 export function getInboundChannels(): InboundChannelDef[] {
-  return (["slack", "discord"] as const).map((platform) => ({
+  const platforms: InboundChannelPlatform[] = ["slack", "discord"];
+  if (process.env.KAKAO_SKILL_ENABLED === "1") platforms.push("kakao");
+  return platforms.map((platform) => ({
     platform,
     ...INBOUND_CHANNEL_COPY[platform],
     connectorUid: resolveInboundConnectorUid(platform),

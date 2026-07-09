@@ -11,4 +11,6 @@ export const chatStubWebEnv = {
   GITHUB_CONNECT_CONNECTOR: "github/dev",
   DISCORD_CONNECT_CONNECTOR: "discord/dev",
   LINEAR_CONNECT_CONNECTOR: "linear/dev",
+  // Surface the Kakao channel card (no OAuth — manual bot-id link).
+  KAKAO_SKILL_ENABLED: "1",
 } as const;

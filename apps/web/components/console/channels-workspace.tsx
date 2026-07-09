@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowClockwiseIcon,
@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +33,8 @@ import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet"
 import {
   addInboundChannelWorkspaceStubAction,
   disconnectInboundChannelWorkspaceAction,
+  disconnectKakaoWorkspaceAction,
+  linkKakaoWorkspaceAction,
 } from "@/app/[orgSlug]/[teamspaceSlug]/channels/actions";
 import {
   inboundChannelAuthorizeHref,
@@ -343,6 +346,226 @@ function InboundChannelSettingsPanel({
   );
 }
 
+/**
+ * Kakao has no OAuth — link/disconnect a workspace by its Open Builder bot id
+ * directly instead of the Vercel Connect flow the other panel uses.
+ */
+function KakaoChannelSettingsPanel({
+  channel,
+  teamspaceId,
+  accountId,
+  returnTo,
+  onClose,
+}: {
+  channel: InboundChannelStatus;
+  teamspaceId: string;
+  accountId: string;
+  returnTo: string;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [botId, setBotId] = useState("");
+  const [label, setLabel] = useState("");
+  const [disconnectTarget, setDisconnectTarget] =
+    useState<InboundChannelWorkspace | null>(null);
+  const webhookUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/chat/kakao`
+      : "/api/chat/kakao";
+
+  function submitLink(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = botId.trim();
+    if (!trimmed) return;
+    startTransition(async () => {
+      await linkKakaoWorkspaceAction({
+        teamspaceId,
+        accountId,
+        botId: trimmed,
+        name: label,
+        revalidate: returnTo,
+      });
+      setBotId("");
+      setLabel("");
+      router.refresh();
+    });
+  }
+
+  function confirmDisconnect() {
+    if (!disconnectTarget) return;
+    startTransition(async () => {
+      await disconnectKakaoWorkspaceAction({
+        teamspaceId,
+        workspaceId: disconnectTarget.id,
+        revalidate: returnTo,
+      });
+      setDisconnectTarget(null);
+      router.refresh();
+      if (channel.workspaces.length <= 1) onClose();
+    });
+  }
+
+  return (
+    <>
+      <CardListSheetPanel
+        title={channel.label}
+        subtitle={channel.description}
+        onClose={onClose}
+        headerPrefix={
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+            <ConnectorBrandIcon provider={channel.platform} className="size-5" />
+          </span>
+        }
+      >
+        <div className="space-y-4" data-testid="channel-detail-kakao">
+          <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+            Paste this webhook URL into your Kakao i Open Builder skill and
+            connect it to the fallback block (no utterances to design — every
+            message routes here):
+            <br />
+            <span className="break-all font-mono">{webhookUrl}</span>
+          </p>
+
+          <AgentSettingCard.Root testId="channel-workspaces-kakao">
+            <AgentSettingCard.Header
+              title="Bots"
+              description="Kakao Open Builder bots linked to this project."
+            />
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+                {channel.workspaces.length === 0 ? (
+                  <AgentSettingCard.Empty>
+                    No bots linked yet.
+                  </AgentSettingCard.Empty>
+                ) : (
+                  channel.workspaces.map((workspace) => {
+                    const itemKey = workspaceItemKey(workspace);
+                    const title = workspace.name ?? workspace.workspaceKey;
+                    return (
+                      <AgentSettingCard.Item
+                        key={workspace.id}
+                        testId={`channel-workspace-kakao-${itemKey}`}
+                        icon={
+                          <ConnectorBrandIcon
+                            provider={channel.platform}
+                            className="size-3.5"
+                          />
+                        }
+                        title={title}
+                        subtitle={workspace.workspaceKey}
+                        trailing={
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={isPending}
+                                  className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                  aria-label={`Disconnect ${title}`}
+                                  onClick={() => setDisconnectTarget(workspace)}
+                                  data-testid={`channel-disconnect-kakao-${itemKey}`}
+                                />
+                              }
+                            >
+                              <LinkBreakIcon className="size-4" aria-hidden />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                              Disconnect
+                            </TooltipContent>
+                          </Tooltip>
+                        }
+                      />
+                    );
+                  })
+                )}
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <form
+                onSubmit={submitLink}
+                className="flex w-full flex-col gap-2 sm:flex-row sm:items-end"
+              >
+                <div className="flex-1 space-y-1">
+                  <label
+                    className="text-xs text-muted-foreground"
+                    htmlFor="kakao-bot-id"
+                  >
+                    Bot ID
+                  </label>
+                  <Input
+                    id="kakao-bot-id"
+                    value={botId}
+                    onChange={(event) => setBotId(event.target.value)}
+                    placeholder="Open Builder bot id"
+                    data-testid="channel-kakao-bot-id-input"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label
+                    className="text-xs text-muted-foreground"
+                    htmlFor="kakao-bot-label"
+                  >
+                    Label (optional)
+                  </label>
+                  <Input
+                    id="kakao-bot-label"
+                    value={label}
+                    onChange={(event) => setLabel(event.target.value)}
+                    placeholder="e.g. Support bot"
+                    data-testid="channel-kakao-bot-label-input"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isPending || !botId.trim()}
+                  className="gap-2"
+                  data-testid="channel-add-connection-kakao"
+                >
+                  <PlusIcon className="size-4" />
+                  Link
+                </Button>
+              </form>
+            </AgentSettingCard.Footer>
+          </AgentSettingCard.Root>
+        </div>
+      </CardListSheetPanel>
+
+      <AlertDialog
+        open={disconnectTarget !== null}
+        onOpenChange={(open) => !open && setDisconnectTarget(null)}
+      >
+        <AlertDialogContent data-testid="channel-disconnect-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect bot?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {disconnectTarget
+                ? `Disconnect ${disconnectTarget.name ?? disconnectTarget.workspaceKey} from this project. It will stop receiving inbound Kakao messages until you link it again.`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="channel-disconnect-cancel">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="channel-disconnect-confirm"
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={confirmDisconnect}
+            >
+              {isPending ? "Disconnecting…" : "Disconnect"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 export function ChannelsWorkspace({
   channels,
   teamspaceId,
@@ -381,14 +604,24 @@ export function ChannelsWorkspace({
       </BrowseWorkspace.Frame>
 
       {activeChannel ? (
-        <InboundChannelSettingsPanel
-          channel={activeChannel}
-          teamspaceId={teamspaceId}
-          accountId={accountId}
-          returnTo={returnTo}
-          connectStubEnabled={connectStubEnabled}
-          onClose={() => setActiveId(null)}
-        />
+        activeChannel.platform === "kakao" ? (
+          <KakaoChannelSettingsPanel
+            channel={activeChannel}
+            teamspaceId={teamspaceId}
+            accountId={accountId}
+            returnTo={returnTo}
+            onClose={() => setActiveId(null)}
+          />
+        ) : (
+          <InboundChannelSettingsPanel
+            channel={activeChannel}
+            teamspaceId={teamspaceId}
+            accountId={accountId}
+            returnTo={returnTo}
+            connectStubEnabled={connectStubEnabled}
+            onClose={() => setActiveId(null)}
+          />
+        )
       ) : null}
     </CardListSheet.Root>
   );

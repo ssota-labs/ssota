@@ -136,6 +136,51 @@ export async function disconnectInboundChannelWorkspaceAction(input: {
   revalidatePath(input.revalidate);
 }
 
+/**
+ * Kakao has no OAuth — link a workspace by recording its Open Builder bot id
+ * directly (no `account_connections` row, so no Connect revocation on
+ * disconnect either; see disconnectKakaoWorkspaceAction).
+ */
+export async function linkKakaoWorkspaceAction(input: {
+  teamspaceId: string;
+  accountId: string;
+  botId: string;
+  name?: string;
+  revalidate: string;
+}): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const botId = input.botId.trim();
+  if (!botId) throw new Error("Kakao bot id is required");
+
+  await resolveApiAccountScope(input.teamspaceId, {
+    requestedAccountId: input.accountId,
+  });
+
+  await getChatWorkspacePort().link({
+    teamspaceId: input.teamspaceId,
+    accountId: input.accountId,
+    platform: "kakao",
+    workspaceKey: botId,
+    name: input.name?.trim() || null,
+  });
+
+  revalidatePath(input.revalidate);
+}
+
+export async function disconnectKakaoWorkspaceAction(input: {
+  teamspaceId: string;
+  workspaceId: string;
+  revalidate: string;
+}): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  await getChatWorkspacePort().unlink(input.workspaceId, input.teamspaceId);
+  revalidatePath(input.revalidate);
+}
+
 /** @deprecated Prefer disconnectInboundChannelWorkspaceAction per workspace row. */
 export async function disconnectInboundChannelAction(input: {
   teamspaceId: string;
