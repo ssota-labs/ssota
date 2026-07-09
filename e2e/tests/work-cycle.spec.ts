@@ -3,7 +3,7 @@ import { gotoProject } from "../helpers/console";
 import { loginAsSmoke } from "../helpers/auth";
 
 test.describe("Work cycle map", () => {
-  test("loads single React Flow canvas with cycles collapsed by default", async ({
+  test("parent/child subflow mode nests gates inside expanded cycle", async ({
     page,
   }) => {
     await loginAsSmoke(page);
@@ -11,48 +11,64 @@ test.describe("Work cycle map", () => {
 
     await expect(page.getByTestId("work-cycle-workspace")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Work cycles" })).toBeVisible();
-    await expect(page.getByText(/cycles,/)).toBeVisible();
-    await expect(page.getByText("Work cycle map (A–G)")).toBeVisible();
 
-    // One React Flow canvas — expand/collapse lives on nodes (official RF pattern).
-    await expect(page.getByTestId("work-cycle-flow-canvas")).toBeVisible({
+    // Default mode is parent/child (subflow).
+    await expect(page.getByTestId("work-cycle-mode-subflow")).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByTestId("work-cycle-flow-canvas-subflow")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.locator(".react-flow")).toBeVisible();
 
-    // Cycle nodes present; topology gates hidden until expand.
     await expect(
       page.getByTestId("work-cycle-expand-initiative_planning"),
     ).toBeVisible();
     await expect(page.getByText("PRD ApprovalInbox")).toHaveCount(0);
 
-    await test.info().attach("work-cycle-rf-collapsed", {
+    await test.info().attach("work-cycle-subflow-collapsed", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
+
+    await page.getByTestId("work-cycle-expand-initiative_planning").click();
+
+    await expect(page.getByText("PRD ApprovalInbox")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Feature/Story gate")).toBeVisible();
+    // Group parent has grown around children.
+    await expect(
+      page.getByTestId("work-cycle-group-initiative_planning"),
+    ).toBeVisible();
+
+    await test.info().attach("work-cycle-subflow-expanded", {
       body: await page.screenshot(),
       contentType: "image/png",
     });
   });
 
-  test("expanding cycle node reveals topology gates in the same canvas", async ({
+  test("expand-collapse mode shows gates as flat siblings after expand", async ({
     page,
   }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "work-cycle");
 
-    await expect(page.getByTestId("work-cycle-workspace")).toBeVisible();
-    const expand = page.getByTestId("work-cycle-expand-initiative_planning");
-    await expect(expand).toBeVisible({ timeout: 15_000 });
-    await expand.click();
+    await page.getByTestId("work-cycle-mode-expand-collapse").click();
+    await expect(
+      page.getByTestId("work-cycle-flow-canvas-expand"),
+    ).toBeVisible({ timeout: 15_000 });
 
-    // Gates appear inside the same React Flow (hidden → visible).
+    await page.getByTestId("work-cycle-expand-initiative_planning").click();
     await expect(page.getByText("PRD ApprovalInbox")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Feature/Story gate")).toBeVisible();
+    // Flat mode does not wrap children in a group shell.
     await expect(
-      page.locator(".react-flow").filter({ hasText: "PRD ApprovalInbox" }),
-    ).toBeVisible();
+      page.getByTestId("work-cycle-group-initiative_planning"),
+    ).toHaveCount(0);
 
-    await test.info().attach("work-cycle-rf-expanded", {
+    await test.info().attach("work-cycle-expand-mode", {
       body: await page.screenshot(),
       contentType: "image/png",
     });

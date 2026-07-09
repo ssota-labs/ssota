@@ -20,7 +20,10 @@ import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/componen
 import { layoutFlow } from "@/lib/page-runtime/flow-layout";
 import type { FlowModel } from "@/lib/page-runtime/flow-model";
 import {
+  SUBFLOW_HEADER_H,
+  SUBFLOW_PAD,
   buildExpandCollapseModel,
+  buildSubflowModel,
   type GatePolicyInstance,
   type OverviewNodeData,
   type TopologyNodeData,
@@ -29,9 +32,47 @@ import {
 
 const DIAGRAM_HEIGHT = 720;
 
+export type WorkCycleDiagramMode = "expand-collapse" | "subflow";
+
 type CycleCardData = OverviewNodeData & {
   onToggleExpand?: (cycleKey: string) => void;
 };
+
+function ExpandToggle({
+  cycleKey,
+  expanded,
+  expandable,
+  onToggleExpand,
+}: {
+  cycleKey: string;
+  expanded: boolean;
+  expandable: boolean;
+  onToggleExpand?: (cycleKey: string) => void;
+}) {
+  if (!expandable) return null;
+  return (
+    <button
+      type="button"
+      data-testid={`work-cycle-expand-${cycleKey}`}
+      aria-expanded={expanded}
+      aria-label={expanded ? "Collapse cycle" : "Expand cycle"}
+      className={cn(
+        "border-border bg-background hover:bg-muted text-muted-foreground",
+        "flex size-7 shrink-0 items-center justify-center rounded-md border",
+      )}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        onToggleExpand?.(cycleKey);
+      }}
+    >
+      {expanded ? (
+        <MinusIcon className="size-3.5" weight="bold" />
+      ) : (
+        <PlusIcon className="size-3.5" weight="bold" />
+      )}
+    </button>
+  );
+}
 
 function CycleCardNode({ data, selected }: NodeProps) {
   const d = data as unknown as CycleCardData;
@@ -57,28 +98,47 @@ function CycleCardNode({ data, selected }: NodeProps) {
             {d.orchestratorMode ? <span>orch: {d.orchestratorMode}</span> : null}
           </div>
         </div>
-        {d.expandable ? (
-          <button
-            type="button"
-            data-testid={`work-cycle-expand-${d.cycleKey}`}
-            aria-expanded={d.expanded}
-            aria-label={d.expanded ? "Collapse cycle" : "Expand cycle"}
-            className={cn(
-              "border-border bg-background hover:bg-muted text-muted-foreground",
-              "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border",
-            )}
-            onClick={(ev) => {
-              ev.stopPropagation();
-              d.onToggleExpand?.(d.cycleKey);
-            }}
-          >
-            {d.expanded ? (
-              <MinusIcon className="size-3.5" weight="bold" />
-            ) : (
-              <PlusIcon className="size-3.5" weight="bold" />
-            )}
-          </button>
-        ) : null}
+        <ExpandToggle
+          cycleKey={d.cycleKey}
+          expanded={d.expanded}
+          expandable={d.expandable}
+          onToggleExpand={d.onToggleExpand}
+        />
+      </div>
+      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+    </div>
+  );
+}
+
+/** Parent group for Sub Flow mode — children sit inside this box. */
+function CycleGroupNode({ data, selected }: NodeProps) {
+  const d = data as unknown as CycleCardData;
+  return (
+    <div
+      className={cn(
+        "border-border bg-muted/30 h-full w-full rounded-xl border-2 border-dashed",
+        selected && "ring-primary ring-2",
+        "border-primary/35",
+      )}
+      data-testid={`work-cycle-group-${d.cycleKey}`}
+    >
+      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <div
+        className="border-border/60 flex items-start gap-2 border-b px-3 py-2"
+        style={{ height: SUBFLOW_HEADER_H }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+            {d.letter}. {d.group}
+          </div>
+          <div className="text-sm font-semibold leading-snug">{d.title}</div>
+        </div>
+        <ExpandToggle
+          cycleKey={d.cycleKey}
+          expanded={d.expanded}
+          expandable={d.expandable}
+          onToggleExpand={d.onToggleExpand}
+        />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
     </div>
@@ -91,12 +151,13 @@ function TopologyStepNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-card border-border w-[200px] rounded-lg border px-3 py-2 shadow-sm",
+        "bg-card border-border w-full rounded-lg border px-3 py-2 shadow-sm",
         isGate && "border-amber-500/60 bg-amber-500/5",
         d.nodeKind === "trigger" && "border-dashed",
         d.nodeKind === "end" && "border-emerald-600/40",
         selected && "ring-primary ring-2",
       )}
+      style={{ minWidth: 160 }}
       data-testid={
         isGate
           ? `work-cycle-gate-${d.parentCycleKey}-${d.gatePolicyKey ?? d.label}`
@@ -131,6 +192,7 @@ function TopologyStepNode({ data, selected }: NodeProps) {
 
 const NODE_TYPES = {
   cycleCard: CycleCardNode,
+  cycleGroup: CycleGroupNode,
   topologyStep: TopologyStepNode,
 };
 
@@ -174,11 +236,13 @@ function WorkCycleFlowCanvas({
   edges,
   height = DIAGRAM_HEIGHT,
   fitKey,
+  testId = "work-cycle-flow-canvas",
 }: {
   nodes: Node[];
   edges: Edge[];
   height?: number;
   fitKey: string;
+  testId?: string;
 }) {
   const hostRef = React.useRef<HTMLDivElement | null>(null);
   return (
@@ -186,7 +250,7 @@ function WorkCycleFlowCanvas({
       ref={hostRef}
       className="border-border bg-muted/20 relative w-full overflow-hidden rounded-xl border"
       style={{ height }}
-      data-testid="work-cycle-flow-canvas"
+      data-testid={testId}
     >
       <ReactFlowProvider>
         <ReactFlow
@@ -211,9 +275,39 @@ function WorkCycleFlowCanvas({
   );
 }
 
+function useToggleExpanded() {
+  const [expandedCycleKeys, setExpandedCycleKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const toggleExpand = React.useCallback((cycleKey: string) => {
+    setExpandedCycleKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(cycleKey)) next.delete(cycleKey);
+      else next.add(cycleKey);
+      return next;
+    });
+  }, []);
+  const fitKey = React.useMemo(
+    () => [...expandedCycleKeys].toSorted().join(","),
+    [expandedCycleKeys],
+  );
+  return { expandedCycleKeys, toggleExpand, fitKey };
+}
+
+function edgeStyle(kind: string) {
+  const dashed = kind === "feed" || kind === "handoff" || kind === "expand";
+  return {
+    style: dashed
+      ? { strokeDasharray: "6 4" }
+      : kind === "reject_loop"
+        ? { stroke: "var(--destructive)" }
+        : undefined,
+    markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 } as const,
+  };
+}
+
 /**
- * One React Flow canvas with all work cycles. Expanding a cycle reveals its
- * topology (stages + gates) via the official `hidden` expand/collapse pattern.
+ * Flat expand/collapse: children are siblings on the canvas; visibility via `hidden`.
  * @see https://reactflow.dev/examples/layout/expand-collapse
  */
 export function WorkCycleExpandCollapseDiagram({
@@ -229,18 +323,7 @@ export function WorkCycleExpandCollapseDiagram({
     return map;
   }, [policies]);
 
-  const [expandedCycleKeys, setExpandedCycleKeys] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-
-  const toggleExpand = React.useCallback((cycleKey: string) => {
-    setExpandedCycleKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(cycleKey)) next.delete(cycleKey);
-      else next.add(cycleKey);
-      return next;
-    });
-  }, []);
+  const { expandedCycleKeys, toggleExpand, fitKey } = useToggleExpanded();
 
   const model = React.useMemo(
     () => buildExpandCollapseModel(cycles, policiesByKey, expandedCycleKeys),
@@ -252,7 +335,6 @@ export function WorkCycleExpandCollapseDiagram({
 
   React.useEffect(() => {
     let cancelled = false;
-    // Layout only visible (non-hidden) nodes — matches RF expand-collapse examples.
     const visibleNodes = model.nodes.filter((n) => !n.hidden);
     const visibleIds = new Set(visibleNodes.map((n) => n.id));
     const visibleEdges = model.edges.filter(
@@ -292,23 +374,14 @@ export function WorkCycleExpandCollapseDiagram({
         }),
       );
       setEdges(
-        model.edges.map((e) => {
-          const dashed =
-            e.kind === "feed" || e.kind === "handoff" || e.kind === "expand";
-          return {
-            id: e.id,
-            source: e.source,
-            target: e.target,
-            hidden: e.hidden,
-            label: e.label,
-            style: dashed
-              ? { strokeDasharray: "6 4" }
-              : e.kind === "reject_loop"
-                ? { stroke: "var(--destructive)" }
-                : undefined,
-            markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-          };
-        }),
+        model.edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          hidden: e.hidden,
+          label: e.label,
+          ...edgeStyle(e.kind),
+        })),
       );
     });
     return () => {
@@ -316,12 +389,192 @@ export function WorkCycleExpandCollapseDiagram({
     };
   }, [model, toggleExpand]);
 
-  const fitKey = React.useMemo(
-    () => [...expandedCycleKeys].toSorted().join(","),
-    [expandedCycleKeys],
+  return (
+    <WorkCycleFlowCanvas
+      nodes={nodes}
+      edges={edges}
+      fitKey={fitKey || "collapsed"}
+      testId="work-cycle-flow-canvas-expand"
+    />
+  );
+}
+
+/**
+ * Parent/child Sub Flow: topology steps nest inside an expanded cycle group
+ * via React Flow `parentId` + relative positions.
+ * @see https://reactflow.dev/learn/layouting/sub-flows
+ */
+export function WorkCycleSubflowDiagram({
+  cycles,
+  policies,
+}: {
+  cycles: WorkCycleInstance[];
+  policies: GatePolicyInstance[];
+}) {
+  const policiesByKey = React.useMemo(() => {
+    const map = new Map<string, GatePolicyInstance>();
+    for (const p of policies) map.set(p.properties.policyKey, p);
+    return map;
+  }, [policies]);
+
+  const { expandedCycleKeys, toggleExpand, fitKey } = useToggleExpanded();
+
+  const model = React.useMemo(
+    () => buildSubflowModel(cycles, policiesByKey, expandedCycleKeys),
+    [cycles, policiesByKey, expandedCycleKeys],
   );
 
+  const [nodes, setNodes] = React.useState<Node[]>([]);
+  const [edges, setEdges] = React.useState<Edge[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      // 1) Layout each nested topology (relative coords for children).
+      const nestedPositions = new Map<
+        string,
+        { positions: Record<string, { x: number; y: number }>; width: number; height: number }
+      >();
+
+      for (const nest of model.nestedLayouts) {
+        const laid = await layoutFlow(
+          {
+            nodes: nest.nodes.map((n) => ({
+              id: n.id,
+              title: n.id,
+              width: n.width,
+              height: n.height,
+            })),
+            edges: nest.edges,
+          },
+          "LR",
+        );
+        let maxX = 0;
+        let maxY = 0;
+        for (const n of nest.nodes) {
+          const p = laid[n.id] ?? { x: 0, y: 0 };
+          maxX = Math.max(maxX, p.x + n.width);
+          maxY = Math.max(maxY, p.y + n.height);
+        }
+        // Offset children below the group header inside the parent.
+        const offsetPositions: Record<string, { x: number; y: number }> = {};
+        for (const [id, p] of Object.entries(laid)) {
+          offsetPositions[id] = {
+            x: p.x + SUBFLOW_PAD,
+            y: p.y + SUBFLOW_HEADER_H + SUBFLOW_PAD,
+          };
+        }
+        nestedPositions.set(nest.cycleKey, {
+          positions: offsetPositions,
+          width: Math.max(280, maxX + SUBFLOW_PAD * 2),
+          height: Math.max(160, maxY + SUBFLOW_HEADER_H + SUBFLOW_PAD * 2),
+        });
+      }
+
+      if (cancelled) return;
+
+      // 2) Layout top-level cycle nodes (only parents; children are relative).
+      const topLevel = model.nodes.filter((n) => !n.parentId);
+      const topWithSize = topLevel.map((n) => {
+        const nest = nestedPositions.get(n.id);
+        return {
+          id: n.id,
+          title: n.data.kind === "cycle" ? n.data.title : n.id,
+          width: nest?.width ?? n.width,
+          height: nest?.height ?? n.height,
+        };
+      });
+
+      const outerPositions = await layoutFlow(
+        {
+          nodes: topWithSize,
+          edges: model.edges
+            .filter((e) => !e.id.includes("::"))
+            .map((e) => ({ id: e.id, source: e.source, target: e.target })),
+        },
+        "LR",
+      );
+
+      if (cancelled) return;
+
+      // Parents must come before children in the RF nodes array.
+      const rfNodes: Node[] = [];
+      for (const n of model.nodes) {
+        if (n.parentId) continue;
+        const nest = nestedPositions.get(n.id);
+        const w = nest?.width ?? n.width;
+        const h = nest?.height ?? n.height;
+        const baseData =
+          n.data.kind === "cycle"
+            ? ({ ...n.data, onToggleExpand: toggleExpand } satisfies CycleCardData)
+            : n.data;
+        rfNodes.push({
+          id: n.id,
+          type: n.rfType,
+          position: outerPositions[n.id] ?? { x: 0, y: 0 },
+          data: baseData,
+          style: n.rfType === "cycleGroup" ? { width: w, height: h } : undefined,
+          width: n.rfType === "cycleGroup" ? w : undefined,
+          height: n.rfType === "cycleGroup" ? h : undefined,
+        });
+      }
+      for (const n of model.nodes) {
+        if (!n.parentId) continue;
+        const nest = nestedPositions.get(n.parentId);
+        const rel = nest?.positions[n.id] ?? { x: SUBFLOW_PAD, y: SUBFLOW_HEADER_H };
+        rfNodes.push({
+          id: n.id,
+          type: n.rfType,
+          parentId: n.parentId,
+          extent: "parent",
+          position: rel,
+          data: n.data,
+          style: { width: n.width, height: n.height },
+          draggable: false,
+        });
+      }
+
+      setNodes(rfNodes);
+      setEdges(
+        model.edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          label: e.label,
+          zIndex: e.id.includes("::") ? 10 : 0,
+          ...edgeStyle(e.kind),
+        })),
+      );
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [model, toggleExpand]);
+
   return (
-    <WorkCycleFlowCanvas nodes={nodes} edges={edges} fitKey={fitKey || "collapsed"} />
+    <WorkCycleFlowCanvas
+      nodes={nodes}
+      edges={edges}
+      fitKey={`sub:${fitKey || "collapsed"}`}
+      testId="work-cycle-flow-canvas-subflow"
+    />
   );
+}
+
+export function WorkCycleDiagram({
+  cycles,
+  policies,
+  mode,
+}: {
+  cycles: WorkCycleInstance[];
+  policies: GatePolicyInstance[];
+  mode: WorkCycleDiagramMode;
+}) {
+  if (mode === "subflow") {
+    return <WorkCycleSubflowDiagram cycles={cycles} policies={policies} />;
+  }
+  return <WorkCycleExpandCollapseDiagram cycles={cycles} policies={policies} />;
 }
