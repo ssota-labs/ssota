@@ -59,6 +59,9 @@ export type OverviewNodeData = {
   orchestratorMode?: string;
   gateCount: number;
   stageCount: number;
+  /** React Flow expand/collapse — children hidden when false. */
+  expanded: boolean;
+  expandable: boolean;
 };
 
 export type TopologyNodeData = {
@@ -69,7 +72,13 @@ export type TopologyNodeData = {
   gatePolicyKey?: string;
   gateSummary?: string;
   owner?: string;
+  parentCycleKey: string;
 };
+
+/** Prefix topology node ids so they stay unique across cycles in one canvas. */
+export function topologyNodeId(cycleKey: string, localId: string): string {
+  return `${cycleKey}::${localId}`;
+}
 
 export function buildOverviewModel(cycles: WorkCycleInstance[]) {
   const sorted = [...cycles].sort(
@@ -89,6 +98,8 @@ export function buildOverviewModel(cycles: WorkCycleInstance[]) {
         orchestratorMode: c.properties.orchestratorMode,
         gateCount: topo.nodes.filter((n) => n.kind === "gate").length,
         stageCount: topo.nodes.filter((n) => n.kind === "stage").length,
+        expanded: false,
+        expandable: topo.nodes.length > 0,
       } satisfies OverviewNodeData,
     };
   });
@@ -119,6 +130,7 @@ export function buildOverviewModel(cycles: WorkCycleInstance[]) {
 export function buildTopologyModel(
   topology: WorkCycleTopology,
   policiesByKey: Map<string, GatePolicyInstance>,
+  parentCycleKey = "",
 ) {
   const nodes = topology.nodes.map((n) => {
     const policy = n.gatePolicyKey
@@ -137,8 +149,142 @@ export function buildTopologyModel(
           ? `${require0.path}${require0.in ? ` ∈ [${require0.in.join(",")}]` : ""}`
           : undefined,
         owner: n.owner,
+        parentCycleKey,
       } satisfies TopologyNodeData,
     };
   });
   return { nodes, edges: topology.edges };
+}
+
+/**
+ * Single-canvas expand/collapse model (React Flow official pattern):
+ * all cycle + topology nodes exist; topology nodes/edges use `hidden`
+ * when the parent cycle is collapsed.
+ * @see https://reactflow.dev/examples/layout/expand-collapse
+ */
+export function buildExpandCollapseModel(
+  cycles: WorkCycleInstance[],
+  policiesByKey: Map<string, GatePolicyInstance>,
+  expandedCycleKeys: ReadonlySet<string>,
+) {
+  const sorted = [...cycles].sort(
+    (a, b) => a.properties.sortOrder - b.properties.sortOrder,
+  );
+  const knownKeys = new Set(sorted.map((c) => c.properties.cycleKey));
+
+  type GraphNode = {
+    id: string;
+    parentId?: string;
+    width: number;
+    height: number;
+    hidden: boolean;
+    data: OverviewNodeData | TopologyNodeData;
+    rfType: "cycleCard" | "topologyStep";
+  };
+
+  type GraphEdge = {
+    id: string;
+    source: string;
+    target: string;
+    hidden: boolean;
+    kind: "handoff" | "sequence" | "feed" | "reject_loop" | "expand";
+    label?: string;
+  };
+
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+
+  for (const c of sorted) {
+    const cycleKey = c.properties.cycleKey;
+    const meta = WORK_CYCLE_GROUP_META[c.properties.group];
+    const topo = c.properties.topology;
+    const expanded = expandedCycleKeys.has(cycleKey);
+    const gateCount = topo.nodes.filter((n) => n.kind === "gate").length;
+    const stageCount = topo.nodes.filter((n) => n.kind === "stage").length;
+
+    nodes.push({
+      id: cycleKey,
+      width: 240,
+      height: 96,
+      hidden: false,
+      rfType: "cycleCard",
+      data: {
+        kind: "cycle",
+        cycleKey,
+        title: c.title,
+        group: c.properties.group,
+        letter: meta.letter,
+        orchestratorMode: c.properties.orchestratorMode,
+        gateCount,
+        stageCount,
+        expanded,
+        expandable: topo.nodes.length > 0,
+      },
+    });
+
+    for (const n of topo.nodes) {
+      const policy = n.gatePolicyKey
+        ? policiesByKey.get(n.gatePolicyKey)
+        : undefined;
+      const require0 = policy?.properties.require[0];
+      const id = topologyNodeId(cycleKey, n.id);
+      nodes.push({
+        id,
+        parentId: cycleKey,
+        width: 200,
+        height: n.kind === "gate" ? 100 : 80,
+        hidden: !expanded,
+        rfType: "topologyStep",
+        data: {
+          kind: "topology",
+          nodeKind: n.kind,
+          label: n.label,
+          catalogKeys: n.catalogKeys,
+          gatePolicyKey: n.gatePolicyKey,
+          gateSummary: require0
+            ? `${require0.path}${require0.in ? ` ∈ [${require0.in.join(",")}]` : ""}`
+            : undefined,
+          owner: n.owner,
+          parentCycleKey: cycleKey,
+        },
+      });
+    }
+
+    // Bridge: cycle → first topology trigger/stage when expanded (tree root).
+    const entry =
+      topo.nodes.find((n) => n.kind === "trigger") ?? topo.nodes[0];
+    if (entry) {
+      edges.push({
+        id: `${cycleKey}::expand->${entry.id}`,
+        source: cycleKey,
+        target: topologyNodeId(cycleKey, entry.id),
+        hidden: !expanded,
+        kind: "expand",
+      });
+    }
+
+    for (const e of topo.edges) {
+      edges.push({
+        id: `${cycleKey}::${e.id}`,
+        source: topologyNodeId(cycleKey, e.source),
+        target: topologyNodeId(cycleKey, e.target),
+        hidden: !expanded,
+        kind: e.kind === "reject_loop" ? "reject_loop" : e.kind === "feed" || e.kind === "handoff" ? e.kind : "sequence",
+        label: e.label,
+      });
+    }
+
+    for (const target of c.properties.handoffToCycleKeys ?? []) {
+      if (!knownKeys.has(target)) continue;
+      edges.push({
+        id: `${cycleKey}->${target}`,
+        source: cycleKey,
+        target,
+        hidden: false,
+        kind: "handoff",
+      });
+    }
+  }
+
+  return { nodes, edges };
 }
