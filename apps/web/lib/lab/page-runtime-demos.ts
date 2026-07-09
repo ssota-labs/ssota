@@ -1,5 +1,6 @@
 import type { JsonRenderSpec } from "@ssota/contracts";
 import { DESIGN_THEME_TOKEN_MANIFEST } from "@ssota/contracts/catalog";
+import { axRecruitingDashboard } from "./ax-recruiting-dashboard-demo";
 
 export type PageRuntimeDemoCategory =
   | "layout"
@@ -352,6 +353,7 @@ export const PAGE_RUNTIME_DEMO_CATEGORIES: {
 ];
 
 export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
+  axRecruitingDashboard,
   {
     id: "layout-header",
     category: "layout",
