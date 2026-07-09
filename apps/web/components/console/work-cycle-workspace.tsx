@@ -3,11 +3,6 @@
 import * as React from "react";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@ssota/ui/components/ui/collapsible";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import {
@@ -53,16 +48,14 @@ type WorkCycleWorkspaceProps = {
   policyNodes: RawNode[];
 };
 
-function CycleAccordionRow({
+function CycleRowTrigger({
   cycle,
-  policies,
   open,
-  onOpenChange,
+  onToggle,
 }: {
   cycle: WorkCycleInstance;
-  policies: GatePolicyInstance[];
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onToggle: () => void;
 }) {
   const meta = WORK_CYCLE_GROUP_META[cycle.properties.group];
   const topo = cycle.properties.topology;
@@ -70,67 +63,38 @@ function CycleAccordionRow({
   const stageCount = topo.nodes.filter((n) => n.kind === "stage").length;
   const cycleKey = cycle.properties.cycleKey;
 
-  // Defer React Flow mount until the collapsible panel has real dimensions
-  // (fitView on a 0-width host collapses all nodes off-canvas).
-  const [diagramReady, setDiagramReady] = React.useState(false);
-  React.useEffect(() => {
-    if (!open) {
-      setDiagramReady(false);
-      return;
-    }
-    const id = window.setTimeout(() => setDiagramReady(true), 50);
-    return () => window.clearTimeout(id);
-  }, [open]);
-
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={onOpenChange}
-      data-testid={`work-cycle-item-${cycleKey}`}
-      className="border-border rounded-lg border"
+    <button
+      type="button"
+      data-testid={`work-cycle-trigger-${cycleKey}`}
+      aria-expanded={open}
+      onClick={onToggle}
+      className={cn(
+        "border-border hover:bg-muted/40 flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left",
+        open && "bg-muted/30",
+      )}
     >
-      <CollapsibleTrigger
-        data-testid={`work-cycle-trigger-${cycleKey}`}
-        className="hover:bg-muted/40 flex w-full items-center gap-3 px-3 py-3 text-left"
-      >
-        <CaretDownIcon
-          className={cn(
-            "text-muted-foreground size-4 shrink-0 transition-transform",
-            open && "rotate-180",
-          )}
-        />
-        <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-          <span className="text-sm font-semibold">
-            {meta.letter}. {cycle.title}
-          </span>
-          <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-normal">
-            <Badge variant="secondary">{stageCount} stages</Badge>
-            <Badge variant={gateCount > 0 ? "outline" : "secondary"}>
-              {gateCount} gates
-            </Badge>
-            {cycle.properties.orchestratorMode ? (
-              <span>orch: {cycle.properties.orchestratorMode}</span>
-            ) : null}
-          </span>
+      <CaretDownIcon
+        className={cn(
+          "text-muted-foreground size-4 shrink-0 transition-transform",
+          open && "rotate-180",
+        )}
+      />
+      <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+        <span className="text-sm font-semibold">
+          {meta.letter}. {cycle.title}
         </span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="border-border border-t px-2 pb-3 pt-2">
-        <p className="text-muted-foreground mb-3 px-1 text-sm">
-          {cycle.properties.loopSummary ?? cycle.properties.endCondition}
-        </p>
-        {open && diagramReady ? (
-          <WorkCycleTopologyDiagram
-            key={cycleKey}
-            cycle={cycle}
-            policies={policies}
-          />
-        ) : open ? (
-          <div className="bg-muted/20 border-border text-muted-foreground flex h-[480px] items-center justify-center rounded-xl border text-sm">
-            Laying out topology…
-          </div>
-        ) : null}
-      </CollapsibleContent>
-    </Collapsible>
+        <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-normal">
+          <Badge variant="secondary">{stageCount} stages</Badge>
+          <Badge variant={gateCount > 0 ? "outline" : "secondary"}>
+            {gateCount} gates
+          </Badge>
+          {cycle.properties.orchestratorMode ? (
+            <span>orch: {cycle.properties.orchestratorMode}</span>
+          ) : null}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -173,7 +137,6 @@ export function WorkCycleWorkspace({
             cycles={cycles}
             onSelectCycle={(cycleKey) => {
               setOpenCycleKey(cycleKey);
-              // Scroll the matching accordion row into view after open.
               requestAnimationFrame(() => {
                 document
                   .querySelector(`[data-testid="work-cycle-item-${cycleKey}"]`)
@@ -195,16 +158,38 @@ export function WorkCycleWorkspace({
           <div className="flex flex-col gap-2">
             {cycles.map((cycle) => {
               const cycleKey = cycle.properties.cycleKey;
+              const open = openCycleKey === cycleKey;
               return (
-                <CycleAccordionRow
+                <div
                   key={cycleKey}
-                  cycle={cycle}
-                  policies={policies}
-                  open={openCycleKey === cycleKey}
-                  onOpenChange={(next) =>
-                    setOpenCycleKey(next ? cycleKey : null)
-                  }
-                />
+                  data-testid={`work-cycle-item-${cycleKey}`}
+                  className="flex flex-col gap-2"
+                >
+                  <CycleRowTrigger
+                    cycle={cycle}
+                    open={open}
+                    onToggle={() =>
+                      setOpenCycleKey((prev) =>
+                        prev === cycleKey ? null : cycleKey,
+                      )
+                    }
+                  />
+                  {/* Topology sits outside animated collapse panels so React Flow
+                      measures a real width (avoids empty fitView). */}
+                  {open ? (
+                    <div className="border-border bg-card rounded-lg border p-3">
+                      <p className="text-muted-foreground mb-3 text-sm">
+                        {cycle.properties.loopSummary ??
+                          cycle.properties.endCondition}
+                      </p>
+                      <WorkCycleTopologyDiagram
+                        key={cycleKey}
+                        cycle={cycle}
+                        policies={policies}
+                      />
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
           </div>
