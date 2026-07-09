@@ -97,24 +97,53 @@ const NODE_TYPES = {
   topologyStep: TopologyStepNode,
 };
 
-function FitViewOnce() {
+function FitViewWhenReady({ hostRef }: { hostRef: React.RefObject<HTMLDivElement | null> }) {
   const { fitView } = useReactFlow();
   const ready = useNodesInitialized();
+
   React.useEffect(() => {
-    if (ready) void fitView({ padding: 0.15, minZoom: 0.2 });
-  }, [ready, fitView]);
+    if (!ready) return;
+    const run = () => {
+      const el = hostRef.current;
+      if (!el || el.clientWidth < 40 || el.clientHeight < 40) return;
+      void fitView({ padding: 0.15, minZoom: 0.2 });
+    };
+    // Double-rAF: wait for collapsible open + React Flow measure.
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(run);
+    });
+    const el = hostRef.current;
+    if (!el || typeof ResizeObserver === "undefined") {
+      return () => cancelAnimationFrame(raf);
+    }
+    const ro = new ResizeObserver(() => run());
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [ready, fitView, hostRef]);
+
   return null;
 }
 
 function WorkCycleFlowCanvas({
   nodes,
   edges,
+  height = DIAGRAM_HEIGHT,
 }: {
   nodes: Node[];
   edges: Edge[];
+  height?: number;
 }) {
+  const hostRef = React.useRef<HTMLDivElement | null>(null);
   return (
-    <div className="border-border bg-muted/20 relative h-[640px] overflow-hidden rounded-xl border">
+    <div
+      ref={hostRef}
+      className="border-border bg-muted/20 relative w-full overflow-hidden rounded-xl border"
+      style={{ height }}
+      data-testid="work-cycle-flow-canvas"
+    >
       <ReactFlowProvider>
         <ReactFlow
           nodes={nodes}
@@ -124,13 +153,14 @@ function WorkCycleFlowCanvas({
           nodesConnectable={false}
           elementsSelectable
           fitView
+          minZoom={0.15}
           proOptions={{ hideAttribution: true }}
-          style={{ height: DIAGRAM_HEIGHT }}
+          style={{ width: "100%", height }}
         >
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
           <FlowTopToolbar locked={false} onToggleLock={() => {}} />
           <FlowViewportToolbar />
-          <FitViewOnce />
+          <FitViewWhenReady hostRef={hostRef} />
         </ReactFlow>
       </ReactFlowProvider>
     </div>
@@ -271,5 +301,5 @@ export function WorkCycleTopologyDiagram({
     };
   }, [model]);
 
-  return <WorkCycleFlowCanvas nodes={nodes} edges={edges} />;
+  return <WorkCycleFlowCanvas nodes={nodes} edges={edges} height={480} />;
 }

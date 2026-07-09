@@ -70,6 +70,18 @@ function CycleAccordionRow({
   const stageCount = topo.nodes.filter((n) => n.kind === "stage").length;
   const cycleKey = cycle.properties.cycleKey;
 
+  // Defer React Flow mount until the collapsible panel has real dimensions
+  // (fitView on a 0-width host collapses all nodes off-canvas).
+  const [diagramReady, setDiagramReady] = React.useState(false);
+  React.useEffect(() => {
+    if (!open) {
+      setDiagramReady(false);
+      return;
+    }
+    const id = window.setTimeout(() => setDiagramReady(true), 50);
+    return () => window.clearTimeout(id);
+  }, [open]);
+
   return (
     <Collapsible
       open={open}
@@ -106,8 +118,16 @@ function CycleAccordionRow({
         <p className="text-muted-foreground mb-3 px-1 text-sm">
           {cycle.properties.loopSummary ?? cycle.properties.endCondition}
         </p>
-        {open ? (
-          <WorkCycleTopologyDiagram cycle={cycle} policies={policies} />
+        {open && diagramReady ? (
+          <WorkCycleTopologyDiagram
+            key={cycleKey}
+            cycle={cycle}
+            policies={policies}
+          />
+        ) : open ? (
+          <div className="bg-muted/20 border-border text-muted-foreground flex h-[480px] items-center justify-center rounded-xl border text-sm">
+            Laying out topology…
+          </div>
         ) : null}
       </CollapsibleContent>
     </Collapsible>
