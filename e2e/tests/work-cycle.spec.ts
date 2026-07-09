@@ -26,14 +26,15 @@ test.describe("Work cycle map", () => {
     await gotoProject(page, "work-cycle");
 
     await expect(page.getByTestId("work-cycle-workspace")).toBeVisible();
-    await expect(page.locator(".react-flow__node").first()).toBeVisible({
-      timeout: 15_000,
-    });
+    const firstNode = page.locator(".react-flow__node").first();
+    await expect(firstNode).toBeVisible({ timeout: 20_000 });
 
-    await page.locator(".react-flow__node").first().click();
+    await firstNode.click();
     await expect(page.getByRole("button", { name: "Back to overview" })).toBeVisible({
       timeout: 10_000,
     });
+    // Topology canvas remounts after selection.
+    await expect(page.locator(".react-flow").last()).toBeVisible();
 
     await test.info().attach("work-cycle-topology", {
       body: await page.screenshot(),

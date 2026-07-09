@@ -93,6 +93,7 @@ export function buildOverviewModel(cycles: WorkCycleInstance[]) {
     };
   });
 
+  const knownKeys = new Set(sorted.map((c) => c.properties.cycleKey));
   const edges: Array<{
     id: string;
     source: string;
@@ -102,6 +103,8 @@ export function buildOverviewModel(cycles: WorkCycleInstance[]) {
   }> = [];
   for (const c of sorted) {
     for (const target of c.properties.handoffToCycleKeys ?? []) {
+      // Skip dangling handoffs — ELK rejects edges to missing node ids.
+      if (!knownKeys.has(target)) continue;
       edges.push({
         id: `${c.properties.cycleKey}->${target}`,
         source: c.properties.cycleKey,

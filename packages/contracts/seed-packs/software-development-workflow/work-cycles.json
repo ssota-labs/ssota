@@ -10,7 +10,7 @@
       "startTriggers": ["quarterly_planning", "weekly_kpi_review", "roadmap_rebalance"],
       "loopSummary": "측정 → 판단 → 목표/로드맵 수정",
       "endCondition": "목표 체계 갱신 (코드 배포 필수 아님)",
-      "handoffToCycleKeys": ["planning"],
+      "handoffToCycleKeys": ["initiative_planning"],
       "includedNodeCatalogKeys": [
         "product_roadmap",
         "roadmap",
@@ -61,7 +61,7 @@
       "startTriggers": ["hypothesis_gap", "market_change", "orchestrator_research_spawn"],
       "loopSummary": "draft → testing → validated / rejected / parked",
       "endCondition": "validated(이니셔티브 후보) 또는 parked",
-      "handoffToCycleKeys": ["planning"],
+      "handoffToCycleKeys": ["initiative_planning"],
       "includedNodeCatalogKeys": [
         "market_research",
         "user_research",
@@ -319,7 +319,7 @@
       "startTriggers": ["ux_needed_in_planning_or_build"],
       "loopSummary": "IA/플로우/와이어 ↔ 리뷰 ↔ DS 동기화",
       "endCondition": "스펙·스토리에 흡수",
-      "handoffToCycleKeys": ["planning", "delivery"],
+      "handoffToCycleKeys": ["initiative_planning", "delivery"],
       "includedNodeCatalogKeys": [
         "information_architecture",
         "user_flow",
