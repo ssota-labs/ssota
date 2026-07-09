@@ -3,7 +3,9 @@ import { getDb } from "@ssota/agent-runtime";
 
 /**
  * Best-effort extraction of the workspace/tenant id from a platform's raw
- * payload (Slack `team_id`/`team`, Discord `guild_id`, Telegram `chat.id`).
+ * payload (Slack `team_id`/`team`, Discord `guild_id`, Telegram `chat.id`,
+ * Kakao `bot.id` — each Open Builder bot has a distinct id, entered manually
+ * since Kakao has no OAuth to discover it from).
  * Returns undefined when not found. Reads `message.raw` since the normalized
  * message has no cross-platform tenant id; verify field names per platform.
  */
@@ -16,8 +18,9 @@ export function extractWorkspaceKey(raw: unknown): string | undefined {
       ? team
       : ((team as { id?: unknown } | undefined)?.id ?? undefined);
   const chatId = (r.chat as { id?: unknown } | undefined)?.id;
+  const kakaoBotId = (r.bot as { id?: unknown } | undefined)?.id;
 
-  const candidates = [r.team_id, teamFromObj, r.guild_id, chatId];
+  const candidates = [r.team_id, teamFromObj, r.guild_id, chatId, kakaoBotId];
   for (const c of candidates) {
     if (typeof c === "string" && c) return c;
     if (typeof c === "number") return String(c);
