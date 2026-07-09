@@ -14,6 +14,7 @@ import {
 } from "./agent-definition-port.js";
 import { seedTeamspaceMainConfig } from "./teamspace-main-config-port.js";
 import { seedPages } from "./page-port.js";
+import { seedWorkCycleAndGatePolicies } from "./seed-work-cycles.js";
 
 export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
   meta: {
@@ -52,4 +53,7 @@ export async function applyTemplate(
   await seedMainAgentDefinition(db, teamspaceId);
   await seedAgentDefinitions(db, teamspaceId, seeds);
   await seedPages(db, teamspaceId, bundle.pages);
+  if (bundle.meta.id === "software-development") {
+    await seedWorkCycleAndGatePolicies(db, teamspaceId);
+  }
 }
