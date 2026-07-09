@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { LifecycleStatusSchema, nodeTypeSchema } from "@ssota/contracts";
-import { edgeTypeSchema } from "@ssota/contracts";
+import { LifecycleStatusSchema } from "@ssota/contracts";
 import { throwMcpToolError } from "@/lib/api/mcp-errors";
 import {
   createEdgeForMcp,
+  createEdgeTypeForMcp,
   createNodeForMcp,
+  createNodeTypeForMcp,
   getEdgeTypeForMcp,
   getNodeForMcp,
   getNodeTypeForMcp,
@@ -30,8 +31,12 @@ type McpToolServer = {
   ) => void;
 };
 
-const catalogKeySchema = nodeTypeSchema;
-const edgeCatalogKeySchema = edgeTypeSchema;
+// Catalog keys are org-scoped DB catalog entries (not a fixed enum), so any
+// non-empty key is accepted at the MCP boundary. The core use-case still
+// rejects keys absent from the org catalog with UNKNOWN_NODE_TYPE — author new
+// types with create_node_type / create_edge_type first.
+const catalogKeySchema = z.string().min(1);
+const edgeCatalogKeySchema = z.string().min(1);
 
 export function registerGraphTools(server: McpToolServer) {
   registerScopedProjectTool(
@@ -40,10 +45,11 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "List Node Types",
       description:
-        "List catalog node types from packages/contracts (no database round-trip).",
+        "List this project's node types from the org catalog (DB). Empty until you author types with create_node_type. For large catalogs prefer search_catalog.",
       inputSchema: {},
     },
-    async () => jsonContent(await listNodeTypesForMcp()),
+    async ({ teamspaceId }) =>
+      jsonContent(await listNodeTypesForMcp(teamspaceId)),
   );
 
   registerScopedProjectTool(
@@ -52,12 +58,12 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "Get Node Type",
       description:
-        "Fetch a node type catalog entry and property schema summary (contracts SSOT).",
+        "Fetch a node type's catalog entry (label, description, keywords, propertySchema) from this project's org catalog.",
       inputSchema: { catalogKey: catalogKeySchema },
     },
-    async ({ args }) => {
+    async ({ teamspaceId, args }) => {
       const catalogKey = String(args.catalogKey ?? args.nodeType);
-      return jsonContent(getNodeTypeForMcp(catalogKey));
+      return jsonContent(await getNodeTypeForMcp(teamspaceId, catalogKey));
     },
   );
 
@@ -67,12 +73,12 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "Get Edge Type",
       description:
-        "Fetch an edge type catalog entry (label, description, keywords) from the contracts SSOT.",
+        "Fetch an edge type's catalog entry (label, description, keywords, domain/range catalog ids) from this project's org catalog.",
       inputSchema: { catalogKey: edgeCatalogKeySchema },
     },
-    async ({ args }) => {
+    async ({ teamspaceId, args }) => {
       const catalogKey = String(args.catalogKey ?? args.edgeType);
-      return jsonContent(getEdgeTypeForMcp(catalogKey));
+      return jsonContent(await getEdgeTypeForMcp(teamspaceId, catalogKey));
     },
   );
 
@@ -82,10 +88,84 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "List Edge Types",
       description:
-        "List catalog edge types from packages/contracts (no database round-trip).",
+        "List this project's edge types from the org catalog (DB). Empty until you author types with create_edge_type.",
       inputSchema: {},
     },
-    async () => jsonContent(listEdgeTypesForMcp()),
+    async ({ teamspaceId }) =>
+      jsonContent(await listEdgeTypesForMcp(teamspaceId)),
+  );
+
+  registerScopedProjectTool(
+    server,
+    "create_node_type",
+    {
+      title: "Create Node Type",
+      description:
+        "Define (or update) a node type in this project's catalog. Use during environment setup to model the domain's entities BEFORE creating node instances. Upserts by key. propertySchema is a JSON-schema-like object describing the type's properties.",
+      inputSchema: {
+        key: z
+          .string()
+          .min(1)
+          .describe(
+            "Stable snake_case type key, e.g. 'employee', 'leave_request'.",
+          ),
+        label: z.string().min(1).describe("Human-readable name."),
+        description: z
+          .string()
+          .optional()
+          .describe("One-line, search-facing description of when to use this type."),
+        keywords: z
+          .array(z.string())
+          .optional()
+          .describe("Search aliases/synonyms to improve catalog search recall."),
+        propertySchema: z.record(z.unknown()).optional(),
+      },
+    },
+    async ({ teamspaceId, args }) => {
+      try {
+        return jsonContent(await createNodeTypeForMcp(teamspaceId, args));
+      } catch (error) {
+        throwMcpToolError(error);
+      }
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
+    "create_edge_type",
+    {
+      title: "Create Edge Type",
+      description:
+        "Define (or update) an edge type (relationship) in this project's catalog. domainKeys/rangeKeys are node-type keys constraining valid source/target types (empty = unconstrained); the node types must already exist. Upserts by key.",
+      inputSchema: {
+        key: z
+          .string()
+          .min(1)
+          .describe("Stable snake_case type key, e.g. 'requests', 'approved_by'."),
+        label: z.string().min(1),
+        description: z
+          .string()
+          .optional()
+          .describe("One-line, search-facing description of the relationship."),
+        keywords: z.array(z.string()).optional(),
+        domainKeys: z
+          .array(z.string())
+          .optional()
+          .describe("Allowed source node-type keys (must exist)."),
+        rangeKeys: z
+          .array(z.string())
+          .optional()
+          .describe("Allowed target node-type keys (must exist)."),
+        propertySchema: z.record(z.unknown()).optional(),
+      },
+    },
+    async ({ teamspaceId, args }) => {
+      try {
+        return jsonContent(await createEdgeTypeForMcp(teamspaceId, args));
+      } catch (error) {
+        throwMcpToolError(error);
+      }
+    },
   );
 
   registerScopedProjectTool(

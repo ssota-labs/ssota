@@ -8,6 +8,7 @@ import {
 } from "@ssota/adapter-postgres";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
+  createAgentDefinitionForMcp,
   getAgentForMcp,
   getAgentInstructionForMcp,
   listAgentsForMcp,
@@ -19,6 +20,7 @@ describe("agent-services", () => {
   let db: ReturnType<typeof createDb>["db"];
   let teamspaceId: string;
   let client: ReturnType<typeof createDb>["client"] | undefined;
+  const createdAgentIds: string[] = [];
 
   beforeAll(async () => {
     try {
@@ -44,6 +46,10 @@ describe("agent-services", () => {
   });
 
   afterAll(async () => {
+    if (!skip && teamspaceId) {
+      const port = createAgentDefinitionPort(db, { teamspaceId });
+      for (const id of createdAgentIds) await port.deleteById(id).catch(() => {});
+    }
     await client?.end();
   });
 
@@ -99,5 +105,36 @@ describe("agent-services", () => {
     );
     expect(result?.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
     expect(result?.instruction.length).toBeGreaterThan(50);
+  });
+
+  it("authors an agent with toolBundles + triggers, reads it back", async () => {
+    const created = await createAgentDefinitionForMcp(db, teamspaceId, {
+      name: "AX Test — leave intake",
+      description: "Use to triage incoming leave requests.",
+      body: "1. Read pending leave_request nodes.\n2. Validate balance.\n3. Route to approver.",
+      toolBundles: ["graph.read", "graph.write", "tasks.manage"],
+      allowedTriggers: ["task", "schedule"],
+      model: "claude-sonnet-5",
+    });
+    createdAgentIds.push(created.id);
+    expect(created.name).toBe("AX Test — leave intake");
+    expect(created.toolBundles).toContain("graph.write");
+    expect(created.runPolicy.allowedTriggers).toContain("schedule");
+
+    const readBack = await getAgentForMcp(db, teamspaceId, created.id);
+    expect(readBack?.id).toBe(created.id);
+    const instr = await getAgentInstructionForMcp(db, teamspaceId, created.id);
+    expect(instr?.instruction).toMatch(/leave_request/);
+  });
+
+  it("rejects an invalid tool bundle", async () => {
+    await expect(
+      createAgentDefinitionForMcp(db, teamspaceId, {
+        name: "bad",
+        description: "x",
+        body: "x",
+        toolBundles: ["not_a_real_bundle"],
+      }),
+    ).rejects.toThrow();
   });
 });

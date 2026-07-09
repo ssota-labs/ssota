@@ -4,6 +4,8 @@ import { verifyBearerToken } from "@/lib/auth";
 import { resolveProjectAccess } from "@/lib/mcp/project-access";
 import { registerAccountTools } from "@/lib/mcp/register-account-tools";
 import { registerGraphTools } from "@/lib/mcp/register-graph-tools";
+import { registerPageTools } from "@/lib/mcp/register-page-tools";
+import { registerScheduleTools } from "@/lib/mcp/register-schedule-tools";
 import { registerProjectTools } from "@/lib/mcp/register-project-tools";
 import { registerAgentTools } from "@/lib/mcp/register-agent-tools";
 import { parseMcpProjectScope } from "@/lib/mcp/resource-url";
@@ -29,6 +31,8 @@ const unifiedMcpHandler = createMcpHandler(
     registerProjectTools(server as never);
     registerAgentTools(server as never);
     registerGraphTools(server as never);
+    registerPageTools(server as never);
+    registerScheduleTools(server as never);
   },
   mcpHandlerOptions,
   mcpTransportOptions,

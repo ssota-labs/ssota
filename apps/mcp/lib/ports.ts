@@ -2,6 +2,9 @@ import {
   createConsolePort,
   createGraphPorts,
   createDb,
+  createDbCatalogWritePort,
+  createPagePort,
+  createSchedulePort,
   createTaskPort,
   createAgentDefinitionPort,
   registerTeamspaceOrganization,
@@ -26,6 +29,16 @@ export function getTaskPort(teamspaceId: string) {
 
 export function getAgentDefinitionPort(teamspaceId: string) {
   return createAgentDefinitionPort(getDb(), { teamspaceId });
+}
+
+/** Page store (json-render dashboards). Builder scope = no accountId. */
+export function getPagePort(teamspaceId: string, accountId?: string) {
+  return createPagePort(getDb(), { teamspaceId, accountId });
+}
+
+/** Schedule store (cron cadences firing agent runs). Builder scope. */
+export function getSchedulePort(teamspaceId: string, accountId?: string) {
+  return createSchedulePort(getDb(), { teamspaceId, accountId });
 }
 
 /** @deprecated Use getAgentDefinitionPort */
@@ -53,6 +66,26 @@ export async function getGraphPortsForTeamspace(teamspaceId: string) {
 
 export function getGraphReadPort(teamspaceId: string, organizationId?: string) {
   return getGraphPorts(teamspaceId, organizationId).graphRead;
+}
+
+/**
+ * Org-scoped catalog WRITE port (node/edge type authoring). Catalog is
+ * organization-scoped, so it resolves the org from the teamspace registration
+ * (populated by the scoped-tool access check). Mirrors agent-runtime's
+ * `getCatalogWritePort`.
+ */
+export function getCatalogWritePort(
+  teamspaceId: string,
+  organizationId?: string,
+) {
+  const orgId =
+    organizationId ?? getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!orgId) {
+    throw new Error(
+      `Organization scope not registered for teamspace '${teamspaceId}'`,
+    );
+  }
+  return createDbCatalogWritePort(getDb(), { organizationId: orgId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

@@ -1,8 +1,6 @@
 import {
   catalogSearchInputSchema,
-  getEdgeTypeEntry,
   getNodeTypeEntry,
-  listEdgeTypes,
 } from "@ssota/contracts";
 import {
   createEdgeInputSchema,
@@ -23,10 +21,7 @@ import {
   traverseEdges,
   updateNode,
 } from "@ssota/core";
-import { createContractsCatalogReadPort } from "@ssota/core";
-import { getGraphPorts } from "@/lib/ports";
-
-const catalog = createContractsCatalogReadPort();
+import { getCatalogWritePort, getGraphPorts } from "@/lib/ports";
 
 function serializeNode(node: GraphNode) {
   return {
@@ -97,51 +92,145 @@ function mergeNodePropertiesForWrite(
   return merged;
 }
 
-export async function listNodeTypesForMcp() {
+export async function listNodeTypesForMcp(teamspaceId: string) {
+  const { catalog } = getGraphPorts(teamspaceId);
   const rows = await catalog.listNodeCatalog();
   return rows.map((entry) => {
     const meta = getNodeTypeEntry(entry.key);
     return {
+      // Identifier is exposed as both `catalogKey` (matches create_node /
+      // get_node_type params) and `key` (matches create_node_type /
+      // search_catalog output) so either projection works.
       catalogKey: entry.key,
+      key: entry.key,
       label: entry.label,
+      description: entry.description,
       mutability: meta?.mutability ?? "living",
       contentRequired: meta?.contentRequired ?? false,
     };
   });
 }
 
-export function getNodeTypeForMcp(catalogKey: string) {
-  const entry = getNodeTypeEntry(catalogKey);
-  if (!entry) return null;
+export async function getNodeTypeForMcp(
+  teamspaceId: string,
+  catalogKey: string,
+) {
+  const { catalog } = getGraphPorts(teamspaceId);
+  const row = await catalog.getNodeCatalogByKey(catalogKey);
+  if (!row) return null;
+  const meta = getNodeTypeEntry(catalogKey);
   return {
-    catalogKey: entry.nodeType,
-    label: entry.label,
-    description: entry.description,
-    keywords: entry.keywords,
-    mutability: entry.mutability,
-    contentRequired: entry.contentRequired,
+    catalogKey: row.key,
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    keywords: row.keywords,
+    propertySchema: row.propertySchema,
+    mutability: meta?.mutability ?? "living",
+    contentRequired: meta?.contentRequired ?? false,
   };
 }
 
-export function getEdgeTypeForMcp(catalogKey: string) {
-  const entry = getEdgeTypeEntry(catalogKey);
-  if (!entry) return null;
+export async function getEdgeTypeForMcp(
+  teamspaceId: string,
+  catalogKey: string,
+) {
+  const { catalog } = getGraphPorts(teamspaceId);
+  const row = await catalog.getEdgeCatalogByKey(catalogKey);
+  if (!row) return null;
+  // Resolve domain/range catalog ids back to node-type KEYS so authors can
+  // verify edge wiring without a separate id->key lookup.
+  const idsToKeys = async (ids: string[]): Promise<string[]> => {
+    const keys: string[] = [];
+    for (const id of ids) {
+      const node = await catalog.getNodeCatalogById(id);
+      if (node) keys.push(node.key);
+    }
+    return keys;
+  };
   return {
-    catalogKey: entry.edgeType,
-    label: entry.label,
-    description: entry.description,
-    keywords: entry.keywords,
+    catalogKey: row.key,
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    keywords: row.keywords,
+    domainKeys: await idsToKeys(row.domainCatalogIds),
+    rangeKeys: await idsToKeys(row.rangeCatalogIds),
+    domainCatalogIds: row.domainCatalogIds,
+    rangeCatalogIds: row.rangeCatalogIds,
   };
 }
 
-export function listEdgeTypesForMcp() {
-  return listEdgeTypes().map((catalogKey) => {
-    const entry = getEdgeTypeEntry(catalogKey);
-    return {
-      catalogKey,
-      label: entry?.label ?? catalogKey,
-    };
+export async function listEdgeTypesForMcp(teamspaceId: string) {
+  const { catalog } = getGraphPorts(teamspaceId);
+  const rows = await catalog.listEdgeCatalog();
+  return rows.map((entry) => ({
+    catalogKey: entry.key,
+    key: entry.key,
+    label: entry.label,
+  }));
+}
+
+/**
+ * S1 — Catalog write (node type). Mirrors agent-runtime `create_node_type`:
+ * upserts an org-scoped node_catalog row so the domain's entities can be
+ * modeled before creating node instances. Upserts by (org, key).
+ */
+export async function createNodeTypeForMcp(
+  teamspaceId: string,
+  input: Record<string, unknown>,
+) {
+  const writePort = getCatalogWritePort(teamspaceId);
+  const row = await writePort.upsertNodeCatalog({
+    key: String(input.key),
+    label: String(input.label),
+    description: input.description as string | undefined,
+    keywords: input.keywords as string[] | undefined,
+    propertySchema: (input.propertySchema as Record<string, unknown>) ?? {},
   });
+  return { ...row, catalogKey: row.key };
+}
+
+/**
+ * S1 — Catalog write (edge type). Resolves domain/range node-type KEYS to
+ * catalog ids (throws if a key is unknown → author it with create_node_type
+ * first), then upserts an org-scoped edge_catalog row. Upserts by (org, key).
+ */
+export async function createEdgeTypeForMcp(
+  teamspaceId: string,
+  input: Record<string, unknown>,
+) {
+  const { catalog } = getGraphPorts(teamspaceId);
+  const resolveKeys = async (keys: string[]): Promise<string[]> => {
+    const ids: string[] = [];
+    for (const key of keys) {
+      const nodeType = await catalog.getNodeCatalogByKey(key);
+      if (!nodeType) {
+        throw new Error(
+          `Unknown node type key '${key}' — create it with create_node_type first.`,
+        );
+      }
+      ids.push(nodeType.id);
+    }
+    return ids;
+  };
+  const domainKeys = (input.domainKeys as string[] | undefined) ?? [];
+  const rangeKeys = (input.rangeKeys as string[] | undefined) ?? [];
+  const writePort = getCatalogWritePort(teamspaceId);
+  const row = await writePort.upsertEdgeCatalog({
+    key: String(input.key),
+    label: String(input.label),
+    description: input.description as string | undefined,
+    keywords: input.keywords as string[] | undefined,
+    domainCatalogIds: await resolveKeys(domainKeys),
+    rangeCatalogIds: await resolveKeys(rangeKeys),
+    propertySchema:
+      (input.propertySchema as Record<string, unknown> | null | undefined) ??
+      null,
+  });
+  // Echo the resolved domain/range back as keys so authors can verify the
+  // mapping without a second lookup.
+  return { ...row, catalogKey: row.key, domainKeys, rangeKeys };
 }
 
 /**
