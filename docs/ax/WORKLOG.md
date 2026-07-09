@@ -6,7 +6,18 @@
 
 ---
 
-## ⬛ 현재 상태 (2026-07-08, 한 줄)
+## ⬛ 현재 상태 (2026-07-09, 한 줄)
+
+**AX 스킬 방법론 → SWDL 코드 시드 환류 분석 완료** — [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md). Task 1·2·3 MCP 실증은 유지. 다음: 분석 U1(edge domain/range) 또는 U4(SWDL agents) 중 첫 구현 슬라이스.
+
+### 2026-07-09 — SWDL 시드 고도화 분석 (코드 경로)
+- AX `ssota-ax-author` S1–S4 루프를 **MCP 재저작이 아니라** `SOFTWARE_DEV_TEMPLATE`/seed-pack에 대입해 갭 정리.
+- 핵심 갭: edge domain/range 11/17 공백, 페이지 Document 편향·Inbox/Board/Stat 약함, SWDL orchestrator/schedule 미시드, instances `[]`.
+- 로드맵 슬라이스 U1–U6 제안. 구현은 별 PR.
+
+---
+
+## ⬛ 이전 상태 (2026-07-08)
 
 **Task 1·2·3 완료 — AX 능력 + 3도메인 실증(HR·개인재무·SWDL) + 반복 friction 수정까지.** 남은 후보: 라이브 web 렌더 데모, 코드 템플릿 캡처(선택), PR.
 
