@@ -34,6 +34,7 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 4. **Author the pages** — the human-approval dashboards that bind to the catalog. See `references/page-authoring.md`:
    - **Discover components first** with `list_page_components` → `get_page_component` (progressive disclosure — don't hold all 46 in mind; fetch the few you'll use).
    - Compose a `spec` (`{root, elements}`) of those components; wire data with `bindings` (query the catalog), mutations with `actions`; `create_page` (it validates the spec).
+   - **Author for quality, not just validity** — a valid spec is still a form dump if you free-compose. Derive the page manifest from the schema → pick an **archetype** per page → copy a **golden spec** → pass the **self-review gate**. See `references/page-archetypes.md`, `references/page-golden-specs.md`, `references/page-review.md`.
 5. **Author the agents** — the recurring workers, and (if useful) an orchestrator that schedules & dispatches to them. See `references/agent-authoring.md`: `create_agent` with a markdown playbook `body`, `toolBundles` (capabilities), `allowedTriggers` (`task`/`schedule`/`chat`…). Link an orchestrator to its specialists via `linkedWorkerAgentIds`.
 6. **Author the schedules** — give the cadence agents (usually the orchestrator) a cron so the environment runs itself. See `references/schedule-authoring.md`: `create_schedule {agentDefinitionId, cronExpression, timezone}`. The target agent must exist and allow the `schedule`/`heartbeat` trigger.
 7. **Verify** — catalog via `list_*_types`; pages via `list_pages`; agents via `list_agents`; schedules via `list_schedules`. (Return envelopes differ: `list_page_components`→`{components:[…]}` and `list_agents`→`{agents:[…]}` are wrapped; `list_node_types`/`list_edge_types`/`list_pages`/`list_schedules` return a bare array.) The environment is now complete: **types → human-approval pages → agents → the cadence that runs them.**
@@ -49,6 +50,9 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 
 ## Rules — page authoring
 
+- **Quality is the job, not validity.** The design system is in the components, so your leverage is product judgment: right archetype, one clear primary action, all states, typed data, linked nav. Follow the 4-step method (manifest → archetype → golden spec → review gate) in `references/page-archetypes.md` / `page-golden-specs.md` / `page-review.md`. A page a blank user can't instantly read (what's it for, what to do, what state) is not done.
+- **Pick an archetype; don't free-compose.** Dashboard / List / Detail / Board / Calendar / Inbox / Activity / Form — each maps to a schema signal and hands you structure + states + a hero component.
+- **Never render raw.** status→token badge, date→`type:"date"`, money→`format:"currency"`, relation→link. Same status = same color everywhere (shared tokens).
 - **Author the catalog first.** Pages bind to node/edge types via `bindings`; the types must exist.
 - **Discover before composing.** `list_page_components` (manifest) → `get_page_component` (props + example) for the few components you'll place. Don't invent component keys — `create_page` rejects unknown types.
 - **A spec is `{root, elements}`.** `elements` is a map of `id → { type, props?, children? }`; `root` is the top element's id; containers list child ids in `children`.
@@ -74,6 +78,9 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 ## Load on demand (progressive disclosure)
 
 - `references/catalog-authoring.md` — `create_node_type` / `create_edge_type` field-by-field, `propertySchema` conventions, worked HR catalog example.
-- `references/page-authoring.md` — `create_page`/`update_page`, the `spec`/`bindings`/`actions` shape, component discovery, and a worked HR page example.
+- `references/page-authoring.md` — `create_page`/`update_page`, the `spec`/`bindings`/`actions` shape, component discovery, the 4-step quality method, and a worked HR page example.
+- `references/page-archetypes.md` — the schema→page manifest, ~9 page archetypes (when/hero/slots/states), data→component semantic mapping, and hierarchy/microcopy rules.
+- `references/page-golden-specs.md` — known-good Dashboard/List/Inbox `spec`s to copy, plus the quality anti-patterns.
+- `references/page-review.md` — the 9-point self-review checklist + adversarial pass + render-and-look gate to run before `create_page`.
 - `references/agent-authoring.md` — `create_agent` fields, tool-bundle & trigger vocab, the orchestrator/specialist pattern, and a worked HR agent org-chart.
 - `references/schedule-authoring.md` — `create_schedule`/`list_schedules`, cron & timezone, and the orchestrator-cadence pattern.

@@ -158,6 +158,8 @@ type AdvancedDataTableProps<TData> = {
   toolbarEnd?: React.ReactNode
   /** Rendered between the table body and the pagination bar (e.g. "+ New row"). */
   footer?: React.ReactNode
+  /** Message shown when there are no rows (default "No rows"). */
+  emptyMessage?: React.ReactNode
   className?: string
 }
 
@@ -495,6 +497,7 @@ export function AdvancedDataTable<TData>({
   facetedFilters = [],
   toolbarEnd,
   footer,
+  emptyMessage = "No rows",
   className,
 }: AdvancedDataTableProps<TData>) {
   const allIds = React.useMemo(() => columnIds(columns), [columns])
@@ -888,7 +891,7 @@ export function AdvancedDataTable<TData>({
                       colSpan={leafCols.length + 1}
                       className="h-20 text-center text-muted-foreground"
                     >
-                      No rows
+                      {emptyMessage}
                     </TableCell>
                   </TableRow>
                 ) : (

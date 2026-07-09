@@ -736,7 +736,8 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     id: "forms-create",
     category: "forms",
     title: "Form · Field · Button",
-    description: "Collect multiple values and submit via a single action.",
+    description:
+      "Typed fields (text/number/date/select/switch/textarea) in a two-column Form, submitted via a single action.",
     components: ["Card", "Form", "Field", "Button"],
     spec: {
       root: "card",
@@ -748,7 +749,16 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
         },
         form: {
           type: "Form",
-          children: ["titleField", "submit"],
+          props: { columns: 2 },
+          children: [
+            "titleField",
+            "priorityField",
+            "pointsField",
+            "dueField",
+            "billableField",
+            "notesField",
+            "submit",
+          ],
         },
         titleField: {
           type: "Field",
@@ -756,6 +766,37 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             name: "title",
             label: "Title",
             placeholder: "e.g. Console v2.7 graph UI",
+            required: true,
+          },
+        },
+        priorityField: {
+          type: "Field",
+          props: {
+            name: "priority",
+            label: "Priority",
+            inputType: "select",
+            options: ["low", "medium", "high"],
+          },
+        },
+        pointsField: {
+          type: "Field",
+          props: { name: "points", label: "Story points", inputType: "number" },
+        },
+        dueField: {
+          type: "Field",
+          props: { name: "due_date", label: "Due date", inputType: "date" },
+        },
+        billableField: {
+          type: "Field",
+          props: { name: "billable", label: "Billable", inputType: "switch" },
+        },
+        notesField: {
+          type: "Field",
+          props: {
+            name: "notes",
+            label: "Notes",
+            inputType: "textarea",
+            placeholder: "Context, links…",
           },
         },
         submit: {
@@ -1947,6 +1988,369 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           },
         },
       },
+    },
+  },
+  {
+    id: "forms-relation",
+    category: "forms",
+    title: "Form · Relation Field",
+    description:
+      "Relation Fields pick existing nodes from a query binding via a searchable combobox; the picked nodeId is submitted so a create_edge action can link records. Second field shows the multi-select variant.",
+    components: ["Card", "Form", "Field", "Button"],
+    spec: {
+      root: "card",
+      elements: {
+        card: {
+          type: "Card",
+          props: { title: "Link a dependency" },
+          children: ["form"],
+        },
+        form: {
+          type: "Form",
+          children: ["blockedByField", "relatedField", "submit"],
+        },
+        blockedByField: {
+          type: "Field",
+          props: {
+            name: "blockedBy",
+            label: "차단 이슈 (Blocked by)",
+            inputType: "relation",
+            optionsBinding: "openIssues",
+            placeholder: "이슈 검색…",
+            required: true,
+          },
+        },
+        relatedField: {
+          type: "Field",
+          props: {
+            name: "related",
+            label: "관련 이슈 (multi)",
+            inputType: "relation",
+            optionsBinding: "openIssues",
+            multiple: true,
+            placeholder: "여러 개 선택…",
+          },
+        },
+        submit: {
+          type: "Button",
+          props: { action: "linkDependency", label: "링크 생성" },
+        },
+      },
+    },
+    bindingData: {
+      openIssues: [
+        { id: "aaaaaaa1-0000-4000-8000-000000000001", catalogKey: "issue", title: "Graph write port rejects cross-org edges", properties: { status: "todo" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000002", catalogKey: "issue", title: "Combobox filter is case-insensitive", properties: { status: "doing" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000003", catalogKey: "issue", title: "Relation field empty-state copy", properties: { status: "todo" } },
+        { id: "aaaaaaa1-0000-4000-8000-000000000004", catalogKey: "issue", title: "End-user app 404 when app_enabled=false", properties: { status: "review" } },
+      ],
+    },
+  },
+  {
+    id: "data-approval-inbox",
+    category: "data",
+    title: "ApprovalInbox",
+    description:
+      "Pending-approval queue: each row shows title + meta + a status chip and Approve / Reject buttons that dispatch { nodeId, value }. Real empty state when nothing is pending.",
+    components: ["Section", "ApprovalInbox"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Approvals", subtitle: "승인 대기 큐 — 각 행에서 승인/반려" },
+          children: ["inbox"],
+        },
+        inbox: {
+          type: "ApprovalInbox",
+          props: {
+            binding: "rows",
+            titleField: "title",
+            metaFields: ["requester", "amount"],
+            statusField: "status",
+            approveAction: "approveRequest",
+            rejectAction: "rejectRequest",
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc01", catalogKey: "approval_request", title: "출장비 정산 — 부산 고객 미팅", properties: { requester: "김지원", amount: "₩482,000", status: "pending" } },
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc02", catalogKey: "approval_request", title: "PR #412 — 그래프 쓰기 포트 검증", properties: { requester: "이도현", amount: "3 files", status: "review" } },
+        { id: "cccccccc-cccc-4ccc-8ccc-cccccccccc03", catalogKey: "approval_request", title: "연차 신청 — 7/14 ~ 7/16", properties: { requester: "박서연", amount: "3 days", status: "submitted" } },
+      ],
+    },
+  },
+  {
+    id: "data-kanban",
+    category: "data",
+    title: "KanbanBoard",
+    description:
+      "Status-column board on the shared kibo kanban primitive: drag a card to another column to change its `status` (optimistic move + set_node_property). Column headers show a color dot + live count; the empty column shows a placeholder.",
+    components: ["Section", "KanbanBoard"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Sprint board", subtitle: "Drag a card between columns to change its status" },
+          children: ["board"],
+        },
+        board: {
+          type: "KanbanBoard",
+          props: {
+            binding: "rows",
+            groupField: "status",
+            titleField: "title",
+            metaField: "owner",
+            moveAction: "moveCard",
+            columns: [
+              { value: "todo", label: "To do", color: "gray" },
+              { value: "doing", label: "In progress", color: "amber" },
+              { value: "review", label: "In review", color: "blue" },
+              { value: "done", label: "Done", color: "green" },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        { id: "c1a70000-0000-4000-8000-000000000001", catalogKey: "task", title: "Draft Q3 product roadmap", properties: { status: "todo", owner: "Felix Han" } },
+        { id: "c1a70000-0000-4000-8000-000000000002", catalogKey: "task", title: "Wire up MCP consent scopes", properties: { status: "todo", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000003", catalogKey: "task", title: "Kanban board on tasks page", properties: { status: "doing", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000004", catalogKey: "task", title: "Render agent markdown blocks", properties: { status: "doing", owner: "Felix Han" } },
+        { id: "c1a70000-0000-4000-8000-000000000005", catalogKey: "task", title: "Ship chat history sidebar", properties: { status: "done", owner: "Joowhan Yohn" } },
+        { id: "c1a70000-0000-4000-8000-000000000006", catalogKey: "task", title: "Seed dogfood roadmap node", properties: { status: "done", owner: "Felix Han" } },
+      ],
+    },
+  },
+  {
+    id: "data-stat-tiles",
+    category: "data",
+    title: "StatTile / StatRow (KPI strip)",
+    description:
+      "A dashboard KPI strip: StatRow grids StatTiles that aggregate a graph binding (sum / count / avg), show a prior-period delta chip (▲ green up, ▼ red down), and an inline sparkline.",
+    components: ["Section", "StatRow", "StatTile"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Revenue KPIs", subtitle: "Aggregated from graph bindings — sum, count, avg + deltas & sparklines" },
+          children: ["kpis"],
+        },
+        kpis: {
+          type: "StatRow",
+          props: {},
+          children: ["spend", "tickets", "winrate", "deals"],
+        },
+        spend: {
+          type: "StatTile",
+          props: { binding: "expenses", label: "Total spend", valueField: "amount", aggregate: "sum", format: "currency", deltaValue: -4.2 },
+        },
+        tickets: {
+          type: "StatTile",
+          props: { binding: "tickets", label: "Open tickets", deltaValue: 8 },
+        },
+        winrate: {
+          type: "StatTile",
+          props: { binding: "winRate", label: "Win rate", valueField: "rate", format: "percent", deltaField: "delta", sparklineField: "trend" },
+        },
+        deals: {
+          type: "StatTile",
+          props: { binding: "deals", label: "Avg deal size", valueField: "value", aggregate: "avg", format: "currency" },
+        },
+      },
+    },
+    bindingData: {
+      expenses: [
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000001", catalogKey: "expense", title: "Cloud", properties: { amount: 5200 } },
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000002", catalogKey: "expense", title: "Salaries", properties: { amount: 4800 } },
+        { id: "cccccccc-cccc-4ccc-8ccc-000000000003", catalogKey: "expense", title: "Tooling", properties: { amount: 2480 } },
+      ],
+      tickets: Array.from({ length: 24 }, (_, i) => ({
+        id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(i + 1).padStart(12, "0")}`,
+        catalogKey: "ticket",
+        title: `Ticket ${i + 1}`,
+        properties: {},
+      })),
+      winRate: {
+        id: "dddddddd-dddd-4ddd-8ddd-000000000001",
+        catalogKey: "metric",
+        title: "Win rate",
+        properties: { rate: 62, delta: 5.5, trend: [48, 51, 50, 55, 58, 60, 62] },
+      },
+      deals: [12000, 8000, 9500, 5500].map((value, i) => ({
+        id: `bbbbbbbb-bbbb-4bbb-8bbb-${String(i + 1).padStart(12, "0")}`,
+        catalogKey: "deal",
+        title: `Deal ${i + 1}`,
+        properties: { value },
+      })),
+    },
+  },
+  {
+    id: "data-calendar",
+    category: "data",
+    title: "CalendarView (month calendar)",
+    description:
+      "A month calendar placing nodes on their date: event chips colored from a token field, today highlighted, per-day overflow, prev/next navigation. Opens on July 2026 where the sample events live.",
+    components: ["Section", "CalendarView"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "진료 일정", subtitle: "예약을 날짜에 배치 — 상태 색상 + 클릭 선택" },
+          children: ["cal"],
+        },
+        cal: {
+          type: "CalendarView",
+          props: {
+            binding: "appointments",
+            dateField: "startAt",
+            titleField: "title",
+            colorField: "status",
+            colors: { scheduled: "blue", checked_in: "amber", completed: "green", no_show: "red", cancelled: "gray" },
+            initialMonth: "2026-07",
+          },
+        },
+      },
+    },
+    bindingData: {
+      appointments: [
+        { id: "a9900000-0000-4000-8000-000000000001", catalogKey: "appointment", title: "김민준 초진 09:00", properties: { startAt: "2026-07-03", status: "scheduled" } },
+        { id: "a9900000-0000-4000-8000-000000000002", catalogKey: "appointment", title: "이서연 재진 10:30", properties: { startAt: "2026-07-03", status: "completed" } },
+        { id: "a9900000-0000-4000-8000-000000000003", catalogKey: "appointment", title: "박도윤 시술 14:00", properties: { startAt: "2026-07-03", status: "checked_in" } },
+        { id: "a9900000-0000-4000-8000-000000000004", catalogKey: "appointment", title: "최지우 상담 11:00", properties: { startAt: "2026-07-10", status: "completed" } },
+        { id: "a9900000-0000-4000-8000-000000000005", catalogKey: "appointment", title: "정하준 노쇼", properties: { startAt: "2026-07-18", status: "no_show" } },
+        { id: "a9900000-0000-4000-8000-000000000006", catalogKey: "appointment", title: "강서준 재진 16:00", properties: { startAt: "2026-07-24", status: "scheduled" } },
+      ],
+    },
+  },
+  {
+    id: "data-record",
+    category: "data",
+    title: "RecordView (record detail)",
+    description:
+      "A single-node full record: header (title + status badge + actions), typed property sections, and related-record sections resolved from separate bindings. The Detail archetype.",
+    components: ["RecordView"],
+    spec: {
+      root: "record",
+      elements: {
+        record: {
+          type: "RecordView",
+          props: {
+            binding: "deal",
+            statusField: "stage",
+            sections: [
+              {
+                title: "세부",
+                fields: [
+                  { key: "title", label: "딜" },
+                  { key: "amount", label: "금액", type: "number" },
+                  { key: "closeDate", label: "예상 마감", type: "date" },
+                  { key: "owner", label: "담당" },
+                ],
+              },
+            ],
+            relations: [
+              { title: "관련 견적", binding: "quotes" },
+              { title: "활동", binding: "activity" },
+            ],
+            actions: [
+              { label: "성사 처리", action: "win", variant: "default" },
+              { label: "실패 처리", action: "lose", variant: "outline" },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      deal: {
+        id: "d1100000-0000-4000-8000-000000000001",
+        catalogKey: "deal",
+        title: "Acme 연간 계약",
+        properties: { stage: "proposal", amount: 48000, closeDate: "2026-08-15", owner: "김지원" },
+      },
+      quotes: [
+        { id: "d1100000-0000-4000-8000-000000000010", catalogKey: "quote", title: "Acme Q3 견적", properties: { status: "approved", amount: 48000 } },
+        { id: "d1100000-0000-4000-8000-000000000011", catalogKey: "quote", title: "Acme 파일럿 견적", properties: { status: "rejected", amount: 12000 } },
+      ],
+      activity: [
+        { id: "d1100000-0000-4000-8000-000000000020", catalogKey: "event", title: "제안서 발송", properties: {} },
+        { id: "d1100000-0000-4000-8000-000000000021", catalogKey: "event", title: "데모 미팅 완료", properties: {} },
+      ],
+    },
+  },
+  {
+    id: "data-timeline",
+    category: "data",
+    title: "Timeline (activity feed)",
+    description:
+      "A vertical, time-ordered feed: status-colored rail dots, title + actor + relative time, newest-first with a direction toggle and day grouping. Read-mostly (audit / change history).",
+    components: ["Section", "Timeline"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "변경 이력", subtitle: "최신순 · 상태별 색상 · 일자별 그룹" },
+          children: ["feed"],
+        },
+        feed: {
+          type: "Timeline",
+          props: {
+            binding: "revisions",
+            timeField: "createdAt",
+            titleField: "note",
+            byField: "editor",
+            statusField: "stage",
+            groupByDay: true,
+          },
+        },
+      },
+    },
+    bindingData: {
+      revisions: [
+        { id: "e2200000-0000-4000-8000-000000000001", catalogKey: "revision", title: "", properties: { note: "초안 작성", editor: "Felix Han", stage: "drafting", createdAt: "2026-07-01" } },
+        { id: "e2200000-0000-4000-8000-000000000002", catalogKey: "revision", title: "", properties: { note: "1차 리뷰 반영", editor: "Joowhan Yohn", stage: "review", createdAt: "2026-07-01" } },
+        { id: "e2200000-0000-4000-8000-000000000003", catalogKey: "revision", title: "", properties: { note: "편집장 승인", editor: "Felix Han", stage: "scheduled", createdAt: "2026-07-04" } },
+        { id: "e2200000-0000-4000-8000-000000000004", catalogKey: "revision", title: "", properties: { note: "발행 완료", editor: "Joowhan Yohn", stage: "published", createdAt: "2026-07-08" } },
+      ],
+    },
+  },
+  {
+    id: "charts-aggregate",
+    category: "chart",
+    title: "ChartBar (aggregation)",
+    description:
+      "Aggregation mode: group a node binding by a field and sum/count/avg another — no KPI-snapshot needed. Here: total spend grouped by category.",
+    components: ["Section", "ChartBar"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "카테고리별 지출", subtitle: "expenses를 category로 그룹 + amount 합계" },
+          children: ["chart"],
+        },
+        chart: {
+          type: "ChartBar",
+          props: { binding: "expenses", groupBy: "category", valueField: "amount", aggregate: "sum", height: 220 },
+        },
+      },
+    },
+    bindingData: {
+      expenses: [
+        { id: "f3300000-0000-4000-8000-000000000001", catalogKey: "expense", title: "AWS", properties: { category: "Cloud", amount: 5200 } },
+        { id: "f3300000-0000-4000-8000-000000000002", catalogKey: "expense", title: "Vercel", properties: { category: "Cloud", amount: 1800 } },
+        { id: "f3300000-0000-4000-8000-000000000003", catalogKey: "expense", title: "급여 A", properties: { category: "Payroll", amount: 4800 } },
+        { id: "f3300000-0000-4000-8000-000000000004", catalogKey: "expense", title: "급여 B", properties: { category: "Payroll", amount: 5100 } },
+        { id: "f3300000-0000-4000-8000-000000000005", catalogKey: "expense", title: "Figma", properties: { category: "Tooling", amount: 720 } },
+        { id: "f3300000-0000-4000-8000-000000000006", catalogKey: "expense", title: "Linear", properties: { category: "Tooling", amount: 480 } },
+      ],
     },
   },
 ];

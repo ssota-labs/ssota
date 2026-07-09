@@ -4,7 +4,8 @@ import {
   createInMemoryGraphStore,
   createInMemoryGraphWritePort,
 } from "../../testing/in-memory-graph.js";
-import { resolvePageBindings } from "./resolve-bindings.js";
+import { matchesFilter, resolvePageBindings } from "./resolve-bindings.js";
+import type { GraphNode } from "../../domain/graph-types.js";
 
 const PROJECT_ID = "00000000-0000-4000-8000-000000000001";
 
@@ -261,5 +262,38 @@ describe("resolvePageBindings", () => {
       { searchParams: {} },
     );
     expect(missing.selected).toBeNull();
+  });
+});
+
+describe("matchesFilter (comparison ops)", () => {
+  const node = (properties: Record<string, unknown>) =>
+    ({ properties }) as unknown as GraphNode;
+
+  it("gt/gte/lt/lte compare numerically across a string/number mix", () => {
+    expect(matchesFilter(node({ quantity: 3 }), [{ key: "quantity", op: "lte", value: 5 }])).toBe(true);
+    expect(matchesFilter(node({ quantity: 8 }), [{ key: "quantity", op: "lte", value: 5 }])).toBe(false);
+    expect(matchesFilter(node({ quantity: "3" }), [{ key: "quantity", op: "lt", value: 5 }])).toBe(true);
+    expect(matchesFilter(node({ reorder: 10 }), [{ key: "reorder", op: "gte", value: "10" }])).toBe(true);
+    expect(matchesFilter(node({ reorder: 9 }), [{ key: "reorder", op: "gt", value: 9 }])).toBe(false);
+    // low-stock pattern: quantity <= reorder_point (the gap both test agents hit)
+    expect(matchesFilter(node({ quantity: 2 }), [{ key: "quantity", op: "lte", value: 5 }])).toBe(true);
+  });
+
+  it("orders ISO date/timestamp strings lexically", () => {
+    expect(matchesFilter(node({ due: "2026-07-01" }), [{ key: "due", op: "lt", value: "2026-08-01" }])).toBe(true);
+    expect(matchesFilter(node({ due: "2026-09-01" }), [{ key: "due", op: "lt", value: "2026-08-01" }])).toBe(false);
+  });
+
+  it("missing / empty / incomparable values never satisfy an ordering clause", () => {
+    expect(matchesFilter(node({}), [{ key: "quantity", op: "lte", value: 5 }])).toBe(false);
+    expect(matchesFilter(node({ quantity: null }), [{ key: "quantity", op: "gt", value: 0 }])).toBe(false);
+    expect(matchesFilter(node({ quantity: "" }), [{ key: "quantity", op: "gte", value: 0 }])).toBe(false);
+  });
+
+  it("keeps eq / neq / exists working", () => {
+    expect(matchesFilter(node({ status: "low" }), [{ key: "status", op: "eq", value: "low" }])).toBe(true);
+    expect(matchesFilter(node({ status: "ok" }), [{ key: "status", op: "neq", value: "low" }])).toBe(true);
+    expect(matchesFilter(node({ status: "ok" }), [{ key: "status", op: "exists" }])).toBe(true);
+    expect(matchesFilter(node({}), [{ key: "status", op: "exists" }])).toBe(false);
   });
 });

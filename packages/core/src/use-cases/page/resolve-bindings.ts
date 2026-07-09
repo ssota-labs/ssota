@@ -26,7 +26,25 @@ function canReadNodeInTeamspace(node: GraphNode, pageTeamspaceId: string): boole
 
 type QueryFilter = NonNullable<Extract<BindingDef, { kind: "query" }>["filter"]>;
 
-function matchesFilter(node: GraphNode, filter: QueryFilter): boolean {
+/**
+ * Compare two property values for the ordering ops. Numeric when BOTH parse as
+ * finite numbers (so `quantity <= reorder_point` works with string/number mix);
+ * otherwise lexical (ISO `date`/timestamp strings sort correctly). Returns null
+ * when a side is missing/incomparable — an ordering clause then never matches.
+ */
+function compareValues(a: unknown, b: unknown): number | null {
+  if (a === null || a === undefined || a === "" || b === null || b === undefined || b === "") {
+    return null;
+  }
+  const na = Number(a);
+  const nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  const sa = String(a);
+  const sb = String(b);
+  return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
+export function matchesFilter(node: GraphNode, filter: QueryFilter): boolean {
   for (const clause of filter) {
     const value = node.properties[clause.key];
     if (clause.op === "exists") {
@@ -35,6 +53,14 @@ function matchesFilter(node: GraphNode, filter: QueryFilter): boolean {
     }
     if (clause.op === "eq" && value !== clause.value) return false;
     if (clause.op === "neq" && value === clause.value) return false;
+    if (clause.op === "gt" || clause.op === "gte" || clause.op === "lt" || clause.op === "lte") {
+      const c = compareValues(value, clause.value);
+      if (c === null) return false;
+      if (clause.op === "gt" && !(c > 0)) return false;
+      if (clause.op === "gte" && !(c >= 0)) return false;
+      if (clause.op === "lt" && !(c < 0)) return false;
+      if (clause.op === "lte" && !(c <= 0)) return false;
+    }
   }
   return true;
 }

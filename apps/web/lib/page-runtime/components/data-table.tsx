@@ -88,6 +88,7 @@ function DataTableEl({
   addAction,
   addLabel = "New row",
   deleteAction,
+  emptyLabel,
 }: {
   elementId: string;
   nodes: RenderNode[];
@@ -99,6 +100,7 @@ function DataTableEl({
   addAction?: string;
   addLabel?: string;
   deleteAction?: string;
+  emptyLabel?: string;
 }) {
   const onAction = useAction();
   const basePath = useBasePath();
@@ -360,6 +362,7 @@ function DataTableEl({
         columns={columnDefs}
         data={rows}
         getRowId={(r) => r.id}
+        emptyMessage={emptyLabel}
         facetedFilters={facetedFilters}
         defaultViewState={viewStateCtx?.initial[elementId]}
         onViewStateChange={viewStateCtx ? save : undefined}
@@ -403,6 +406,7 @@ export const dataTableComponents: Record<string, CatalogComponent> = {
       deleteAction={
         typeof props.deleteAction === "string" ? props.deleteAction : undefined
       }
+      emptyLabel={typeof props.emptyLabel === "string" ? props.emptyLabel : undefined}
     />
   ),
 };

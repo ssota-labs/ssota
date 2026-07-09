@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const propertyFilterSchema = z.object({
   key: z.string().min(1),
-  op: z.enum(["eq", "neq", "exists"]),
+  op: z.enum(["eq", "neq", "exists", "gt", "gte", "lt", "lte"]),
   value: z.unknown().optional(),
 });
 
