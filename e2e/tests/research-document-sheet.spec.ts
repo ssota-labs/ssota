@@ -40,9 +40,18 @@ test.describe("Research document sheet", () => {
     await expect(page.getByText("Findings")).toBeVisible();
   });
 
-  test("hypotheses opens document in floating sheet", async ({ page }) => {
+  test("hypotheses board shows smoke card; Docs tab opens sheet", async ({
+    page,
+  }) => {
     await gotoProject(page, "research/hypotheses");
 
+    await expect(page.getByRole("tab", { name: "Board" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Draft", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Smoke hypothesis").first()).toBeVisible();
+
+    await page.getByRole("tab", { name: "Docs" }).click();
     await expect(page.getByTestId("document-sheet-list")).toBeVisible();
     await page
       .locator('[data-testid^="document-sheet-list-item-"]')
