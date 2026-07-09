@@ -3,7 +3,7 @@
 > 상태: design discussion · 2026-07-09  
 > 범위: Domain Pack 운영 가정, **게이트 정책 선언** 설계, 사람 승인 모델, 미연동 페이지 개선, 업무 사이클 맵.  
 > 전제: Main = 플랫폼 챗봇(루프 밖). SWDL cadence = Orchestrator only.  
-> 관련: [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md) · [swdl-runtime-skills.md](swdl-runtime-skills.md) · AGENTS.md `[GRAPH-05]` · `[ARCH-03]`
+> 관련: [swdl-work-cycles.md](swdl-work-cycles.md) (사이클 다이어그램·트리거·업무 목록 SSOT) · [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md) · [swdl-runtime-skills.md](swdl-runtime-skills.md) · AGENTS.md `[GRAPH-05]` · `[ARCH-03]`
 
 ---
 
@@ -257,156 +257,15 @@ Approve 직후 즉시 다음 단계가 필요하면 page action에 **제네릭**
 
 ---
 
-## 3. 서브그룹 · 트리거 · 루프
+## 3. 서브그룹 · 트리거 · 루프 (요약)
 
-Main은 이 다이어그램 **밖**(플랫폼 채팅). Orchestrator cron이 B/C/D/G를 주로 스캔한다.
+**SSOT:** [swdl-work-cycles.md](swdl-work-cycles.md) — 다이어그램, 그룹별 트리거/루프/끝, 업무 사이클 60항.
 
-```mermaid
-flowchart TB
-  subgraph EXEC["A. Direction / Goals"]
-    E1[roadmap / objective / KPI] --> E2[분기·월간 리뷰]
-    E2 --> E1
-  end
-
-  subgraph DISC["B. Discovery"]
-    R1[market / user / sources] --> R2[hypothesis board]
-    R2 -->|validated| R3[initiative 후보]
-    R2 -->|rejected/parked| R1
-  end
-
-  subgraph PLAN["C. Initiative planning"]
-    P0[Create initiative - Human] --> P1[PRD draft - Planning agent]
-    P1 --> P2{Gate: PRD approved}
-    P2 -->|approved| P3[features / stories]
-    P2 -->|rejected / pending| P1
-    P3 --> P4{Gate: feature/story}
-  end
-
-  subgraph BUILD["D. Build / Delivery"]
-    D1[implementation_plan / sprint / tasks] --> D2[sandbox / PR graph]
-    D2 --> D3[QA test_plan / verify]
-    D3 -->|fail| D1
-    D3 -->|pass| D4[merge-ready]
-  end
-
-  subgraph SHIP["E. Launch / Operate"]
-    L1[launch_plan approve] --> L2[release notes / runbook]
-    L2 --> L3[retro / metrics]
-  end
-
-  subgraph DESIGN["F. Design track"]
-    F1[IA / flows / wireframes] --> F2[ui_component / theme]
-    F2 -.->|feeds| P3
-    F2 -.->|feeds| D1
-  end
-
-  subgraph HYGIENE["G. Platform hygiene"]
-    H1[data_spec / api_snapshot / architecture]
-    H1 --> H1
-  end
-
-  EXEC -.->|우선순위 신호| P0
-  R3 --> P0
-  P4 -->|approved stories| D1
-  D4 --> L1
-
-  ORCH((SWDL Orchestrator)) -.-> DISC
-  ORCH -.-> PLAN
-  ORCH -.-> BUILD
-  ORCH -.-> HYGIENE
-```
-
-### 그룹별 시작 트리거 / 루프 / 끝
-
-| 그룹 | 시작 트리거 | 루프 | 끝나는 곳 |
-|------|-------------|------|-----------|
-| A Goals | 분기 기획, 주간 KPI | 측정→판단→목표 수정 | 목표 체계 (배포 필수 아님) |
-| B Discovery | 가설/리서치 공백, Orchestrator | draft→testing→validated/rejected | validated 또는 parked |
-| C Planning | Human initiative 생성 | draft→**게이트**→stories | stories/features approved |
-| D Build | 게이트 통과, backlog 신호 | task↔PR↔QA | merge-ready |
-| E Launch | D pass | launch 승인→문서→retro | retro 닫힘 |
-| F Design | 기획/빌드 중 UX 필요 | 초안↔리뷰 | 스펙에 흡수 |
-| G Hygiene | 주간 cron, API 변경 | diff→문서 갱신 | evergreen 최신 |
-
-게이트 정책은 특히 **C→D**, **D→E** 경계에 둔다. A/F/G는 별 사이클(직렬 강제 최소화).
+게이트 정책은 특히 **C→D**, **D→E** 경계에 둔다. A/F/G는 별 사이클(직렬 강제 최소화). Main은 사이클 맵 **밖**.
 
 ---
 
-## 4. 소프트웨어 팀에서 자주 도는 업무 사이클 (확장 목록)
-
-### 방향·우선순위
-1. OKR/KPI 주간 리뷰  
-2. 로드맵 분기 재배치  
-3. 이니셔티브 포트폴리오 트리아지  
-4. 용량/스프린트 커밋 계획  
-
-### 발견·문제정의
-5. 시장/경쟁 스캔  
-6. 유저 인터뷰 합성  
-7. 가설 실험·검증  
-8. 지원/세일즈 이슈 → 문제 백로그  
-9. 분석 이벤트·퍼널 점검  
-
-### 기획·스펙
-10. PRD 작성·승인  
-11. Feature/Story 분해·추정  
-12. 수락 기준(AC) 합의  
-13. 의존성/리스크 레지스터  
-14. 프라이버시/보안 리뷰 게이트  
-
-### 디자인
-15. IA/플로우 합의  
-16. 와이어→하이파이  
-17. 디자인 시스템/토큰 동기화  
-18. 접근성 리뷰  
-19. 카피/마이크로카피 리뷰  
-
-### 엔지니어링 실행
-20. 테크 스파이크  
-21. 구현 플랜·태스크 브레이크다운  
-22. 스프린트 실행·보드  
-23. PR·코드리뷰·CI  
-24. 버그 트리아지·핫픽스  
-25. 기술부채/리팩터 배치  
-26. 성능/비용 최적화  
-27. 피처 플래그 롤아웃  
-
-### 품질
-28. 테스트 플랜·케이스 갱신  
-29. 회귀/스모크  
-30. 탐색적 QA  
-31. 보안/펜테스트 후속  
-32. 장애 사후 → 액션 아이템  
-
-### 데이터·API·플랫폼
-33. API/데이터 모델 파악·스키마 최신화  
-34. api_snapshot 계약 드리프트 감지  
-35. 마이그레이션 리허설  
-36. 관측성(대시보드/알림) 정비  
-37. 시크릿/권한/RLS 감사  
-
-### 릴리스·운영
-38. 릴리스 열차/컷 기준  
-39. 런북·온콜 핸드북  
-40. 배포 후 공식 문서/changelog 업데이트  
-41. 고객 공지·마이그레이션 가이드  
-42. 피처 채택 측정 → 킬/유지  
-
-### 협업·에이전트 운영 (SSOTA)
-43. Orchestrator 스윕  
-44. Human 승인 큐 / ApprovalInbox 소진  
-45. 에이전트 스킬·instruction 드리프트 교정  
-46. 커넥터 동기 건강  
-47. 샌드박스/워커 실패 복구  
-
-### 조직·컴플라이언스
-48. 라이선스/의존성 감사  
-49. 감사 로그·접근 리뷰  
-50. 온보딩 체크리스트(멤버/에이전트)  
-
----
-
-## 5. 현재 Domain Pack과의 거리
+## 4. 현재 Domain Pack과의 거리
 
 | 항목 | 지금 | 게이트 선언 이후 |
 |------|------|------------------|
@@ -418,7 +277,7 @@ flowchart TB
 
 ---
 
-## 6. 다음 토론 포인트
+## 5. 다음 토론 포인트
 
 1. `via.then` 홉 수를 2로 고정할지, path expression으로 일반화할지.  
 2. `before_spawn_task` match를 agentDefinitionId 대신 **agent tag / role label**(팩 메타)로 할지.  

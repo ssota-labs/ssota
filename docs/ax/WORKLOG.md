@@ -10,8 +10,9 @@
 
 **SWDL Domain Pack P0–P2 구현 + 운영 모델 설계 문서화** — 엣지·Delivery 표면·Main 제거·스킬. 운영/게이트: [swdl-operating-model.md](swdl-operating-model.md). 스킬: [swdl-runtime-skills.md](swdl-runtime-skills.md).
 
-### 2026-07-09 — Operating model design doc
-- [swdl-operating-model.md](swdl-operating-model.md): GatePolicy를 **팩 데이터 선언 + 제네릭 evaluator**로 (코어에 SWDL `if` 금지). Human task vs ApprovalInbox. 사이클 다이어그램·50개 업무 사이클·페이지 갭 PR 순서.
+### 2026-07-09 — Operating model + work cycles docs
+- [swdl-operating-model.md](swdl-operating-model.md): GatePolicy = **팩 데이터 선언 + 제네릭 evaluator** (코어 SWDL `if` 금지). Human task vs ApprovalInbox. 페이지 갭 PR 순서.
+- [swdl-work-cycles.md](swdl-work-cycles.md): 서브그룹 다이어그램·트리거/루프/끝·업무 사이클 목록 SSOT.
 
 ### 2026-07-09 — Domain Pack upgrade (P0–P2)
 - P0: edge domain/range + `blocked_by`/`implements`; task/sprint/PR fields; global backlog/sprints/PR inbox; applyTemplate without Main; Orchestrator-only schedules.
