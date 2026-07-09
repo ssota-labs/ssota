@@ -55,13 +55,15 @@ AX 스킬은 **빈 org에 MCP로 환경을 짓는 절차**다. SWDL 코드 시�
 
 ### 2.3 Agents / Schedules (S3–S4)
 
-| 항목 | 상태 |
+| 항목 | 상태 (가정 갱신 2026-07-09) |
 |---|---|
-| 시드 에이전트 | built-in **10+main** — generic specialist/worker (`Implement feature`, `Research`, …) |
-| SWDL 영역 오케스트레이터 | **없음** (Executive/Research/Manager/Dev/Design 단위 운영 에이전트 부재) |
-| `linkedWorkerAgentIds` 조직도 | 시드에 **없음** |
-| 스케줄 | seed fixture **데모 수준**; 템플릿 번들에 워크플로우 cron **미포함** |
-| AX 실증 (axswdl) | specialists 4 + orchestrator 1 + schedules 3 — **코드 시드에 미반영** |
+| 템플릿 에이전트 | **SWDL 도메인만** — Research / Planning / Delivery / QA + Orchestrator (`SWDL_AGENT_DEFINITION_SEEDS`). generic built-in specialists/workers는 템플릿에 **넣지 않음** |
+| 플랫폼 Main | `seedMainAgentDefinition`으로 **별도** 시드 (채팅 창구; AX “메인 범위 밖”과 동일) |
+| `linkedWorkerAgentIds` | Orchestrator → 4 specialists |
+| 스케줄 | Main weekday heartbeat + Orchestrator `0 9 * * 1-5` + weekly Monday `0 10 * * 1` |
+| AX 실증 (axswdl) | specialists 4 + orchestrator 1 + schedules 3 — **코드 시드에 반영 중** |
+
+> **가정:** “built-in generic은 없다” = Domain Pack 시드 관점. 코드 레지스트리(`AGENT_DEFINITION_REGISTRY`)의 generic 정의는 플랫폼/레거시 참조용으로 남을 수 있으나 `SOFTWARE_DEV_TEMPLATE`은 이를 시드하지 않는다.
 
 ### 2.4 Instances
 
@@ -115,15 +117,14 @@ AX 스킬은 **빈 org에 MCP로 환경을 짓는 절차**다. SWDL 코드 시�
 
 ### 3.4 S3 — Agents 고도화 가능성
 
-| 현재 | AX가 원하는 것 | 시드 적용안 |
-|---|---|---|
-| Generic built-in 10종 | 도메인 playbook + catalog/page 참조 | **추가** SWDL 전용 정의 (built-in 유지) |
-| orchestrator 없음 | 1 orchestrator + specialists + `linkedWorkerAgentIds` | 예: Research / Planning / Delivery / QA specialists + `SWDL Orchestrator` |
-| description 라우팅 | "use when …" | 기존도 양호; SWDL 에이전트는 **페이지 slug·catalogKey를 body에 명시** |
+| 가정 | 적용 |
+|---|---|
+| generic built-in 없음 | 템플릿은 `SWDL_AGENT_DEFINITION_SEEDS`만 시드 |
+| Main 유지 | 플랫폼 채팅 창구만 `seedMainAgentDefinition` |
+| orchestrator 패턴 | 1 orchestrator + 4 specialists + `linkedWorkerAgentIds` |
+| playbook 품질 | body가 catalogKey·page slug를 명시 (AX 규칙) |
 
-**주의:** AX overview는 메인 에이전트를 범위 밖으로 둔다. 시드의 `SSOTA Main Agent`는 플랫폼 창구로 유지하고, **도메인 자동 운영은 별도 orchestrator**로 둔다 (스킬 규칙과 동일).
-
-**플레이북 품질:** body가 `initiative`/`prd`/`task`와 `manager/initiatives`, `tpl/initiative/build/tasks` 등을 이름 붙이면, 시드만으로도 “환경이 무엇을 돌리는지”가 문서화된다.
+**상태:** U4 착수 — SWDL agents + schedules가 템플릿에 연결됨. 추가 고도화는 playbook 정교화·nodeScopes·영역별 세분화.
 
 ### 3.5 S4 — Schedules 고도화 가능성
 

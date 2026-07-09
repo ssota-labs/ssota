@@ -8,12 +8,18 @@
 
 ## ⬛ 현재 상태 (2026-07-09, 한 줄)
 
-**AX 스킬 방법론 → SWDL 코드 시드 환류 분석 완료** — [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md). Task 1·2·3 MCP 실증은 유지. 다음: 분석 U1(edge domain/range) 또는 U4(SWDL agents) 중 첫 구현 슬라이스.
+**SWDL 템플릿 에이전트 = 도메인 전용만** — generic built-in specialists/workers는 `SOFTWARE_DEV_TEMPLATE`에 넣지 않음. Main(플랫폼 채팅)만 별도 시드 + SWDL orchestrator/research/planning/delivery/QA + orchestrator cron. 분석: [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md).
+
+### 2026-07-09 — SWDL agents without generic built-ins
+- Assumption: template pack does **not** seed `AGENT_DEFINITION_SEEDS` (Implement feature, Notion worker, …).
+- Added `SWDL_AGENT_IDS` + playbooks + `SWDL_AGENT_DEFINITION_SEEDS` (4 specialists + orchestrator with `linkedWorkerAgentIds`).
+- `SOFTWARE_DEV_TEMPLATE.agentDefinitions` → SWDL seeds; schedules → Main heartbeat + orchestrator weekday/weekly.
+- Smoke seed task + e2e/mcp tests point at `SWDL_AGENT_IDS.delivery`.
 
 ### 2026-07-09 — SWDL 시드 고도화 분석 (코드 경로)
 - AX `ssota-ax-author` S1–S4 루프를 **MCP 재저작이 아니라** `SOFTWARE_DEV_TEMPLATE`/seed-pack에 대입해 갭 정리.
-- 핵심 갭: edge domain/range 11/17 공백, 페이지 Document 편향·Inbox/Board/Stat 약함, SWDL orchestrator/schedule 미시드, instances `[]`.
-- 로드맵 슬라이스 U1–U6 제안. 구현은 별 PR.
+- 핵심 갭: edge domain/range 11/17 공백, 페이지 Document 편향·Inbox/Board/Stat 약함, SWDL orchestrator/schedule 미시드(→ agents 슬라이스 착수), instances `[]`.
+- 로드맵 슬라이스 U1–U6 제안.
 
 ---
 
