@@ -58,9 +58,9 @@ AX 스킬은 **빈 org에 MCP로 환경을 짓는 절차**다. SWDL 코드 시�
 | 항목 | 상태 (가정 갱신 2026-07-09) |
 |---|---|
 | 템플릿 에이전트 | **SWDL 도메인만** — Research / Planning / Delivery / QA + Orchestrator (`SWDL_AGENT_DEFINITION_SEEDS`). generic built-in specialists/workers는 템플릿에 **넣지 않음** |
-| 플랫폼 Main | `seedMainAgentDefinition`으로 **별도** 시드 (채팅 창구; AX “메인 범위 밖”과 동일) |
+| 플랫폼 Main | Domain Pack/`applyTemplate` **미시드**. Console chat만 seed.ts 플랫폼 경로 |
 | `linkedWorkerAgentIds` | Orchestrator → 4 specialists |
-| 스케줄 | Main weekday heartbeat + Orchestrator `0 9 * * 1-5` + weekly Monday `0 10 * * 1` |
+| 스케줄 | Orchestrator만 `0 9 * * 1-5` + weekly Monday `0 10 * * 1` (Main heartbeat 없음) |
 | AX 실증 (axswdl) | specialists 4 + orchestrator 1 + schedules 3 — **코드 시드에 반영 중** |
 
 > **가정:** “built-in generic은 없다” = Domain Pack 시드 관점. 코드 레지스트리(`AGENT_DEFINITION_REGISTRY`)의 generic 정의는 플랫폼/레거시 참조용으로 남을 수 있으나 `SOFTWARE_DEV_TEMPLATE`은 이를 시드하지 않는다.
@@ -120,7 +120,7 @@ AX 스킬은 **빈 org에 MCP로 환경을 짓는 절차**다. SWDL 코드 시�
 | 가정 | 적용 |
 |---|---|
 | generic built-in 없음 | 템플릿은 `SWDL_AGENT_DEFINITION_SEEDS`만 시드 |
-| Main 유지 | 플랫폼 채팅 창구만 `seedMainAgentDefinition` |
+| Main | Domain Pack 경로에서 **완전 제거**; 플랫폼 chat은 seed 밖 |
 | orchestrator 패턴 | 1 orchestrator + 4 specialists + `linkedWorkerAgentIds` |
 | playbook 품질 | body가 catalogKey·page slug를 명시 (AX 규칙) |
 

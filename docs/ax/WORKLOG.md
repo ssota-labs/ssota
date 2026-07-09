@@ -8,25 +8,12 @@
 
 ## ⬛ 현재 상태 (2026-07-09, 한 줄)
 
-**런타임 스킬 = from scratch Progressive Disclosure** — 레포 빌트인 스킬·Main과 무관. 8스킬(공유3+파이프라인4+오케스트레이트1) 설계: [swdl-runtime-skills.md](swdl-runtime-skills.md). 환경 갭은 [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md).
+**SWDL Domain Pack P0–P2 구현 중/완료** — 엣지 강제·실행 모델·전역 Delivery·Main 제거·스키마/보드·8 런타임 스킬. 계획: Cursor plan `swdl_domain_pack_upgrade`. 스킬: [swdl-runtime-skills.md](swdl-runtime-skills.md).
 
-### 2026-07-09 — SWDL runtime skills (no builtins)
-- Assumption: `.agents/skills` builtins are **dev-time only**; SWDL agents get domain skills only.
-- Progressive disclosure: thin SKILL.md + on-demand `references/`; 8 skills; Orchestrator has no specialist pipelines.
-- Next: implement skill skeletons under `packages/contracts/src/agents/skills/swdl/` after catalog/page P0 alignment.
-
-### 2026-07-09 — SWDL agents without generic built-ins
-- Assumption: template pack does **not** seed `AGENT_DEFINITION_SEEDS` (Implement feature, Notion worker, …).
-- Added `SWDL_AGENT_IDS` + playbooks + `SWDL_AGENT_DEFINITION_SEEDS` (4 specialists + orchestrator with `linkedWorkerAgentIds`).
-- `SOFTWARE_DEV_TEMPLATE.agentDefinitions` → SWDL seeds; schedules → Main heartbeat + orchestrator weekday/weekly.
-- Smoke seed task + e2e/mcp tests point at `SWDL_AGENT_IDS.delivery`.
-
-### 2026-07-09 — SWDL 시드 고도화 분석 (코드 경로)
-- AX `ssota-ax-author` S1–S4 루프를 **MCP 재저작이 아니라** `SOFTWARE_DEV_TEMPLATE`/seed-pack에 대입해 갭 정리.
-- 핵심 갭: edge domain/range 11/17 공백, 페이지 Document 편향·Inbox/Board/Stat 약함, SWDL orchestrator/schedule 미시드(→ agents 슬라이스 착수), instances `[]`.
-- 로드맵 슬라이스 U1–U6 제안.
-
----
+### 2026-07-09 — Domain Pack upgrade (P0–P2)
+- P0: edge domain/range + `blocked_by`/`implements`; task/sprint/PR fields; global backlog/sprints/PR inbox; applyTemplate without Main; Orchestrator-only schedules.
+- P1: plan/spec propertySchemas; hypothesis board; SWDL skill pack + bindings.
+- P2: api_snapshot page; agent node labeled legacy; agent_owns_page excluded from template catalog seed.
 
 ## ⬛ 이전 상태 (2026-07-08)
 
