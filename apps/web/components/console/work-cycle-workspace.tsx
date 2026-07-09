@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@ssota/ui/components/ui/accordion";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@ssota/ui/components/ui/collapsible";
+import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import {
   WorkCycleOverviewDiagram,
@@ -52,6 +53,67 @@ type WorkCycleWorkspaceProps = {
   policyNodes: RawNode[];
 };
 
+function CycleAccordionRow({
+  cycle,
+  policies,
+  open,
+  onOpenChange,
+}: {
+  cycle: WorkCycleInstance;
+  policies: GatePolicyInstance[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const meta = WORK_CYCLE_GROUP_META[cycle.properties.group];
+  const topo = cycle.properties.topology;
+  const gateCount = topo.nodes.filter((n) => n.kind === "gate").length;
+  const stageCount = topo.nodes.filter((n) => n.kind === "stage").length;
+  const cycleKey = cycle.properties.cycleKey;
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={onOpenChange}
+      data-testid={`work-cycle-item-${cycleKey}`}
+      className="border-border rounded-lg border"
+    >
+      <CollapsibleTrigger
+        data-testid={`work-cycle-trigger-${cycleKey}`}
+        className="hover:bg-muted/40 flex w-full items-center gap-3 px-3 py-3 text-left"
+      >
+        <CaretDownIcon
+          className={cn(
+            "text-muted-foreground size-4 shrink-0 transition-transform",
+            open && "rotate-180",
+          )}
+        />
+        <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <span className="text-sm font-semibold">
+            {meta.letter}. {cycle.title}
+          </span>
+          <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-normal">
+            <Badge variant="secondary">{stageCount} stages</Badge>
+            <Badge variant={gateCount > 0 ? "outline" : "secondary"}>
+              {gateCount} gates
+            </Badge>
+            {cycle.properties.orchestratorMode ? (
+              <span>orch: {cycle.properties.orchestratorMode}</span>
+            ) : null}
+          </span>
+        </span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="border-border border-t px-2 pb-3 pt-2">
+        <p className="text-muted-foreground mb-3 px-1 text-sm">
+          {cycle.properties.loopSummary ?? cycle.properties.endCondition}
+        </p>
+        {open ? (
+          <WorkCycleTopologyDiagram cycle={cycle} policies={policies} />
+        ) : null}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export function WorkCycleWorkspace({
   teamspaceId,
   cycleNodes,
@@ -89,7 +151,15 @@ export function WorkCycleWorkspace({
         {cycles.length > 0 ? (
           <WorkCycleOverviewDiagram
             cycles={cycles}
-            onSelectCycle={(cycleKey) => setOpenCycleKey(cycleKey)}
+            onSelectCycle={(cycleKey) => {
+              setOpenCycleKey(cycleKey);
+              // Scroll the matching accordion row into view after open.
+              requestAnimationFrame(() => {
+                document
+                  .querySelector(`[data-testid="work-cycle-item-${cycleKey}"]`)
+                  ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              });
+            }}
           />
         ) : (
           <BrowseWorkspace.Empty>
@@ -102,62 +172,22 @@ export function WorkCycleWorkspace({
         {cycles.length === 0 ? (
           <BrowseWorkspace.Empty>No cycles to expand.</BrowseWorkspace.Empty>
         ) : (
-          <Accordion
-            value={openCycleKey ? [openCycleKey] : []}
-            onValueChange={(next) => {
-              setOpenCycleKey(next[0] ?? null);
-            }}
-            className="w-full"
-          >
+          <div className="flex flex-col gap-2">
             {cycles.map((cycle) => {
-              const meta = WORK_CYCLE_GROUP_META[cycle.properties.group];
-              const topo = cycle.properties.topology;
-              const gateCount = topo.nodes.filter((n) => n.kind === "gate").length;
-              const stageCount = topo.nodes.filter((n) => n.kind === "stage").length;
               const cycleKey = cycle.properties.cycleKey;
-
               return (
-                <AccordionItem
+                <CycleAccordionRow
                   key={cycleKey}
-                  value={cycleKey}
-                  data-testid={`work-cycle-item-${cycleKey}`}
-                >
-                  <AccordionTrigger
-                    className="px-3 py-3 text-left"
-                    data-testid={`work-cycle-trigger-${cycleKey}`}
-                  >
-                    <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                      <span className="text-sm font-semibold">
-                        {meta.letter}. {cycle.title}
-                      </span>
-                      <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-normal">
-                        <Badge variant="secondary">{stageCount} stages</Badge>
-                        <Badge variant={gateCount > 0 ? "outline" : "secondary"}>
-                          {gateCount} gates
-                        </Badge>
-                        {cycle.properties.orchestratorMode ? (
-                          <span className="text-muted-foreground">
-                            orch: {cycle.properties.orchestratorMode}
-                          </span>
-                        ) : null}
-                      </span>
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-1 pb-4">
-                    <p className="text-muted-foreground mb-3 px-2 text-sm">
-                      {cycle.properties.loopSummary ?? cycle.properties.endCondition}
-                    </p>
-                    {openCycleKey === cycleKey ? (
-                      <WorkCycleTopologyDiagram
-                        cycle={cycle}
-                        policies={policies}
-                      />
-                    ) : null}
-                  </AccordionContent>
-                </AccordionItem>
+                  cycle={cycle}
+                  policies={policies}
+                  open={openCycleKey === cycleKey}
+                  onOpenChange={(next) =>
+                    setOpenCycleKey(next ? cycleKey : null)
+                  }
+                />
               );
             })}
-          </Accordion>
+          </div>
         )}
       </BrowseWorkspace.Section>
     </BrowseWorkspace.Frame>
