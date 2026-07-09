@@ -6,7 +6,21 @@
 
 ---
 
-## ⬛ 현재 상태 (2026-07-08, 한 줄)
+## ⬛ 현재 상태 (2026-07-09, 한 줄)
+
+**WorkCycle + GatePolicy (org catalog) 착수·구현** — `work_cycle`/`gate_policy` L1 + path-expression evaluator + onPass spawn + `/work-cycle` UI + AX Step 0. 시드 A–G + SWDL 최소 게이트 세트. 상세: [swdl-work-cycles.md](swdl-work-cycles.md) · [swdl-operating-model.md](swdl-operating-model.md).
+
+### WorkCycle + GatePolicy (2026-07-09)
+- Contracts: `work_cycle` / `gate_policy` schemas, `parseGatePath`, seed JSON (`work-cycles.json`, `gate-policies.json`), `swdl-ids` Delivery UUID.
+- Core: `evaluateGatePolicies` + hooks on create/update/spawn; `onPass` sync `spawn_task`; codes `GATE_PENDING`/`GATE_REJECTED`.
+- Adapter: `seedWorkCyclesAndGatePolicies` in `applyTemplate` (software-development).
+- Web: `/{orgSlug}/work-cycle` React Flow overview + topology; page action `spawn_task`; nav + i18n.
+- AX skill: Step 0 / 0b + `references/work-cycle-authoring.md` / `gate-policy-authoring.md` (ENV-02 mirrors).
+- E2E: `e2e/tests/work-cycle.spec.ts`.
+
+---
+
+## ⬛ 이전 상태 (2026-07-08, 한 줄)
 
 **Task 1·2·3 완료 — AX 능력 + 3도메인 실증(HR·개인재무·SWDL) + 반복 friction 수정까지.** 남은 후보: 라이브 web 렌더 데모, 코드 템플릿 캡처(선택), PR.
 
