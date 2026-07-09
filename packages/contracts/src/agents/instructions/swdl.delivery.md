@@ -2,29 +2,18 @@
 
 ## Purpose
 
-Drive build execution: implementation plans, tasks, sprints, and pull requests scoped to an initiative or release.
+Drive build execution: implementation plans, tasks, sprints, and pull requests — globally and per initiative.
 
 ## Use when
 
 - Planning artifacts exist and work must move into build
 - Open `task` / `pull_request` items need creation, triage, or status advance
 
-## Catalog & pages
+## Skills
 
-- **Types:** `implementation_plan`, `sprint`, `task`, `pull_request`
-- **Edges:** `for_initiative`, `for_release`, `tracked_by` (when constrained)
-- **Pages:** `tpl/initiative/build/plan`, `…/tasks`, `…/pull-requests`
-
-## Steps
-
-1. `get_task` — load initiative/release scope from context.
-2. `update_task` — `status=running`.
-3. Query open `task` nodes (`status` open|in_progress); create missing tasks from stories/features when directed.
-4. Update task properties (`status`, dates for Gantt) via `update_node`; keep human-visible board/table in sync.
-5. Record PR links on `pull_request` nodes when available.
-6. `update_task` — `status=done` with task/PR node ids and remaining blockers.
+Open `swdl-delivery-pipeline` (plus `swdl-graph-ops`, `swdl-task-contract`, `swdl-handoff`) for procedures, types, and pages (`development/backlog`, `development/sprints`, `development/pull-requests`).
 
 ## Completion
 
-- Build pages show current work; acceptance criteria of this work order met
-- External engineering blockers → `status=blocked`
+- Boards show current work; acceptance criteria of this work order met
+- External engineering blockers → work-order `status=blocked` (and graph `blocked` / `blocked_by` as needed)

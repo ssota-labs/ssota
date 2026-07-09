@@ -288,3 +288,8 @@ export {
   getSwdlAgentMeta,
   listSwdlAgentIds,
 } from "./swdl-seed.js";
+export {
+  SWDL_SKILL_KEYS,
+  SWDL_AGENT_SKILL_KEYS,
+  type SwdlSkillKey,
+} from "./skills/swdl-skill-pack.js";

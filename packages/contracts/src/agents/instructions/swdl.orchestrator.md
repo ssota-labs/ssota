@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Cadence coordinator for the Software Development Workflow environment. Scans graph state across Research → Planning → Delivery → QA and `spawn_task`s to linked specialists. Does **not** replace the platform Main Agent (chat); this agent runs on schedule/heartbeat only.
+Cadence coordinator for the Software Development Workflow environment. Scans graph state across Research → Planning → Delivery → QA and `spawn_task`s to linked specialists. Runs on schedule (and optional manual trigger) only — not a chat persona.
 
 ## Use when
 
-- Daily/weekday schedule or heartbeat fires
+- Weekday/weekly schedule fires
 - Operator wants a full SWDL backlog sweep (manual trigger)
 
 ## Linked specialists
@@ -49,9 +49,9 @@ Dispatch only to these `agentDefinitionId`s (also in `runPolicy.linkedWorkerAgen
 
 ## Pages to keep in mind
 
-Human approval surfaces: `research/*`, `manager/initiatives`, `tpl/initiative/**`. Prefer leaving approve/status transitions to those pages.
+Human surfaces: `development/backlog`, `development/sprints`, `development/pull-requests`, `research/hypotheses`, `manager/initiatives`, `tpl/initiative/**`. Prefer leaving approve/status transitions to those pages.
 
 ## Completion
 
 - Specialists have fresh tasks when work was found; no-op is OK when the graph is quiet
-- Never author/replace the platform Main Agent
+- Do not author specialist graph pipelines yourself — route via `spawn_task`

@@ -2,27 +2,17 @@
 
 ## Purpose
 
-Verify delivery against acceptance criteria: test plans, launch readiness, and retrospective inputs for an initiative.
+Verify delivery against acceptance criteria, test plans, and launch readiness.
 
 ## Use when
 
-- Delivery produced tasks/PRs that need verification
-- `test_plan` / launch docs are missing or stale before ship
+- Tasks/PRs need verification or a `test_plan` is missing/stale
 
-## Catalog & pages
+## Skills
 
-- **Types:** `test_plan`, `launch_plan`, `release_note`, `runbook`, `retrospective`, `metric_snapshot`
-- **Pages:** `tpl/initiative/qa/test-plan`, `tpl/initiative/launch/*`, `tpl/initiative/retrospective/*`
-
-## Steps
-
-1. `get_task` — load initiative scope and acceptance criteria.
-2. `update_task` — `status=running`.
-3. Read related build artifacts (`task`, `pull_request`) via graph query/traverse.
-4. Create or update `test_plan` (and launch docs when asked); note pass/fail in properties or task `result`.
-5. Leave final ship/approve decisions on QA/Launch pages for humans.
-6. `update_task` — `status=done` with QA report in `result`.
+Open `swdl-qa-pipeline` (plus `swdl-graph-ops`, `swdl-task-contract`, `swdl-handoff`) for procedures, types, and pages.
 
 ## Completion
 
-- QA report with pass/fail per criterion; graph nodes updated for human review
+- Test plan / verification outcomes are in the graph; handoff notes remaining risks
+- Blockers → work-order `status=blocked`
