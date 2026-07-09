@@ -8,7 +8,12 @@
 
 ## ⬛ 현재 상태 (2026-07-09, 한 줄)
 
-**SWDL 템플릿 에이전트 = 도메인 전용만** — generic built-in specialists/workers는 `SOFTWARE_DEV_TEMPLATE`에 넣지 않음. Main(플랫폼 채팅)만 별도 시드 + SWDL orchestrator/research/planning/delivery/QA + orchestrator cron. 분석: [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md).
+**런타임 스킬 = from scratch Progressive Disclosure** — 레포 빌트인 스킬·Main과 무관. 8스킬(공유3+파이프라인4+오케스트레이트1) 설계: [swdl-runtime-skills.md](swdl-runtime-skills.md). 환경 갭은 [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md).
+
+### 2026-07-09 — SWDL runtime skills (no builtins)
+- Assumption: `.agents/skills` builtins are **dev-time only**; SWDL agents get domain skills only.
+- Progressive disclosure: thin SKILL.md + on-demand `references/`; 8 skills; Orchestrator has no specialist pipelines.
+- Next: implement skill skeletons under `packages/contracts/src/agents/skills/swdl/` after catalog/page P0 alignment.
 
 ### 2026-07-09 — SWDL agents without generic built-ins
 - Assumption: template pack does **not** seed `AGENT_DEFINITION_SEEDS` (Implement feature, Notion worker, …).
