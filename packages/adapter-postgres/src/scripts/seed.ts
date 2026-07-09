@@ -21,7 +21,7 @@ import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { BUILTIN_AGENT_IDS, SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -149,14 +149,14 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await seedScheduleFixtures(db, teamspaceId);
     await seedInboundChannelFixtures(db, teamspaceId);
 
-    const implementFeatureId = BUILTIN_AGENT_IDS.implementFeature;
+    const deliveryAgentId = SWDL_AGENT_IDS.delivery;
     const mainAgentId = BUILTIN_AGENT_IDS.main;
 
     await db
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        agentDefinitionId: implementFeatureId,
+        agentDefinitionId: deliveryAgentId,
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",

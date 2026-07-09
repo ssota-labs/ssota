@@ -3,7 +3,7 @@ import {
   listEdgeTypes,
   type TemplateBundle,
 } from "@ssota/contracts";
-import { AGENT_DEFINITION_SEEDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_DEFINITION_SEEDS } from "@ssota/contracts/agents";
 import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
@@ -20,14 +20,15 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
     id: "software-development",
     name: "Software Development",
     description:
-      "Full SDLC workspace — roadmap, research, initiatives, design, engineering, build, QA, launch and retrospective.",
+      "Full SDLC workspace — roadmap, research, initiatives, design, engineering, build, QA, launch and retrospective. Domain agents: SWDL orchestrator + research/planning/delivery/QA specialists (no generic built-in workers).",
     category: "Engineering",
   },
   catalog: {
     nodeTypeKeys: listNodeTypes(),
     edgeTypeKeys: listEdgeTypes(),
   },
-  agentDefinitions: AGENT_DEFINITION_SEEDS,
+  /** Domain pack agents only — platform Main is seeded separately via seedMainAgentDefinition. */
+  agentDefinitions: SWDL_AGENT_DEFINITION_SEEDS,
   pages: pagesTreeSeed as unknown as TemplateBundle["pages"],
 };
 
