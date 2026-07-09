@@ -72,3 +72,18 @@ WITH 런의 self-review 게이트가 **출시 전에 잡아 고친** 실제 결�
 - **레이어는 목표대로 작동한다** — non-sales·blank-context 3도메인에서 100% 유효 + 아키타입 정합 + 반복 correctness 버그를 출시 전 차단. A/B에서 컨트롤은 유효성·규율·응집 모두에서 뒤졌다.
 - **레버리지 분해**: 시각·구조 품질 ≈ 컴포넌트 카탈로그(재료), 정합성·규율·응집 ≈ 품질 레이어(패턴). 둘은 **상보적·곱셈적**. 앞선 논의(② 즉시 ROI, ④ 강제 승수)와 일치.
 - **다음**: (1) 위 4개 component 갭을 wave-3/폴리시에 반영(특히 ApprovalInbox 값 지정 — 가장 자주 걸림), (2) 골든 스펙에 Calendar/Board/Detail 예시 1개씩 추가(현재 Dashboard/List/Inbox 3종 → 아키타입 커버리지↑), (3) self-review 게이트의 "결함 3개" adversarial 패스를 스킬에서 더 강조(버그 캐치의 주역).
+
+## 풀파이프라인 검증 (S1–S4, 2026-07-09 추가)
+
+위 테스트는 S2(페이지)만 검증했다. 후속으로 **전체 AX 파이프라인**(S1 카탈로그 → S2 페이지 → S3 에이전트 → S4 스케줄)을 강화 스킬로 blank-context 에이전트가 저작할 수 있는지 2 신규 도메인(채용/ATS, 차량정비)에서 검증. 4레이어 검증기(`jsonRenderSpec` + 카탈로그/에이전트/스케줄 코히런스)로 객관 채점.
+
+| 도메인 | node types | edges | pages | agents | schedules | archetypes | 검증 이슈 |
+|---|---|---|---|---|---|---|---|
+| 채용/ATS | 5 | 4 | 8 | 4 | 3 | 6 | **0** |
+| 차량 정비 | 7 | 10 | 9 | 4 | 2 | 7 | **0** |
+
+- **두 환경 모두 4레이어 100% 유효 + 크로스레이어 코히런트**: edge domain/range 전부 저작 node type 참조, 페이지 바인딩 전부 catalog 참조(unbound 0), orchestrator scheduled + specialists `task` 트리거, cron valid. 교과서적 org-chart + cadence.
+- **강화 기능이 실제로 발현**(문서만 아니라 discover+use): `approveValue/rejectValue`, `emptyLabel`(7/9), StatTile `href`(4/4), `format`/`aggregate`/`traverse`/`appliesToNodeType`. self-review가 dead nav 링크·무효 `searchColumn`·enum 불일치를 출시 전 차단. (메타: 채용 에이전트가 내 검증기의 `semanticViol` 버그까지 독립적으로 리포트.)
+- **테스트가 좁힌 잔여 스킬 갭 2개 → 이번에 반영**: (a) binding `filter`에 `gt/gte/lt/lte` 추가(수치·ISO date 비교; "low stock/overdue" 우회 불필요), (b) `CalendarView.colors` value→token 맵(KanbanBoard처럼 도메인 status 색상 지정). 위 §"제품 갭 4개"도 모두 반영 완료.
+- **한계(정직)**: 파일 기반 — 스키마+코히런스 검증이지 라이브 MCP 커밋 검증은 아니었다(당시 연결 MCP에 authoring 툴 미노출). 이후 MCP에 `create_node_type`/`create_page`/`create_agent`/`create_schedule`가 노출돼 **라이브 end-to-end 실행은 후속으로 가능**.
+- **결론**: 강화 `ssota-ax-author` 스킬로 blank-context 에이전트가 신규 도메인의 **완전하고 정합적인 에이전트 네이티브 환경을 첫 시도에 저작** — AX 능력이 S2뿐 아니라 S1–S4 전 파이프라인에서 작동함을 실증.

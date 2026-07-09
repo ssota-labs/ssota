@@ -58,11 +58,15 @@ A map `bindingKey → { kind, … }`. Kinds:
 | `url_selection` | `{ kind:"url_selection", param, catalogKey }` | node id read from the URL query |
 | `ref` | `{ kind:"ref", binding }` | alias another binding |
 
-**`filter` is an ARRAY of predicates** (not an object): `filter: [{ key, op, value }]`, where `key` is a property name (or `title`), `op` is one of `eq | neq | exists`, and `value` the comparand (omit for `exists`). Example — pending leave only:
+**`filter` is an ARRAY of predicates** (not an object): `filter: [{ key, op, value }]`, where `key` is a property name (or `title`), `op` is one of `eq | neq | exists | gt | gte | lt | lte`, and `value` the comparand (omit for `exists`). The ordering ops (`gt/gte/lt/lte`) compare **numerically** when both sides parse as numbers (so `quantity <= reorder_point` works with a string/number mix) and **lexically** otherwise — so ISO `date`/timestamp strings sort correctly (`due_date lt "2026-08-01"`). A missing/empty value never satisfies an ordering clause. Multiple clauses AND together. Examples:
 
 ```json
-"pending": { "kind": "query", "catalogKey": "leave_request",
-             "filter": [{ "key": "status", "op": "eq", "value": "pending" }] }
+"pending":   { "kind": "query", "catalogKey": "leave_request",
+               "filter": [{ "key": "status", "op": "eq", "value": "pending" }] },
+"lowStock":  { "kind": "query", "catalogKey": "part",
+               "filter": [{ "key": "quantity", "op": "lte", "value": 5 }] },
+"overdue":   { "kind": "query", "catalogKey": "work_order",
+               "filter": [{ "key": "due_date", "op": "lt", "value": "2026-07-09" }] }
 ```
 
 ## `actions` — mutate the graph (the "approve" buttons)
