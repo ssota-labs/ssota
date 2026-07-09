@@ -31,14 +31,27 @@ export const ToolBundleSchema = z.enum([
 
 export type ToolBundle = z.infer<typeof ToolBundleSchema>;
 
-/** Bundles merged into every runnable agent at runtime. */
+/**
+ * The general-tool baseline force-merged into EVERY runnable agent at runtime
+ * (main + every specialist), via `mergeAgentToolBundles`. This is the "full
+ * citizen" tool set every agent gets unconditionally — mirrors what the main
+ * agent carries, minus the two role-specific bundles that stay opt-in:
+ * `delegate` (orchestrator dispatch) and `sandbox.code` (code execution).
+ * Connector *bundle* is baseline (the meta-tool surface), but the actual
+ * connected accounts are still per-agent (`runPolicy.connectorBindings`).
+ * Keep in sync with `OPTIONAL_TOOL_BUNDLES` in the console tool catalog.
+ */
 export const DEFAULT_AGENT_TOOL_BUNDLES: ToolBundle[] = [
   "graph.read",
+  "graph.write",
   "tasks.manage",
-  "connectors",
+  "pages.author",
+  "skills.read",
   "workers",
+  "connectors",
 ];
 
+/** Union the baseline into an agent's declared bundles (baseline always wins). */
 export function mergeAgentToolBundles(bundles: ToolBundle[]): ToolBundle[] {
   return [...new Set([...DEFAULT_AGENT_TOOL_BUNDLES, ...bundles])];
 }

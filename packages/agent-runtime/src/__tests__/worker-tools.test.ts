@@ -12,13 +12,17 @@ describe("worker tool surface", () => {
     ]);
   });
 
-  it("includes worker tools when tool_bundles has workers", () => {
+  it("includes worker tools plus the forced general-tool baseline", () => {
     const tools = buildAgentTools({
       isMain: false,
       toolBundles: ["workers"],
     });
-    expect(tools).toHaveProperty("run_worker");
-    expect(tools).toHaveProperty("spawn_task");
-    expect(tools).not.toHaveProperty("create_node");
+    expect(tools).toHaveProperty("run_worker"); // workers bundle
+    expect(tools).toHaveProperty("spawn_task"); // tasks.manage (baseline)
+    expect(tools).toHaveProperty("create_node"); // graph.write (baseline)
+    expect(tools).toHaveProperty("read_skill"); // skills.read (baseline)
+    // agent-authoring stays main-only; delegate stays opt-in
+    expect(tools).not.toHaveProperty("write_agent_definition");
+    expect(tools).not.toHaveProperty("delegate");
   });
 });
