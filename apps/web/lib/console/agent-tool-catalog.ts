@@ -8,12 +8,15 @@ import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 /** @deprecated Use DEFAULT_AGENT_TOOL_BUNDLES from @ssota/contracts */
 export const BASE_TOOL_BUNDLES: ToolBundle[] = [...DEFAULT_AGENT_TOOL_BUNDLES];
 
-/** Optional bundles the settings UI can enable per agent. */
+/**
+ * Bundles the settings UI can toggle per agent — everything NOT in the forced
+ * baseline (`DEFAULT_AGENT_TOOL_BUNDLES`). `graph.write`/`pages.author`/
+ * `skills.read` moved into the baseline, so only the two role-specific bundles
+ * remain opt-in here.
+ */
 export const OPTIONAL_TOOL_BUNDLES: ToolBundle[] = [
-  "graph.write",
-  "pages.author",
-  "sandbox.code",
   "delegate",
+  "sandbox.code",
 ];
 
 export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
