@@ -163,8 +163,8 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
         assignee: "automation",
         context: { source: "seed" },
         acceptanceCriteria: [
-          "Active Drizzle schema keeps only profiles, organizations, memberships, projects, tasks, nodes, and edges.",
-          "Generic graph runtime files live under archive/generic-runtime.",
+          "Active Drizzle schema keeps the Console v2.7 tables (profiles, organizations, memberships, teamspaces, tasks, accounts, node_catalog, edge_catalog, nodes, edges, pages, agent_definitions, schedules, …).",
+          "Generic graph runtime removed from the repo — available in git history only.",
         ],
         idempotencyKey: "seed:archive-generic-runtime",
       })
