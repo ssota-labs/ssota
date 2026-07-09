@@ -27,6 +27,7 @@
     "@blocknote/react": "^0.51.4",
     "@blocknote/shadcn": "^0.51.4",
     "@chat-adapter/discord": "^4.31.0",
+    "@chat-adapter/shared": "^4.31.0",
     "@chat-adapter/slack": "^4.31.0",
     "@chat-adapter/state-pg": "^4.31.0",
     "@chat-adapter/telegram": "^4.31.0",
