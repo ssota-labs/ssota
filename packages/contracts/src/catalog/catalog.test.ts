@@ -21,8 +21,8 @@ import {
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 39 node types and 18 edge types", () => {
-    expect(NODE_TYPES).toHaveLength(39);
+  it("defines 41 node types and 18 edge types", () => {
+    expect(NODE_TYPES).toHaveLength(41);
     expect(EDGE_TYPES).toHaveLength(18);
   });
 

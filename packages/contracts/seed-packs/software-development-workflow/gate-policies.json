@@ -1,0 +1,122 @@
+[
+  {
+    "title": "PRD approved before task create",
+    "properties": {
+      "policyKey": "swdl.prd-approved-before-task",
+      "sortOrder": 10,
+      "includedTeamspaceIds": [],
+      "when": "before_create_node",
+      "match": { "catalogKey": "task" },
+      "require": [
+        {
+          "path": "in:for_initiative[prd].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "PRD must be approved before creating a task",
+        "suggest": {
+          "approvalCatalogKey": "prd",
+          "pageKey": "tpl/initiative/planning/prd",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
+    "title": "PRD approved before Delivery spawn",
+    "properties": {
+      "policyKey": "swdl.prd-approved-before-delivery-spawn",
+      "sortOrder": 20,
+      "includedTeamspaceIds": [],
+      "when": "before_spawn_task",
+      "match": {
+        "agentDefinitionId": "a1000000-0000-4000-8000-000000000003"
+      },
+      "require": [
+        {
+          "path": "in:for_initiative[prd].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "PRD must be approved before spawning Delivery",
+        "suggest": {
+          "approvalCatalogKey": "prd",
+          "pageKey": "tpl/initiative/planning/prd",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
+    "title": "PRD approved → sync Delivery spawn",
+    "properties": {
+      "policyKey": "swdl.prd-approved-onpass-spawn",
+      "sortOrder": 30,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "prd",
+        "property": { "path": "status", "in": ["approved"] }
+      },
+      "require": [
+        {
+          "path": "self.status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "PRD status transition blocked"
+      },
+      "onPass": {
+        "effects": [
+          {
+            "kind": "spawn_task",
+            "agentDefinitionId": "a1000000-0000-4000-8000-000000000003",
+            "titleTemplate": "{{nodeTitle}} — delivery",
+            "idempotencyKeyTemplate": "gate:{{policyKey}}:{{nodeId}}:delivery",
+            "executorType": "Agent",
+            "includeSubjectNode": true,
+            "targetNodePath": "out:for_initiative[initiative]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "title": "Feature approved before story ready",
+    "properties": {
+      "policyKey": "swdl.feature-approved-before-story-ready",
+      "sortOrder": 40,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "user_story",
+        "property": { "path": "status", "in": ["ready", "approved"] }
+      },
+      "require": [
+        {
+          "path": "out:part_of[feature].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Parent feature must be approved before story ready",
+        "suggest": {
+          "approvalCatalogKey": "feature",
+          "pageKey": "tpl/initiative/planning/features",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  }
+]
