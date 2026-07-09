@@ -143,4 +143,45 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByTestId("media-embed-x")).toBeVisible();
     await expect(page.getByTestId("media-embed-open-link")).toBeVisible();
   });
+
+  // wave-2 + eval: new cross-domain catalog components render from their demo specs.
+  // Assertions are scoped to the rendered preview (dynamic-page-renderer) so the
+  // collapsible "View JSON spec" panel — which repeats the same strings — doesn't
+  // trip strict-mode.
+  test("wave-2 CalendarView demo renders month grid and event chips", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=data-calendar");
+    const demo = page.getByTestId("dynamic-page-renderer");
+    await expect(demo).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(demo.getByText("2026년 7월")).toBeVisible();
+    await expect(demo.getByText("김민준 초진 09:00")).toBeVisible();
+  });
+
+  test("wave-2 RecordView demo renders header, status badge and actions", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=data-record");
+    const demo = page.getByTestId("dynamic-page-renderer");
+    await expect(demo).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(demo.getByText("Acme 연간 계약").first()).toBeVisible();
+    await expect(demo.getByRole("button", { name: "성사 처리" })).toBeVisible();
+    await expect(demo.getByText("세부")).toBeVisible();
+  });
+
+  test("wave-2 Timeline demo renders activity feed with sort toggle", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=data-timeline");
+    const demo = page.getByTestId("dynamic-page-renderer");
+    await expect(demo).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(demo.getByText("변경 이력")).toBeVisible();
+    await expect(demo.getByText("발행 완료")).toBeVisible();
+    await expect(demo.getByRole("button", { name: "최신순" })).toBeVisible();
+  });
+
+  test("wave-2 charts aggregation demo renders without unknown components", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=charts-aggregate");
+    const demo = page.getByTestId("dynamic-page-renderer");
+    await expect(demo).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(demo.getByText("카테고리별 지출")).toBeVisible();
+  });
 });
