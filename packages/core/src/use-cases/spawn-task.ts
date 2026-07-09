@@ -5,11 +5,16 @@ import type { GraphReadPort } from "../ports/graph-read-port.js";
 import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
 import type { Task, TaskPort } from "../domain/types.js";
 import type { SpawnTaskInput } from "@ssota/contracts";
+import {
+  evaluateGatePolicies,
+  type GatePolicySource,
+} from "../gate/evaluate-gate-policies.js";
 
 export interface SpawnTaskDeps {
   tasks: TaskPort;
   graphRead?: GraphReadPort;
   agentDefinitions: AgentDefinitionReadPort;
+  gatePolicies?: GatePolicySource;
 }
 
 export async function spawnTask(
@@ -60,6 +65,19 @@ export async function spawnTask(
         `Parent task '${input.parentTaskId}' belongs to a different project`,
       );
     }
+  }
+
+  if (deps.gatePolicies && deps.graphRead) {
+    await evaluateGatePolicies(
+      { graphRead: deps.graphRead, gatePolicies: deps.gatePolicies },
+      {
+        hook: "before_spawn_task",
+        teamspaceId,
+        agentDefinitionId: input.agentDefinitionId,
+        subjectNodeId: input.targetNodeId ?? null,
+        title: input.title,
+      },
+    );
   }
 
   return deps.tasks.createTask({

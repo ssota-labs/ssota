@@ -5,7 +5,9 @@ export type GraphErrorCode =
   | "VALIDATION_FAILED"
   | "NOT_FOUND"
   | "PRECONDITION_FAILED"
-  | "FORBIDDEN";
+  | "FORBIDDEN"
+  | "GATE_PENDING"
+  | "GATE_REJECTED";
 
 export class GraphError extends Error {
   constructor(

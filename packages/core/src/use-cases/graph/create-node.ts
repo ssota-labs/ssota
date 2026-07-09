@@ -1,6 +1,10 @@
 import type { CreateNodeInput } from "@ssota/contracts/graph";
 import { normalizeNodeContentForWrite } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
+import {
+  evaluateGatePolicies,
+  type GatePolicySource,
+} from "../../gate/evaluate-gate-policies.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort, GraphWritePort } from "../../ports/graph-read-port.js";
 import { assertRoadmapCreateAllowed } from "./validate-roadmap.js";
@@ -40,6 +44,7 @@ export async function createNode(
     catalog: CatalogReadPort;
     graphRead: GraphReadPort;
     graphWrite: GraphWritePort;
+    gatePolicies?: GatePolicySource;
   },
   input: CreateNodeInput,
 ) {
@@ -72,6 +77,20 @@ export async function createNode(
     ...input,
     catalogKey: catalogRef.key,
   });
+
+  if (deps.gatePolicies) {
+    await evaluateGatePolicies(
+      { graphRead: deps.graphRead, gatePolicies: deps.gatePolicies },
+      {
+        hook: "before_create_node",
+        teamspaceId: input.teamspaceId,
+        catalogKey: catalogRef.key,
+        subjectNodeId: input.initiativeId ?? null,
+        properties: validatedProperties,
+        title: input.title,
+      },
+    );
+  }
 
   return deps.graphWrite.createNode({
     teamspaceId: input.teamspaceId,
