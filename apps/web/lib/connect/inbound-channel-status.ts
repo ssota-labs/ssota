@@ -102,7 +102,8 @@ export async function loadInboundChannelStatus(
     const primary = linkedWorkspaces[0] ?? workspaces[0];
 
     const credentialConnected =
-      channel.platform === "slack" && slackUsesStaticToken()
+      (channel.platform === "slack" && slackUsesStaticToken()) ||
+      channel.platform === "kakao" // no OAuth credential to obtain
         ? true
         : workspaces.some((row) => row.connectionId) ||
           connections.some(
