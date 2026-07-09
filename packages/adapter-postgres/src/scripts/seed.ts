@@ -19,9 +19,10 @@ import { seedScheduleFixtures } from "./seed/schedules.js";
 import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
+import { seedSwdlSkillsAndBindings } from "./seed/swdl-skills.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
-import { BUILTIN_AGENT_IDS, SWDL_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -146,11 +147,20 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   if (teamspaceId) {
     await seedGraphInstances(db, teamspaceId);
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
+    // Platform Console chat (outside Domain Pack): Main config/agent only.
+    const { seedTeamspaceMainConfig } = await import(
+      "../ports/teamspace-main-config-port.js"
+    );
+    const { seedMainAgentDefinition } = await import(
+      "../ports/agent-definition-port.js"
+    );
+    await seedTeamspaceMainConfig(db, teamspaceId);
+    await seedMainAgentDefinition(db, teamspaceId);
     await seedScheduleFixtures(db, teamspaceId);
     await seedInboundChannelFixtures(db, teamspaceId);
 
     const deliveryAgentId = SWDL_AGENT_IDS.delivery;
-    const mainAgentId = BUILTIN_AGENT_IDS.main;
+    const orchestratorAgentId = SWDL_AGENT_IDS.orchestrator;
 
     await db
       .insert(schema.tasks)
@@ -174,7 +184,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        agentDefinitionId: mainAgentId,
+        agentDefinitionId: orchestratorAgentId,
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
         executorType: "Human",
@@ -367,7 +377,15 @@ async function main() {
   const communityCount = await seedCommunitySkills(db);
   console.log(`Seeded ${communityCount} community skills.`);
   if (consoleSeed?.organizationId && consoleSeed.teamspaceId) {
-    console.log("Seeding main agent default skill bindings...");
+    console.log("Seeding SWDL domain skill pack + agent bindings...");
+    const swdl = await seedSwdlSkillsAndBindings(db, {
+      organizationId: consoleSeed.organizationId,
+      teamspaceId: consoleSeed.teamspaceId,
+    });
+    console.log(
+      `Seeded ${swdl.skills} SWDL skills; bound ${swdl.bindings} agent skill links.`,
+    );
+    console.log("Seeding main agent default skill bindings (platform chat)...");
     const boundCount = await seedMainDefaultSkillBindings(db, {
       organizationId: consoleSeed.organizationId,
       teamspaceId: consoleSeed.teamspaceId,
