@@ -295,6 +295,107 @@ SaaS SKU:
 The active product is a development-workflow workspace. The generic action
 runtime from earlier experiments is archived as reference material only.
 
+## Build your own pack from your coding agent
+
+> **AX (Agent Transformation)** — point Claude Code, Cursor, or Codex at SSOTA
+> over MCP and have it author your domain's operating environment: the graph
+> catalog, review pages, agents, and schedules. A **pack** is that environment,
+> made repeatable.
+
+You don't assemble a SSOTA workspace by hand. You connect the coding agent you
+already use to the **SSOTA MCP**, load the **AX authoring skill**, and describe
+your domain in a sentence. The agent authors the four layers bottom-up and you
+review the result as pages in the workspace. Real records come later — created
+by your team or the environment's own agents on top of the catalog.
+
+| Layer | Authored with | Example (HR) |
+| --- | --- | --- |
+| **Catalog** — node & edge types | `create_node_type`, `create_edge_type` | `employee`, `leave_request`, `approved_by` |
+| **Pages** — json-render review surfaces | `list_page_components` → `create_page` | pending-leave inbox + approve action, team calendar |
+| **Agents** — specialists + orchestrator | `create_agent` | intake agent + an orchestrator that dispatches work |
+| **Schedules** — cron cadence | `create_schedule` | 09:00 daily run so the environment runs itself |
+
+### 1 · Connect the SSOTA MCP
+
+Every tool lives on one endpoint, **`/api/mcp`**; scope (`orgSlug` +
+`teamspaceSlug`) is passed as tool params on each call and validated
+server-side.
+
+| | SSOTA cloud / hosted | Local (self-host or `pnpm dev`) |
+| --- | --- | --- |
+| URL | `https://mcp.ssota.ai/api/mcp` (or `https://<your-host>/api/mcp`) | `http://127.0.0.1:3001/api/mcp` |
+| Auth | OAuth — the client handles it | `Authorization: Bearer <token>` |
+
+**Claude Code**
+
+```bash
+# hosted — OAuth runs interactively on first use
+claude mcp add --transport http ssota https://mcp.ssota.ai/api/mcp
+
+# local — bearer token
+claude mcp add --transport http ssota-local http://127.0.0.1:3001/api/mcp \
+  --header "Authorization: Bearer $SSOTA_MCP_TOKEN"
+```
+
+**Cursor** — add to `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "ssota": { "url": "https://mcp.ssota.ai/api/mcp" }
+  }
+}
+```
+
+Hosted: omit `headers` — Cursor manages OAuth. Local: use the `127.0.0.1:3001`
+URL with `"headers": { "Authorization": "Bearer ${SSOTA_MCP_TOKEN}" }`.
+
+**Codex** — add an MCP server to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.ssota]
+url = "https://mcp.ssota.ai/api/mcp"
+```
+
+For stdio-only setups, bridge with `npx mcp-remote https://mcp.ssota.ai/api/mcp`.
+
+The repo ships a ready-made bundle at [`plugins/ssota-plugin/`](plugins/ssota-plugin/)
+(MCP config + skills) with per-client walkthroughs in
+[`plugins/ssota-plugin/examples/`](plugins/ssota-plugin/examples/).
+
+### 2 · Load the AX skill
+
+Two skills work together: **`ssota-mcp`** (connect + resolve scope) and
+**`ssota-ax-author`** (author the environment). They live in `.agents/skills/`
+with Claude and Cursor mirrors, and inside the plugin bundle. Install the
+plugin, or symlink the skill into your client's skills directory:
+
+```bash
+ln -s "$PWD/.agents/skills/ssota-ax-author" .claude/skills/ssota-ax-author
+```
+
+### 3 · Describe your domain
+
+```txt
+Use the ssota-ax-author skill. Set up our HR attendance & leave system in SSOTA
+(org: acme, teamspace: people-ops).
+```
+
+The agent discovers your scope (`list_projects`), reuses any existing types
+(`search_catalog`), then authors catalog → pages → agents → schedules — running
+a self-review before each `create_page` so what ships is valid and legible, not
+a form dump.
+
+### 4 · Review it in the workspace
+
+Open the teamspace: the pages render as real review surfaces (inbox, calendar,
+dashboard), the schedule appears in the cadence, and the graph is ready for
+instances. Re-run the same prompt to refine — upserts are idempotent by key —
+or capture the environment as a reusable template.
+
+Full authoring contract:
+[`.agents/skills/ssota-ax-author/SKILL.md`](.agents/skills/ssota-ax-author/SKILL.md).
+
 ## Architecture
 
 SSOTA is built as a multi-tenant workspace on top of:
