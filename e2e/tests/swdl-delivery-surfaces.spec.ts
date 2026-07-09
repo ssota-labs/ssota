@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
+import { getSmokePageIdBySlug } from "../helpers/pages-seed";
 
 /**
  * P0 U2 — global Delivery surfaces seeded by the SWDL Domain Pack.
- * Asserts nav pages render Board/Table (or inbox table) shells.
+ * Navigate via /p/{id} (canonical) after resolving seeded slugs.
  */
 test.describe("SWDL delivery surfaces", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,10 +13,9 @@ test.describe("SWDL delivery surfaces", () => {
   });
 
   test("backlog shows Board and Table tabs", async ({ page }) => {
-    await gotoProject(page, "development/backlog");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/development/backlog`),
-    );
+    const pageId = await getSmokePageIdBySlug("development/backlog");
+    await gotoProject(page, `p/${pageId}`);
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`));
     await expect(page.getByRole("tab", { name: "Board" })).toBeVisible({
       timeout: 15_000,
     });
@@ -26,10 +26,9 @@ test.describe("SWDL delivery surfaces", () => {
   });
 
   test("sprints page includes Board tab and task columns", async ({ page }) => {
-    await gotoProject(page, "development/sprints");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/development/sprints`),
-    );
+    const pageId = await getSmokePageIdBySlug("development/sprints");
+    await gotoProject(page, `p/${pageId}`);
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`));
     await expect(page.getByRole("tab", { name: "Board" })).toBeVisible({
       timeout: 15_000,
     });
@@ -40,10 +39,9 @@ test.describe("SWDL delivery surfaces", () => {
   });
 
   test("pull-requests inbox renders status table", async ({ page }) => {
-    await gotoProject(page, "development/pull-requests");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/development/pull-requests`),
-    );
+    const pageId = await getSmokePageIdBySlug("development/pull-requests");
+    await gotoProject(page, `p/${pageId}`);
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`));
     await expect(page.getByText("PR inbox", { exact: true })).toBeVisible({
       timeout: 15_000,
     });
@@ -51,11 +49,20 @@ test.describe("SWDL delivery surfaces", () => {
   });
 
   test("api-snapshots page is reachable", async ({ page }) => {
-    await gotoProject(page, "development/api-snapshots");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/development/api-snapshots`),
-    );
+    const pageId = await getSmokePageIdBySlug("development/api-snapshots");
+    await gotoProject(page, `p/${pageId}`);
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`));
     await expect(page.getByText("API snapshots").first()).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test("legacy development/backlog slug redirects to page id", async ({
+    page,
+  }) => {
+    const pageId = await getSmokePageIdBySlug("development/backlog");
+    await gotoProject(page, "development/backlog");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`), {
       timeout: 15_000,
     });
   });

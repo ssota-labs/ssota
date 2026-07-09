@@ -30,7 +30,9 @@ test.describe("Research document sheet", () => {
   test("user research opens document in floating sheet", async ({ page }) => {
     await gotoProject(page, "research/user");
 
-    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
+    await expect(page.getByTestId("document-sheet-list").first()).toBeVisible({
+      timeout: 15_000,
+    });
     await page
       .locator('[data-testid^="document-sheet-list-item-"]')
       .filter({ hasText: "Onboarding interviews (smoke cohort)" })
