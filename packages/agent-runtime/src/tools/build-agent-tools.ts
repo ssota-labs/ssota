@@ -96,7 +96,9 @@ export function buildAgentTools(definition: {
     tools = mergeTools(tools, skills);
   }
 
-  if (definition.isMain || bundles.has("graph.write")) {
+  // Agent-authoring tools are a privilege (see resolve-workflow-tools) — gate to
+  // the main agent, not the now-universal graph.write baseline.
+  if (definition.isMain) {
     tools = mergeTools(tools, pickTools(agents, AGENT_DEF_TOOLS));
   }
 

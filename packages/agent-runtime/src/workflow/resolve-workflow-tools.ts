@@ -1,5 +1,5 @@
 import type { ToolBundle, SandboxAccessTier } from "@ssota/contracts";
-import { SANDBOX_TOOLS_BY_ACCESS_TIER } from "@ssota/contracts";
+import { SANDBOX_TOOLS_BY_ACCESS_TIER, mergeAgentToolBundles } from "@ssota/contracts";
 import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 import {
   workflowToolSchemas,
@@ -74,7 +74,10 @@ export interface ResolveWorkflowToolsInput {
 export function resolveWorkflowToolNames(
   input: ResolveWorkflowToolsInput,
 ): WorkflowToolName[] {
-  const bundles = new Set(input.toolBundles);
+  // Force-merge the general-tool baseline (DEFAULT_AGENT_TOOL_BUNDLES) so every
+  // agent — main and every specialist — is a full citizen regardless of what it
+  // declared. Only `delegate`/`sandbox.code` and connector *accounts* stay per-agent.
+  const bundles = new Set(mergeAgentToolBundles(input.toolBundles));
   const names = new Set<WorkflowToolName>();
 
   if (bundles.has("graph.read")) {
@@ -101,7 +104,10 @@ export function resolveWorkflowToolNames(
   if (bundles.has("skills.read")) {
     for (const n of SKILL_TOOLS) names.add(n);
   }
-  if (input.isMain || bundles.has("graph.write")) {
+  // Agent-authoring tools (incl. write_agent_definition) are a privilege, not a
+  // general tool — gate to the main agent so the forced graph.write baseline
+  // does NOT hand every specialist the power to rewrite agent definitions.
+  if (input.isMain) {
     for (const n of AGENT_DEF_TOOLS) names.add(n);
   }
 

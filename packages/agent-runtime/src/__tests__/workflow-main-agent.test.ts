@@ -70,13 +70,42 @@ describe("resolveWorkflowToolNames", () => {
     }
   });
 
-  it("omits composio tools when connectors bundle is absent", () => {
+  it("keeps composio tools off until a connector account is enabled (baseline connectors bundle alone is not enough)", () => {
     const names = resolveWorkflowToolNames({
-      toolBundles: ["graph.read"],
+      toolBundles: [],
       isMain: false,
       includeComposioTools: true,
+      // no enabledConnectorProviders → no connected account bound
     });
-    expect(names).not.toContain("COMPOSIO_SEARCH_TOOLS");
+    for (const composioName of COMPOSIO_META_TOOL_NAMES) {
+      expect(names).not.toContain(composioName);
+    }
+  });
+
+  it("force-merges the general-tool baseline onto a bare specialist", () => {
+    const names = resolveWorkflowToolNames({ toolBundles: [], isMain: false });
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "query_nodes", // graph.read
+        "create_node", // graph.write
+        "spawn_task", // tasks.manage
+        "create_page", // pages.author
+        "read_skill", // skills.read
+        "run_worker", // workers
+      ]),
+    );
+    // role-specific bundles stay opt-in, never forced
+    expect(names).not.toContain("delegate");
+  });
+
+  it("gates agent-authoring tools to the main agent under the graph.write baseline", () => {
+    const specialist = resolveWorkflowToolNames({
+      toolBundles: ["graph.write"],
+      isMain: false,
+    });
+    expect(specialist).not.toContain("write_agent_definition");
+    const main = resolveWorkflowToolNames({ toolBundles: [], isMain: true });
+    expect(main).toContain("write_agent_definition");
   });
 });
 
