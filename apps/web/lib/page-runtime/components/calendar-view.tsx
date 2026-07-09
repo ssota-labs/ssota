@@ -42,6 +42,22 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const MAX_VISIBLE_PER_DAY = 3;
 const DEFAULT_EVENT_TOKEN: FlowColorToken = "blue";
 
+/**
+ * Event tint. An explicit `colors` map (fieldValue → flow token, like KanbanBoard's
+ * column colors) wins — so custom statuses (`scheduled`/`no_show`) map to a token;
+ * otherwise the raw field value is coerced via the shared palette (`asColorToken`).
+ */
+function eventToken(
+  node: RenderNode,
+  colorField: string | undefined,
+  colors: Record<string, string> | undefined,
+): FlowColorToken {
+  if (!colorField) return DEFAULT_EVENT_TOKEN;
+  const value = readField(node, colorField);
+  const key = value == null ? "" : String(value);
+  return asColorToken(colors?.[key] ?? value);
+}
+
 type CalEvent = {
   node: RenderNode;
   /** Local-midnight epoch ms for the first and last day the event covers. */
@@ -165,6 +181,7 @@ function CalendarViewEl({
   endField,
   titleField,
   colorField,
+  colors,
   selectAction,
   initialMonth,
   eventHref,
@@ -175,6 +192,7 @@ function CalendarViewEl({
   endField?: string;
   titleField: string;
   colorField?: string;
+  colors?: Record<string, string>;
   selectAction?: string;
   initialMonth?: string;
   eventHref?: string;
@@ -210,12 +228,12 @@ function CalendarViewEl({
         node,
         start: start.getTime(),
         end: end.getTime(),
-        token: colorField ? asColorToken(readField(node, colorField)) : DEFAULT_EVENT_TOKEN,
+        token: eventToken(node, colorField, colors),
         title: String(readField(node, titleField) ?? node.title ?? ""),
       });
     }
     return { events: parsed, undatedCount: undated };
-  }, [nodes, dateField, endField, titleField, colorField]);
+  }, [nodes, dateField, endField, titleField, colorField, colors]);
 
   const cells = useMemo(() => {
     const first = new Date(cursor.year, cursor.month, 1);
@@ -416,6 +434,11 @@ export const calendarComponents: Record<string, CatalogComponent> = {
       endField={typeof props.endField === "string" ? props.endField : undefined}
       titleField={typeof props.titleField === "string" ? props.titleField : "title"}
       colorField={typeof props.colorField === "string" ? props.colorField : undefined}
+      colors={
+        props.colors && typeof props.colors === "object" && !Array.isArray(props.colors)
+          ? (props.colors as Record<string, string>)
+          : undefined
+      }
       selectAction={
         typeof props.selectAction === "string" ? props.selectAction : undefined
       }

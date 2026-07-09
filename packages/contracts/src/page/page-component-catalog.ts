@@ -696,7 +696,12 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       colorField: {
         type: "string",
         description:
-          "Optional property whose value maps to a shared status token color (e.g. status/stage).",
+          "Optional property whose value tints the event chip. Pair with `colors` to map domain values → tokens; without `colors`, the value itself is coerced to a token (so it must already be a token name).",
+      },
+      colors: {
+        type: "{ [value: string]: token }",
+        description:
+          'Optional value→token map for `colorField` (like KanbanBoard column colors), e.g. { "scheduled": "blue", "completed": "green", "no_show": "red" }. token = red|orange|amber|green|blue|purple|pink|gray.',
       },
       selectAction: action("Optional — dispatched with { nodeId } when an event is clicked."),
       initialMonth: {
