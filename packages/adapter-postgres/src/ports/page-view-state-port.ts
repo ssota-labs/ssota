@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ActionPortsScope, PageViewStatePort } from "@ssota/core";
+import type { PortScope, PageViewStatePort } from "@ssota/core";
 import { tableViewStateSchema, type TableViewState } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -12,7 +12,7 @@ import * as schema from "../db/schema.js";
  */
 export function createPageViewStatePort(
   db: Db,
-  scope: ActionPortsScope,
+  scope: PortScope,
 ): PageViewStatePort {
   const { teamspaceId } = scope;
   return {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
-  ActionPortsScope,
+  PortScope,
   Task,
   TaskPort,
   TaskQueryInput,
@@ -25,7 +25,7 @@ export function createInMemoryState(): InMemoryState {
 
 export function createInMemoryPorts(
   state: InMemoryState,
-  scope?: ActionPortsScope,
+  scope?: PortScope,
 ): { tasks: TaskPort } {
   const teamspaceId = scope?.teamspaceId ?? TEST_PROJECT_ID;
   return { tasks: createInMemoryTaskPort(state, teamspaceId) };

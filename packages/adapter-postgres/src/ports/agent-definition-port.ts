@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import type { ActionPortsScope, AgentDefinitionPort } from "@ssota/core";
+import type { PortScope, AgentDefinitionPort } from "@ssota/core";
 import {
   AgentDefinitionSchema,
   AgentDefinitionSeedSchema,
@@ -47,7 +47,7 @@ function accountCondition(accountId?: string | null) {
 
 export function createAgentDefinitionPort(
   db: Db,
-  scope: ActionPortsScope,
+  scope: PortScope,
 ): AgentDefinitionPort {
   const { teamspaceId } = scope;
 

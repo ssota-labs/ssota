@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { ActionPortsScope, PagePort } from "@ssota/core";
+import type { PortScope, PagePort } from "@ssota/core";
 import {
   pageRecordSchema,
   pageSchema,
@@ -35,7 +35,7 @@ function mapPage(row: PageRow): Page {
  * are project-scoped; `accountId` is carried for interface symmetry. Replaces the
  * page-as-graph-node reads/writes (`queryNodes({catalogKey:"page"})`).
  */
-export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
+export function createPagePort(db: Db, scope: PortScope): PagePort {
   const { teamspaceId } = scope;
   return {
     async listPages() {
