@@ -29,7 +29,7 @@ When packaging support is finalized, install the full plugin bundle rather than 
 Use either implicit invocation or explicitly mention the skill:
 
 ```txt
-Use the ssota-mcp skill to find the relevant instruction, inspect the action contract, execute the action, and verify the action log.
+Use the ssota-mcp skill to load the relevant workflow instruction, query project/task/graph state, apply the change with the MCP write tools (`create_node` / `update_node` / `create_edge`), and read it back to verify.
 ```
 
 ## MCP dependency

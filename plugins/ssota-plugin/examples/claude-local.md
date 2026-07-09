@@ -22,7 +22,7 @@ Then start or reload Claude Code and ask it to use `ssota-mcp`.
 ## Prompt example
 
 ```txt
-Use the ssota-mcp skill. Find the relevant SSOTA instruction, inspect the action contract, execute the appropriate SSOTA action, and verify the action log.
+Use the ssota-mcp skill. Load the `agent.main` workflow instruction, query the relevant tasks/nodes, make the change with the MCP write tools (`create_node` / `update_node` / `create_edge`), and read the result back to verify.
 ```
 
 ## Packaging note

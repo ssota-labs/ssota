@@ -6,7 +6,7 @@ describe("createContractsCatalogReadPort", () => {
   const catalog = createContractsCatalogReadPort();
 
   it("lists all node and edge catalog entries from contracts SSOT", async () => {
-    expect((await catalog.listNodeCatalog()).length).toBe(36);
+    expect((await catalog.listNodeCatalog()).length).toBe(39);
     expect((await catalog.listEdgeCatalog()).length).toBe(18);
   });
 

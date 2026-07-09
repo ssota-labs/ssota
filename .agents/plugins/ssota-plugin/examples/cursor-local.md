@@ -47,7 +47,7 @@ Set the token locally through your shell or Cursor MCP configuration mechanism. 
 2. Go to the MCP settings area.
 3. Confirm `ssota-local` appears.
 4. Confirm the `ssota-mcp` skill is available.
-5. Ask the agent to use SSOTA MCP to call a read tool such as `list_action_contracts`.
+5. Ask the agent to use SSOTA MCP to call a read tool such as `list_projects` or `list_node_types`.
 
 ## Cleanup
 

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
-import type { ActionPortsScope, SandboxEnvironmentPort } from "@ssota/core";
+import type { PortScope, SandboxEnvironmentPort } from "@ssota/core";
 import type { SandboxSessionRecordPort } from "@ssota/core";
 import {
   SandboxEnvironmentSchema,
@@ -114,7 +114,7 @@ function accountCondition(
 
 export function createSandboxEnvironmentPort(
   db: Db,
-  scope: ActionPortsScope,
+  scope: PortScope,
 ): SandboxEnvironmentPort {
   const { teamspaceId } = scope;
 
@@ -288,7 +288,7 @@ export function createSandboxEnvironmentPort(
 
 export function createSandboxSessionRecordPort(
   db: Db,
-  scope: ActionPortsScope,
+  scope: PortScope,
 ): SandboxSessionRecordPort {
   const { teamspaceId } = scope;
 

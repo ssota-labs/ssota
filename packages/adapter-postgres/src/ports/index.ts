@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, or, type SQL } from "drizzle-orm";
 import type {
-  ActionPortsScope,
+  PortScope,
   Task,
   TaskCreateInput,
   TaskPort,
@@ -10,7 +10,7 @@ import type {
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
-export type { ActionPortsScope };
+export type { PortScope };
 export { createConsolePort } from "./console.js";
 export { createOnboardingPort } from "./onboarding.js";
 export { createGraphPorts } from "./create-graph-ports.js";
@@ -65,7 +65,7 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   };
 }
 
-export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
+export function createTaskPort(db: Db, scope: PortScope): TaskPort {
   const { teamspaceId, accountId } = scope;
   const accountIdValue = accountId ?? null;
   const taskAccountConds = (): SQL[] =>

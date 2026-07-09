@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import type { ActionPortsScope, WorkerPort } from "@ssota/core";
+import type { PortScope, WorkerPort } from "@ssota/core";
 import { toWorkerKey, uniquifyWorkerKey } from "@ssota/core";
 import {
   CreateWorkerInputSchema,
@@ -90,7 +90,7 @@ export async function listBuilderWorkersByKind(
 
 export function createWorkerPort(
   db: Db,
-  scope: ActionPortsScope,
+  scope: PortScope,
 ): WorkerPort {
   const { teamspaceId } = scope;
 

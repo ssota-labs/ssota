@@ -1,6 +1,6 @@
 # Smoke MCP workflow
 
-Verify the SSOTA Plugin root skill + MCP read/write path.
+Verify the SSOTA Plugin root skill + MCP workflow fetch + task/graph tools.
 
 ## Prerequisites
 
@@ -14,43 +14,34 @@ MCP URL: `http://127.0.0.1:3001/api/mcp` (project scope via tool params)
 
 ## Root skill sequence
 
-1. Classify intent (read / create / update / …)
-2. `find_workflow` → `get_workflow`
-3. `get_action_contract`
-4. Context: `query_nodes` / `get_node` as needed
-5. `execute_action`
-6. Verify: `get_action_log_entry` / `get_node`
+1. `list_projects` — discover `ssota-labs/ssota-dev`
+2. `get_workflow_instruction` — `{ workflowKey: "agent.main" }`
+3. `query_tasks` — `status: "ready"` (or per agent.main)
+4. For each task: `get_workflow` → `get_workflow_instruction` for `task.workflowKey`
+5. Execute workflow steps (`spawn_task`, `update_task`, graph tools as needed)
 
-## Minimum read flow
+## Minimum workflow fetch
 
 ```txt
 list_projects
-find_workflow        { orgSlug, projectSlug, query }
-get_workflow         { orgSlug, projectSlug, workflowId }
-get_action_contract     { orgSlug, projectSlug, actionType }
-get_node_type (optional)
+get_workflow_instruction   { orgSlug, projectSlug, workflowKey: "agent.main" }
+list_workflows             { orgSlug, projectSlug }
+get_workflow               { orgSlug, projectSlug, workflowKey: "orchestrator.daily" }
+get_workflow_instruction   { orgSlug, projectSlug, workflowKey: "work.implement_feature" }
 ```
 
-## Minimum write flow
+## Minimum graph write
 
 ```txt
-execute_action          { orgSlug, projectSlug, actionType, input }
-  -> committed | gated | rejected
-get_action_log_entry    { orgSlug, projectSlug, logId }
-get_node                { orgSlug, projectSlug, nodeId }
-```
-
-## Graph context (optional)
-
-```txt
-query_neighbors
-traverse_graph
+create_node    { orgSlug, projectSlug, nodeType, title, properties?, content? }
+update_node    { orgSlug, projectSlug, nodeId, content }
+create_edge    { orgSlug, projectSlug, edgeType, sourceNodeId, targetNodeId }
 ```
 
 ## Success criteria
 
 - Authenticated JSON-RPC works
-- Domain instruction fetched before write
-- Write uses `execute_action` only
-- Outcome verified with fetch tools
+- `agent.main` instruction fetched from MCP (not local repo)
+- Per-task workflow instruction fetched before execution
+- Graph write round-trip succeeds
 - No secrets committed
