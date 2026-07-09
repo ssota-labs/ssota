@@ -12,13 +12,13 @@ Use this flow to dogfood SSOTA Plugin from the monorepo before marketplace publi
 
 ### Monorepo dogfood (project skills + MCP)
 
-The repo already contains marketplace-style copies:
+The repo already contains marketplace-style install copies:
 
-- `.agents/skills/ssota-mcp`
-- `.cursor/skills/ssota-mcp`
-- `.cursor/mcp.json`
+- `.cursor/plugins/local/ssota-plugin/` — full plugin bundle
+- `.agents/plugins/ssota-plugin/` — full plugin bundle
+- `.agents/skills/ssota-mcp`, `.cursor/skills/ssota-mcp`, `.cursor/mcp.json` — skill + MCP config
 
-When you change `plugins/ssota-plugin/`, update those copies in the same PR.
+When you change `plugins/ssota-plugin/`, update all of those copies in the same PR.
 
 ### Cursor user plugin directory (desktop IDE)
 
@@ -47,7 +47,7 @@ Set the token locally through your shell or Cursor MCP configuration mechanism. 
 2. Go to the MCP settings area.
 3. Confirm `ssota-local` appears.
 4. Confirm the `ssota-mcp` skill is available.
-5. Ask the agent to use SSOTA MCP to call a read tool such as `list_action_contracts`.
+5. Ask the agent to use SSOTA MCP to call a read tool such as `list_projects` or `list_node_types`.
 
 ## Cleanup
 

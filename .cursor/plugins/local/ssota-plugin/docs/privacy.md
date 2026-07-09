@@ -7,10 +7,9 @@ SSOTA Plugin is an agent workflow package. It does not include a custom data sto
 The plugin may cause an agent to send the following to a configured SSOTA MCP server:
 
 - user prompts related to SSOTA automation
-- instruction search queries
-- action contract requests
-- action inputs submitted through `execute_action`
-- verification queries for action log or graph state
+- workflow instruction requests
+- node/edge/page/task inputs submitted through the MCP write tools (`create_node`, `update_node`, `create_edge`, `create_page`, `spawn_task`, …)
+- verification queries for graph, page, or task state
 
 ## Data not included in this repository
 

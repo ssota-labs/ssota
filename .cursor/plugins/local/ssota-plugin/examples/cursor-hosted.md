@@ -32,7 +32,7 @@ The server validates user membership on each call.
 
 1. Connect MCP (OAuth once).
 2. `list_projects` → pick `orgSlug` + `projectSlug`.
-3. Pass scope on every project tool (`find_workflow`, `execute_action`, …).
+3. Pass scope on every project tool (`list_workflows`, `query_nodes`, `spawn_task`, …).
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ The server validates user membership on each call.
 1. Set the MCP URL to `https://<mcp-host>/api/mcp` (no query params).
 2. Do **not** add `headers.Authorization` — Cursor manages OAuth tokens.
 3. Connect → approve on `{Site URL}/oauth/consent`.
-4. Confirm all tools appear (`list_projects`, `list_action_contracts`, `execute_action`, …).
+4. Confirm all tools appear (`list_projects`, `list_node_types`, `create_node`, …).
 
 ## Verify deployment
 
