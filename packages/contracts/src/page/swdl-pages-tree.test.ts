@@ -41,4 +41,12 @@ describe("SWDL pages-tree delivery surfaces", () => {
     );
     expect(types).toContain("KanbanBoard");
   });
+
+  it("seeds planning ApprovalInbox on PRD and features", () => {
+    for (const key of ["tpl/initiative/planning/prd", "tpl/initiative/planning/features"]) {
+      const types = Object.values(byKey.get(key)!.spec!.elements!).map((el) => el.type);
+      expect(types, key).toContain("ApprovalInbox");
+      expect(types, key).toContain("Tabs");
+    }
+  });
 });

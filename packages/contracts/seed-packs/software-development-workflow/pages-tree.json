@@ -2112,9 +2112,27 @@
     "title": "PRD",
     "icon": "planning_prd",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "document",
+            "items": [
+              {
+                "value": "document",
+                "label": "Document",
+                "panel": "documentPanel"
+              },
+              {
+                "value": "approval",
+                "label": "Approval",
+                "panel": "approvalPanel"
+              }
+            ]
+          }
+        },
+        "documentPanel": {
           "type": "Section",
           "props": {
             "title": "PRD"
@@ -2130,6 +2148,35 @@
             "field": "content",
             "action": "saveDoc"
           }
+        },
+        "approvalPanel": {
+          "type": "Section",
+          "props": {
+            "title": "PRD 승인",
+            "subtitle": "승인 대기 중인 PRD"
+          },
+          "children": [
+            "inbox"
+          ]
+        },
+        "inbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingPrd",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setPrdStatus",
+            "rejectAction": "setPrdStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 PRD가 없습니다."
+          }
         }
       }
     },
@@ -2138,6 +2185,17 @@
         "kind": "initiative_scope",
         "catalogKey": "prd",
         "limit": 1
+      },
+      "pendingPrd": {
+        "kind": "initiative_scope",
+        "catalogKey": "prd",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     },
     "actions": {
@@ -2152,6 +2210,16 @@
           }
         },
         "merge": true
+      },
+      "setPrdStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -2162,9 +2230,27 @@
     "title": "Features",
     "icon": "planning_features",
     "spec": {
-      "root": "features",
+      "root": "tabs",
       "elements": {
-        "features": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "features",
+            "items": [
+              {
+                "value": "features",
+                "label": "Features",
+                "panel": "featuresPanel"
+              },
+              {
+                "value": "approval",
+                "label": "Approval",
+                "panel": "approvalPanel"
+              }
+            ]
+          }
+        },
+        "featuresPanel": {
           "type": "ExpandableTable",
           "props": {
             "binding": "features",
@@ -2225,6 +2311,36 @@
               }
             ]
           }
+        },
+        "approvalPanel": {
+          "type": "Section",
+          "props": {
+            "title": "기능 승인",
+            "subtitle": "승인 대기 중인 기능"
+          },
+          "children": [
+            "featureInbox"
+          ]
+        },
+        "featureInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingFeatures",
+            "titleField": "title",
+            "metaFields": [
+              "priority",
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setFeatureStatus",
+            "rejectAction": "setFeatureStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 기능이 없습니다."
+          }
         }
       }
     },
@@ -2238,6 +2354,17 @@
           "catalogKey": "user_story",
           "property": "userStories"
         }
+      },
+      "pendingFeatures": {
+        "kind": "initiative_scope",
+        "catalogKey": "feature",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     },
     "actions": {
@@ -2249,6 +2376,16 @@
         "field": {
           "$input": "field"
         },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "setFeatureStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
         "value": {
           "$input": "value"
         }
