@@ -2399,9 +2399,27 @@
     "title": "Stories",
     "icon": "planning_stories",
     "spec": {
-      "root": "stories",
+      "root": "tabs",
       "elements": {
-        "stories": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "stories",
+            "items": [
+              {
+                "value": "stories",
+                "label": "Stories",
+                "panel": "storiesPanel"
+              },
+              {
+                "value": "approval",
+                "label": "Approval",
+                "panel": "approvalPanel"
+              }
+            ]
+          }
+        },
+        "storiesPanel": {
           "type": "DataTable",
           "props": {
             "binding": "stories",
@@ -2428,6 +2446,35 @@
               }
             ]
           }
+        },
+        "approvalPanel": {
+          "type": "Section",
+          "props": {
+            "title": "스토리 승인",
+            "subtitle": "Ready로 올릴 스토리 (부모 feature 승인 필요)"
+          },
+          "children": [
+            "storyInbox"
+          ]
+        },
+        "storyInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingStories",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setStoryStatus",
+            "rejectAction": "setStoryStatus",
+            "approveLabel": "Ready",
+            "rejectLabel": "반려",
+            "approveValue": "ready",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 스토리가 없습니다."
+          }
         }
       }
     },
@@ -2435,6 +2482,17 @@
       "stories": {
         "kind": "initiative_scope",
         "catalogKey": "user_story"
+      },
+      "pendingStories": {
+        "kind": "initiative_scope",
+        "catalogKey": "user_story",
+        "filter": [
+          {
+            "key": "status",
+            "op": "eq",
+            "value": "draft"
+          }
+        ]
       }
     },
     "actions": {
@@ -2446,6 +2504,16 @@
         "field": {
           "$input": "field"
         },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "setStoryStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
         "value": {
           "$input": "value"
         }
