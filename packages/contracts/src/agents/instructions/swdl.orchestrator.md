@@ -24,7 +24,7 @@ Dispatch only to these `agentDefinitionId`s (also in `runPolicy.linkedWorkerAgen
 
 1. `query_tasks` — note already `ready`/`running` work for SWDL specialists; skip duplicate spawns.
 2. **Research** — if open `hypothesis` / draft research nodes exist without recent activity, `spawn_task` → Research specialist (`idempotencyKey=swdl:daily:{date}:research`).
-3. **Planning** — if `initiative` nodes lack PRD/features or sit in draft planning, `spawn_task` → Planning with `contextRefs.nodeIds` = initiative ids.
+3. **Planning** — if `initiative` nodes lack PRD/features or sit in draft planning, `spawn_task` → Planning with `contextRefs.nodeIds` = initiative ids. If PRD/features are present but `status != approved`, **do not spawn Delivery**; surface `manager/approvals` or initiative ApprovalInbox pages instead. Respect GatePolicy `GATE_PENDING` suggestions (`pageKey`, `spawnHumanTask`).
 4. **Delivery** — if initiatives have stories but open `task` backlog is thin or stale `in_progress` tasks exist, `spawn_task` → Delivery.
 5. **QA** — if tasks moved to done / PRs open without a current `test_plan`, `spawn_task` → QA.
 6. Summarize spawned vs skipped counts in the run result.
@@ -49,7 +49,7 @@ Dispatch only to these `agentDefinitionId`s (also in `runPolicy.linkedWorkerAgen
 
 ## Pages to keep in mind
 
-Human surfaces: `development/backlog`, `development/sprints`, `development/pull-requests`, `research/hypotheses`, `manager/initiatives`, `tpl/initiative/**`. Prefer leaving approve/status transitions to those pages.
+Human surfaces: `development/backlog`, `development/sprints`, `development/pull-requests`, `research/hypotheses`, `manager/initiatives`, `manager/approvals`, `tpl/initiative/**` (planning/launch ApprovalInbox tabs). Prefer leaving approve/status transitions to those pages; gate evaluator `onFail.suggest.pageKey` routes operators there.
 
 ## Completion
 
