@@ -34,6 +34,7 @@ export {
 } from "./sandbox-environment-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
 export { createPageViewStatePort } from "./page-view-state-port.js";
+export { seedWorkCycleAndGatePolicies } from "./seed-work-cycles.js";
 export {
   applyTemplate,
   BUILTIN_TEMPLATES,

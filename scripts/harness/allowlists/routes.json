@@ -200,6 +200,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/work-cycle/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Work-cycle operating map — dedicated React Flow workspace (workflow/map·graph와 동일 패턴); json-render 전환은 후속"
+  },
+  {
     "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"

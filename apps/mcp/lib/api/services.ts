@@ -1,6 +1,7 @@
 import {
   GraphError,
   TaskError,
+  createGraphGatePolicySource,
   serializeTask,
   spawnTask as spawnTaskUseCase,
   updateTask as updateTaskUseCase,
@@ -20,6 +21,7 @@ async function taskDeps(teamspaceId: string) {
     tasks: getTaskPort(teamspaceId),
     graphRead: graphPorts.graphRead,
     agentDefinitions: getAgentDefinitionPort(teamspaceId),
+    gatePolicies: createGraphGatePolicySource(graphPorts.graphRead),
   };
 }
 
@@ -33,7 +35,9 @@ export function mapTaskError(error: unknown): Response | null {
           ? 422
           : error.code === "ORG_MISMATCH"
             ? 403
-            : 400;
+            : error.code === "GATE_PENDING" || error.code === "GATE_REJECTED"
+              ? 409
+              : 400;
     return jsonError(error.code, error.message, status);
   }
   if (error instanceof GraphError) {
@@ -42,7 +46,9 @@ export function mapTaskError(error: unknown): Response | null {
         ? 404
         : error.code === "ORG_MISMATCH"
           ? 403
-          : 422;
+          : error.code === "GATE_PENDING" || error.code === "GATE_REJECTED"
+            ? 409
+            : 422;
     return jsonError(error.code, error.message, status);
   }
   return null;

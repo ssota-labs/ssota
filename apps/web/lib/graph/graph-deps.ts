@@ -1,10 +1,34 @@
-import { createNode, createInitiativeBundle, updateNode, createEdge } from "@ssota/core";
+import {
+  createNode,
+  createInitiativeBundle,
+  updateNode,
+  createEdge,
+  createGraphGatePolicySource,
+} from "@ssota/core";
 import type { NodeType } from "@ssota/contracts";
-import { getGraphPorts } from "@/lib/ports";
+import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 
 export async function getGraphDeps(teamspaceId: string, accountId?: string) {
-  const { catalog, graphRead, graphWrite } = await getGraphPorts(teamspaceId, accountId);
-  return { catalog, graphRead, graphWrite, teamspaceId, accountId };
+  const { catalog, graphRead, graphWrite } = await getGraphPorts(
+    teamspaceId,
+    accountId,
+  );
+  const gatePolicies = createGraphGatePolicySource(graphRead);
+  const spawn = {
+    tasks: getTaskPort(teamspaceId, accountId),
+    graphRead,
+    agentDefinitions: getAgentDefinitionPort(teamspaceId),
+    gatePolicies,
+  };
+  return {
+    catalog,
+    graphRead,
+    graphWrite,
+    gatePolicies,
+    spawn,
+    teamspaceId,
+    accountId,
+  };
 }
 
 /** Builder console graph scope — full project visibility (no account filter). */

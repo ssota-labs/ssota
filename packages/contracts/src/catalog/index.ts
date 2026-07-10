@@ -20,9 +20,12 @@ export * from "./content-parsers.js";
 export * from "./design-theme-schemas.js";
 export * from "./design-toolchain-schemas.js";
 export * from "./edge-types.js";
+export * from "./gate-path.js";
+export * from "./gate-policy-schemas.js";
 export * from "./goal-schemas.js";
 export * from "./node-types.js";
 export * from "./ui-component-schemas.js";
+export * from "./work-cycle-schemas.js";
 
 export function listNodeTypes(): NodeType[] {
   return [...NODE_TYPES];

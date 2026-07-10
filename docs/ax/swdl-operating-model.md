@@ -1,6 +1,6 @@
 # SWDL 운영 모델 — 게이트·사이클·페이지 갭
 
-> 상태: design discussion · 2026-07-09  
+> 상태: design discussion + implementation · 2026-07-09  
 > 범위: Domain Pack 운영 가정, **게이트 정책 선언** 설계, 사람 승인 모델, 미연동 페이지 개선, 업무 사이클 맵.  
 > 전제: Main = 플랫폼 챗봇(루프 밖). SWDL cadence = Orchestrator only.  
 > 관련: [swdl-work-cycles.md](swdl-work-cycles.md) (사이클 다이어그램·트리거·업무 목록 SSOT) · [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md) · [swdl-runtime-skills.md](swdl-runtime-skills.md) · AGENTS.md `[GRAPH-05]` · `[ARCH-03]`
@@ -283,3 +283,34 @@ Approve 직후 즉시 다음 단계가 필요하면 page action에 **제네릭**
 2. `before_spawn_task` match를 agentDefinitionId 대신 **agent tag / role label**(팩 메타)로 할지.  
 3. 승인 직후 동기 spawn vs 다음 cron만 — UX vs 단순성.  
 4. GatePolicy를 org-scoped catalog로 둘지 teamspace overlay를 허용할지 (`[GRAPH-03]`와 정합).
+
+---
+
+## 6. Implementation status (WorkCycle + GatePolicy)
+
+### Separation of concerns
+
+| Layer | Role |
+|---|---|
+| **WorkCycle** | Human/AX map of loops (topology). Org catalog instances. |
+| **GatePolicy** | Fail-closed enforcement on create/update/spawn. Path-expression requires. |
+| **Agents / schedules / tasks** | Execution. Orchestrator may spawn; gates may block or `onPass`-spawn. |
+| **Pages** | Human approval surfaces — prefer `set_node_property` / `update_node`; spawn via policy `onPass`. |
+
+### Evaluation
+
+- Source: `queryNodes(catalogKey: gate_policy)` via `createGraphGatePolicySource`.
+- Hooks wired in `createNode` / `updateNode` / `spawnTask` when `gatePolicies` is on deps (web `getGraphDeps`, MCP graph/task services).
+- Codes: `GATE_PENDING`, `GATE_REJECTED`.
+- After update: if require newly satisfied → `onPass.effects` (`spawn_task`) sync, idempotent by template key.
+
+### Path expression
+
+See contracts `parseGatePath` / `gate-policy-schemas`. Examples in [swdl-work-cycles.md](swdl-work-cycles.md).
+
+### Non-goals
+
+- Legacy Action Log / Human Gate transaction restore ([ARCH-03])
+- Soft/log-only gates (v1)
+- End-user `/app` exposure of `/work-cycle`
+- Using WorkCycle as runtime SSOT

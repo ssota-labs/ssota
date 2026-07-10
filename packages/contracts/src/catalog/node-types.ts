@@ -18,7 +18,9 @@ import {
   snapshotKindSchema,
   snapshotSourceSchema,
 } from "./goal-schemas.js";
+import { gatePolicyPropertiesSchema } from "./gate-policy-schemas.js";
 import { uiComponentPropertiesSchema } from "./ui-component-schemas.js";
+import { workCyclePropertiesSchema } from "./work-cycle-schemas.js";
 
 export const docStatusSchema = z.enum([
   "draft",
@@ -111,6 +113,8 @@ export const NODE_TYPES = [
   "design_theme",
   "design_toolchain",
   "agent",
+  "work_cycle",
+  "gate_policy",
 ] as const;
 
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -325,6 +329,8 @@ const NODE_PROPERTY_SCHEMAS: Record<
     owned_page_route_key: z.string().optional(),
     skills: z.array(z.string()).optional(),
   }),
+  work_cycle: workCyclePropertiesSchema,
+  gate_policy: gatePolicyPropertiesSchema,
 };
 
 export interface NodeTypeCatalogEntry {
@@ -614,6 +620,36 @@ const NODE_CATALOG_META: Record<
     description:
       "레거시 그래프 페르소나 노드. 런타임 agent_definitions와 혼동하지 말 것. Domain Pack은 이 타입을 운영 표면에 쓰지 않는다.",
     keywords: ["에이전트", "agent", "AI", "봇", "bot", "persona", "legacy"],
+    mutability: "living",
+    contentRequired: false,
+  },
+  work_cycle: {
+    label: "업무 사이클",
+    description:
+      "겹치는 업무 사이클 맵(토폴로지). 실행 SSOT가 아니며 GatePolicy·에이전트·페이지가 실제 드라이버다.",
+    keywords: [
+      "워크사이클",
+      "work cycle",
+      "사이클",
+      "topology",
+      "운영 모델",
+      "operating model",
+    ],
+    mutability: "living",
+    contentRequired: false,
+  },
+  gate_policy: {
+    label: "게이트 정책",
+    description:
+      "그래프 mutation/spawn 전 평가하는 선언형 게이트. path expression + agentDefinitionId 매칭.",
+    keywords: [
+      "게이트",
+      "gate policy",
+      "승인",
+      "approval",
+      "GATE_PENDING",
+      "정책",
+    ],
     mutability: "living",
     contentRequired: false,
   },

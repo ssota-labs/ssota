@@ -3,7 +3,9 @@ export type TaskErrorCode =
   | "ORG_MISMATCH"
   | "VALIDATION_FAILED"
   | "NOT_FOUND"
-  | "PRECONDITION_FAILED";
+  | "PRECONDITION_FAILED"
+  | "GATE_PENDING"
+  | "GATE_REJECTED";
 
 export class TaskError extends Error {
   constructor(

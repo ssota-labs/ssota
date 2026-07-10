@@ -1,6 +1,7 @@
 /**
  * Stable UUIDs for Software Development Workflow (SWDL) domain agents.
  * Seeded by SOFTWARE_DEV_TEMPLATE — not the platform built-in generic set.
+ * Referenced by GatePolicy seeds (agentDefinitionId match / onPass spawn).
  */
 export const SWDL_AGENT_IDS = {
   research: "a1000000-0000-4000-8000-000000000001",

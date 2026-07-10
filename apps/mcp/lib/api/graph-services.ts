@@ -13,6 +13,7 @@ import {
 import type { GraphEdge, GraphNode } from "@ssota/core";
 import {
   createEdge,
+  createGraphGatePolicySource,
   createNode,
   getNode,
   queryNodes,
@@ -21,7 +22,12 @@ import {
   traverseEdges,
   updateNode,
 } from "@ssota/core";
-import { getCatalogWritePort, getGraphPorts } from "@/lib/ports";
+import {
+  getAgentDefinitionPort,
+  getCatalogWritePort,
+  getGraphPorts,
+  getTaskPort,
+} from "@/lib/ports";
 
 function serializeNode(node: GraphNode) {
   return {
@@ -288,7 +294,18 @@ export async function traverseEdgesForMcp(
 }
 
 function graphDeps(teamspaceId: string) {
-  return getGraphPorts(teamspaceId);
+  const ports = getGraphPorts(teamspaceId);
+  const gatePolicies = createGraphGatePolicySource(ports.graphRead);
+  return {
+    ...ports,
+    gatePolicies,
+    spawn: {
+      tasks: getTaskPort(teamspaceId),
+      graphRead: ports.graphRead,
+      agentDefinitions: getAgentDefinitionPort(teamspaceId),
+      gatePolicies,
+    },
+  };
 }
 
 export async function createNodeForMcp(

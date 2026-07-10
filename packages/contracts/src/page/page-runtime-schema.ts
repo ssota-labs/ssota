@@ -210,6 +210,14 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
     initiativeTitle: actionParamSchema,
     releaseVersion: actionParamSchema,
   }),
+  z.object({
+    kind: z.literal("spawn_task"),
+    title: actionParamSchema,
+    agentDefinitionId: actionParamSchema,
+    targetNodeId: actionParamSchema.optional(),
+    idempotencyKey: actionParamSchema.optional(),
+    executorType: z.enum(["Agent", "Human"]).optional(),
+  }),
 ]);
 
 export type PageAction = z.infer<typeof pageActionSchema>;

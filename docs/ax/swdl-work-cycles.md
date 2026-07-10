@@ -1,9 +1,53 @@
 # SWDL 업무 사이클 · 서브그룹 · 트리거
 
-> 상태: analysis · 2026-07-09  
+> 상태: analysis + implementation · 2026-07-09  
 > 목적: SWDL Domain Pack을 **하나의 선형 SDLC**가 아니라 **겹치는 업무 사이클**로 이해하고, 그룹별 시작 트리거·루프·종료 조건과 소프트웨어 팀에서 자주 도는 사이클 목록을 고정한다.  
 > 관련: [swdl-operating-model.md](swdl-operating-model.md) (게이트 정책·승인·페이지 갭) · [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md) · [swdl-runtime-skills.md](swdl-runtime-skills.md)  
 > Orchestrator = Domain Pack cadence (Main 챗봇과 무관)
+
+---
+
+## Code SSOT (WorkCycle A–G)
+
+> Implementation reference — seeds + Console UI.
+
+- **Seeds:** `packages/contracts/seed-packs/software-development-workflow/work-cycles.json`  
+- **L1 types:** `work_cycle` · `gate_policy`  
+- **Console:** `/{orgSlug}/work-cycle` (React Flow Sub Flow map)  
+- **Gates:** `gate_policy` instances + core `evaluateGatePolicies` (path expressions)
+
+WorkCycles are an **operating map** for the software-development domain. They are **not** the orchestrator execution SSOT — agents/schedules/`spawn_task` run work; GatePolicy enforces boundaries and can sync-spawn on approval.
+
+### Groups
+
+| Letter | `group` | Focus |
+|---|---|---|
+| A | `direction` | Goals / direction |
+| B | `discovery` | Research / discovery |
+| C | `planning` | Initiative planning (PRD) |
+| D | `delivery` | Build / delivery |
+| E | `launch` | Launch / operate |
+| F | `design` | Design track |
+| G | `hygiene` | Platform hygiene |
+
+Each instance has `cycleKey`, `topology` (`trigger` / `stage` / `gate` / `end` + edges), optional `handoffToCycleKeys`, and `includedTeamspaceIds: []` (all teamspaces).
+
+Gate topology nodes carry `gatePolicyKey` → `gate_policy.properties.policyKey`. The `/work-cycle` UI joins policy require summaries onto those nodes.
+
+### Minimal GatePolicy set (Planning → Delivery)
+
+Seed: `gate-policies.json`
+
+1. `swdl.prd-approved-before-task` — `before_create_node` match `task`
+2. `swdl.prd-approved-before-delivery-spawn` — `before_spawn_task` match Delivery `agentDefinitionId`
+3. `swdl.prd-approved-onpass-spawn` — update PRD → approved → `onPass` Delivery spawn (idempotent)
+4. (optional) feature/story approved gate
+
+Path expressions use catalog keys only (e.g. `in:for_initiative[prd].status`). Core never hard-codes SWDL literals.
+
+### Authoring
+
+AX skill Step 0 / 0b: `.agents/skills/ssota-ax-author/references/work-cycle-authoring.md` and `gate-policy-authoring.md`.
 
 ---
 
@@ -228,12 +272,15 @@ G  ||  전부와 병렬 (evergreen)
 ## 5. 후속 (이 문서 범위 밖 · 링크만)
 
 - **게이트 정책 선언** (팩 데이터 + 제네릭 evaluator, 코어에 SWDL `if` 금지) · Human task vs ApprovalInbox · 페이지 갭 PR 순서 → [swdl-operating-model.md](swdl-operating-model.md).
+- **WorkCycle + GatePolicy 구현** — seeds, evaluator, `/work-cycle` UI (§ Code SSOT).
 
 ---
 
 ## References
 
 1. `packages/contracts/seed-packs/software-development-workflow/pages-tree.json`  
-2. `packages/contracts/src/agents/instructions/swdl.orchestrator.md`  
-3. `packages/contracts/src/agents/skills/swdl/swdl-orchestrate/references/routing-table.md`  
-4. [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md)  
+2. `packages/contracts/seed-packs/software-development-workflow/work-cycles.json`  
+3. `packages/contracts/seed-packs/software-development-workflow/gate-policies.json`  
+4. `packages/contracts/src/agents/instructions/swdl.orchestrator.md`  
+5. `packages/contracts/src/agents/skills/swdl/swdl-orchestrate/references/routing-table.md`  
+6. [swdl-seed-upgrade-analysis.md](swdl-seed-upgrade-analysis.md)

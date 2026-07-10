@@ -9,6 +9,7 @@ import {
   deleteEdge,
   deleteNode,
   resolvePageBindings,
+  spawnTask,
   updateNode,
 } from "@ssota/core";
 import {
@@ -18,6 +19,7 @@ import {
   deleteNodeInputSchema,
   updateNodeInputSchema,
 } from "@ssota/contracts/graph";
+import { SpawnTaskInputSchema } from "@ssota/contracts";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -257,6 +259,31 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
       if (args.routeCtx) {
         redirect(orgPath(args.routeCtx, "n", result.initiativeId));
       }
+      break;
+    }
+    case "spawn_task": {
+      // Auxiliary to GatePolicy onPass — Inbox can chain approve → spawn explicitly.
+      const title = asString(resolveParam(descriptor.title, scopes));
+      const agentDefinitionId = asString(
+        resolveParam(descriptor.agentDefinitionId, scopes),
+      );
+      if (!title || !agentDefinitionId) {
+        throw new Error("spawn_task: missing title or agentDefinitionId");
+      }
+      const targetNodeId = asString(
+        resolveParam(descriptor.targetNodeId, scopes),
+      );
+      const idempotencyKey = asString(
+        resolveParam(descriptor.idempotencyKey, scopes),
+      );
+      const parsed = SpawnTaskInputSchema.parse({
+        title,
+        agentDefinitionId,
+        targetNodeId: targetNodeId || undefined,
+        idempotencyKey: idempotencyKey || undefined,
+        executorType: descriptor.executorType,
+      });
+      await spawnTask(deps.spawn, args.teamspaceId, parsed);
       break;
     }
   }

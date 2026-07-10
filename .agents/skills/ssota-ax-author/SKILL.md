@@ -9,10 +9,12 @@ description: Author a domain's operating "environment" in SSOTA — node/edge ty
 
 ## What you author = the ENVIRONMENT (not instance data)
 
-An environment is four layers, authored bottom-up:
+An environment is layered, authored bottom-up:
 
+0. **Work cycles** — operating map instances (`work_cycle`) of triggers → stages → gates → handoffs. Map only; not execution SSOT.
+0b. **Gate policies** — enforceable rules (`gate_policy`) with path-expression requires, spawn match, and optional `onPass` sync spawn.
 1. **Catalog** — the node TYPES (entities) and edge TYPES (relationships) of the domain. *(this skill — catalog authoring)*
-2. **Pages** — human-approvable dashboards (json-render) that bind to the catalog. *(this skill — page authoring)*
+2. **Pages** — human-approvable dashboards (json-render) that bind to the catalog. *(this skill — page authoring)* ApprovalInbox should **set properties** only; spawn belongs to GatePolicy `onPass` (optional page `spawn_task` is secondary).
 3. **Agents** — definitions that do the recurring work; often an orchestrator that dispatches to specialists. *(this skill — agent authoring)*
 4. **Schedules** — cron cadences so the environment runs itself. *(this skill — schedule authoring)*
 
@@ -25,20 +27,22 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 ## The authoring loop
 
 1. **Understand the domain** — from the user's request, name the entities, the relationships between them, the human-approval surfaces, and the recurring work.
-2. **Discover the existing catalog (reference on demand)** — before creating anything, check what already exists so you REUSE rather than duplicate:
+2. **Author work cycles (Step 0)** — sketch the operating loops before types. Create `work_cycle` instances (topology with `gate` nodes that name `gatePolicyKey`s). See `references/work-cycle-authoring.md`. Console: `/{orgSlug}/work-cycle`.
+3. **Author gate policies (Step 0b)** — for each gate boundary, create `gate_policy` instances: path-expression `require`, `match.catalogKey` / `match.agentDefinitionId`, and `onPass.effects` for approve→spawn. See `references/gate-policy-authoring.md`. Cover both write and spawn hooks when either path could bypass the gate.
+4. **Discover the existing catalog (reference on demand)** — before creating anything, check what already exists so you REUSE rather than duplicate:
    - `search_catalog {query}` — keyword search, returns light hits `{kind,key,label}`. **Preferred** — don't dump the whole catalog into your reasoning.
    - `list_node_types` / `list_edge_types` — the full list (empty on a fresh org).
    - `get_node_type {catalogKey}` — one type's full detail (incl. `propertySchema`) when you actually need it.
-3. **Author the catalog** — model the domain as types. See `references/catalog-authoring.md` for the exact tool contract:
+5. **Author the catalog** — model the domain as types. See `references/catalog-authoring.md` for the exact tool contract:
    - **node types first** (`create_node_type`), **then edge types** (`create_edge_type`) — edges reference node-type keys, so the node types must exist first.
-4. **Author the pages** — the human-approval dashboards that bind to the catalog. See `references/page-authoring.md`:
+6. **Author the pages** — the human-approval dashboards that bind to the catalog. See `references/page-authoring.md`:
    - **Discover components first** with `list_page_components` → `get_page_component` (progressive disclosure — don't hold all 46 in mind; fetch the few you'll use).
    - Compose a `spec` (`{root, elements}`) of those components; wire data with `bindings` (query the catalog), mutations with `actions`; `create_page` (it validates the spec).
    - **Author for quality, not just validity** — a valid spec is still a form dump if you free-compose. Derive the page manifest from the schema → pick an **archetype** per page → copy a **golden spec** → pass the **self-review gate**. See `references/page-archetypes.md`, `references/page-golden-specs.md`, `references/page-review.md`.
-5. **Author the agents** — the recurring workers, and (if useful) an orchestrator that schedules & dispatches to them. See `references/agent-authoring.md`: `create_agent` with a markdown playbook `body`, `toolBundles` (capabilities), `allowedTriggers` (`task`/`schedule`/`chat`…). Link an orchestrator to its specialists via `linkedWorkerAgentIds`.
-6. **Author the schedules** — give the cadence agents (usually the orchestrator) a cron so the environment runs itself. See `references/schedule-authoring.md`: `create_schedule {agentDefinitionId, cronExpression, timezone}`. The target agent must exist and allow the `schedule`/`heartbeat` trigger.
-7. **Verify** — catalog via `list_*_types`; pages via `list_pages`; agents via `list_agents`; schedules via `list_schedules`. (Return envelopes differ: `list_page_components`→`{components:[…]}` and `list_agents`→`{agents:[…]}` are wrapped; `list_node_types`/`list_edge_types`/`list_pages`/`list_schedules` return a bare array.) The environment is now complete: **types → human-approval pages → agents → the cadence that runs them.**
-8. **(Instances — real records — are created later, by users or the agents themselves, on top of the environment.)**
+7. **Author the agents** — the recurring workers, and (if useful) an orchestrator that schedules & dispatches to them. See `references/agent-authoring.md`: `create_agent` with a markdown playbook `body`, `toolBundles` (capabilities), `allowedTriggers` (`task`/`schedule`/`chat`…). Link an orchestrator to its specialists via `linkedWorkerAgentIds`. Use stable `agentDefinitionId`s in gate `match` / `onPass`.
+8. **Author the schedules** — give the cadence agents (usually the orchestrator) a cron so the environment runs itself. See `references/schedule-authoring.md`: `create_schedule {agentDefinitionId, cronExpression, timezone}`. The target agent must exist and allow the `schedule`/`heartbeat` trigger.
+9. **Verify** — work cycles + gate policies via `query_nodes` (`work_cycle` / `gate_policy`); catalog via `list_*_types`; pages via `list_pages`; agents via `list_agents`; schedules via `list_schedules`. (Return envelopes differ: `list_page_components`→`{components:[…]}` and `list_agents`→`{agents:[…]}` are wrapped; `list_node_types`/`list_edge_types`/`list_pages`/`list_schedules` return a bare array.) The environment is now complete: **cycles → gates → types → human-approval pages → agents → the cadence that runs them.**
+10. **(Instances — real records — are created later, by users or the agents themselves, on top of the environment.)**
 
 ## Rules — catalog authoring
 
@@ -77,6 +81,8 @@ Use the **`ssota-mcp`** skill to authenticate and resolve scope. Every project-s
 
 ## Load on demand (progressive disclosure)
 
+- `references/work-cycle-authoring.md` — `work_cycle` instance shape, topology kinds, console map, SWDL seed reference.
+- `references/gate-policy-authoring.md` — path expressions, hooks/match, `onPass` spawn, fail-closed codes.
 - `references/catalog-authoring.md` — `create_node_type` / `create_edge_type` field-by-field, `propertySchema` conventions, worked HR catalog example.
 - `references/page-authoring.md` — `create_page`/`update_page`, the `spec`/`bindings`/`actions` shape, component discovery, the 4-step quality method, and a worked HR page example.
 - `references/page-archetypes.md` — the schema→page manifest, ~9 page archetypes (when/hero/slots/states), data→component semantic mapping, and hierarchy/microcopy rules.

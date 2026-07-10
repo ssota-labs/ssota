@@ -49,3 +49,4 @@ export * from "./ports/page-view-state-port.js";
 export * from "./use-cases/task/index.js";
 export * from "./use-cases/page/index.js";
 export * from "./use-cases/workflow/index.js";
+export * from "./gate/evaluate-gate-policies.js";
