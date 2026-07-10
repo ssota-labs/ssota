@@ -84,6 +84,25 @@ describe("gate_policy / work_cycle schemas", () => {
     }
   });
 
+  it("maps every seeded gate policy to one work-cycle gate node", () => {
+    const policyKeys = new Set(
+      gatePoliciesSeed.map((row) =>
+        gatePolicyPropertiesSchema.parse(row.properties).policyKey,
+      ),
+    );
+    const referencedPolicyKeys = workCyclesSeed.flatMap((row) => {
+      const { topology } = workCyclePropertiesSchema.parse(row.properties);
+      return topology.nodes.flatMap((node) =>
+        node.kind === "gate" && node.gatePolicyKey
+          ? [node.gatePolicyKey]
+          : [],
+      );
+    });
+
+    expect(referencedPolicyKeys).toHaveLength(policyKeys.size);
+    expect(new Set(referencedPolicyKeys)).toEqual(policyKeys);
+  });
+
   it("rejects count on self path", () => {
     expect(() =>
       gatePolicyPropertiesSchema.parse({

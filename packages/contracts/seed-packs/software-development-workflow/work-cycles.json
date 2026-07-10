@@ -213,6 +213,13 @@
             "catalogKeys": ["user_story"]
           },
           {
+            "id": "g-delivery-spawn",
+            "kind": "gate",
+            "label": "PRD before Delivery spawn",
+            "catalogKeys": ["prd"],
+            "gatePolicyKey": "swdl.prd-approved-before-delivery-spawn"
+          },
+          {
             "id": "g-prd-task",
             "kind": "gate",
             "label": "PRD before task",
@@ -241,11 +248,12 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "t-stories", "target": "g-prd-task", "kind": "sequence" },
-          { "id": "e2", "source": "g-prd-task", "target": "s-build", "kind": "sequence" },
-          { "id": "e3", "source": "s-build", "target": "s-qa", "kind": "sequence" },
-          { "id": "e4", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
-          { "id": "e5", "source": "s-qa", "target": "e-merge", "kind": "sequence", "label": "pass" }
+          { "id": "e1", "source": "t-stories", "target": "g-delivery-spawn", "kind": "sequence" },
+          { "id": "e2", "source": "g-delivery-spawn", "target": "g-prd-task", "kind": "sequence" },
+          { "id": "e3", "source": "g-prd-task", "target": "s-build", "kind": "sequence" },
+          { "id": "e4", "source": "s-build", "target": "s-qa", "kind": "sequence" },
+          { "id": "e5", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
+          { "id": "e6", "source": "s-qa", "target": "e-merge", "kind": "sequence", "label": "pass" }
         ]
       }
     }
