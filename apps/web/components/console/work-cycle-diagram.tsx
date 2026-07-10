@@ -148,9 +148,9 @@ function TopologyStepNode({ data, selected }: NodeProps) {
     <div
       className={cn(
         "bg-card border-border w-full rounded-lg border px-3 py-2 shadow-sm",
-        isGate && "border-amber-500/60 bg-amber-500/5",
+        isGate && "border-chart-4/60 bg-chart-4/5",
         d.nodeKind === "trigger" && "border-dashed",
-        d.nodeKind === "end" && "border-emerald-600/40",
+        d.nodeKind === "end" && "border-primary/40",
         selected && "ring-primary ring-2",
       )}
       style={{ minWidth: 160 }}
@@ -172,7 +172,7 @@ function TopologyStepNode({ data, selected }: NodeProps) {
         </div>
       ) : null}
       {d.gatePolicyKey ? (
-        <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+        <div className="text-chart-4 mt-1 text-[11px]">
           {d.gatePolicyKey}
         </div>
       ) : null}
