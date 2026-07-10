@@ -6,7 +6,7 @@ import {
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createAgentDefinitionForMcp,
   getAgentForMcp,
@@ -57,11 +57,11 @@ describe("agent-services", () => {
     if (skip) context.skip();
   });
 
-  it("lists agent definitions without bodies (incl. code built-ins)", async () => {
+  it("lists agent definitions without bodies (SWDL domain seeds)", async () => {
     const result = await listAgentsForMcp(db, teamspaceId);
     expect(
       result.agents.some(
-        (w) => w.id === BUILTIN_AGENT_IDS.implementFeature,
+        (w) => w.id === SWDL_AGENT_IDS.delivery,
       ),
     ).toBe(true);
     for (const agent of result.agents) {
@@ -70,13 +70,13 @@ describe("agent-services", () => {
     }
   });
 
-  it("returns agent definition metadata by id (built-in)", async () => {
+  it("returns agent definition metadata by id (SWDL delivery)", async () => {
     const agent = await getAgentForMcp(
       db,
       teamspaceId,
-      BUILTIN_AGENT_IDS.implementFeature,
+      SWDL_AGENT_IDS.delivery,
     );
-    expect(agent?.id).toBe(BUILTIN_AGENT_IDS.implementFeature);
+    expect(agent?.id).toBe(SWDL_AGENT_IDS.delivery);
     expect(agent).not.toHaveProperty("instructions");
   });
 
@@ -97,13 +97,14 @@ describe("agent-services", () => {
     ).toBeNull();
   });
 
-  it("returns instruction body by id (built-in)", async () => {
+  it("returns instruction body by id (SWDL delivery)", async () => {
     const result = await getAgentInstructionForMcp(
       db,
       teamspaceId,
-      BUILTIN_AGENT_IDS.implementFeature,
+      SWDL_AGENT_IDS.delivery,
     );
-    expect(result?.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
+    expect(result?.agentDefinitionId).toBe(SWDL_AGENT_IDS.delivery);
+    expect(result?.instruction.toLowerCase()).toContain("delivery");
     expect(result?.instruction.length).toBeGreaterThan(50);
   });
 

@@ -1419,14 +1419,14 @@ async function seedDemoOkr(
       });
     }
 
-    const trackedById = maps.edgeKeyToId.get("tracked_by");
-    if (kpi?.id && trackedById) {
+    const objectiveMeasuredById = maps.edgeKeyToId.get("measured_by");
+    if (kpi?.id && objectiveMeasuredById) {
       await db.insert(schema.edges).values({
         teamspaceId,
-        edgeCatalogId: trackedById,
+        edgeCatalogId: objectiveMeasuredById,
         sourceNodeId: objective.id,
         targetNodeId: kpi.id,
-        properties: { seed: `${DEMO_OKR_SEED_KEY}:tracked_by` },
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:measured_by:objective` },
       });
     }
   }
@@ -1505,7 +1505,7 @@ async function seedDemoOkr(
       }
 
       const kpiCatalogId = maps.nodeKeyToId.get("kpi");
-      const trackedById = maps.edgeKeyToId.get("tracked_by");
+      const objective2MeasuredById = maps.edgeKeyToId.get("measured_by");
       if (kpiCatalogId) {
         const [onboardingKpi] = await db
           .insert(schema.nodes)
@@ -1526,13 +1526,15 @@ async function seedDemoOkr(
           })
           .returning({ id: schema.nodes.id });
 
-        if (onboardingKpi?.id && trackedById) {
+        if (onboardingKpi?.id && objective2MeasuredById) {
           await db.insert(schema.edges).values({
             teamspaceId,
-            edgeCatalogId: trackedById,
+            edgeCatalogId: objective2MeasuredById,
             sourceNodeId: objective2.id,
             targetNodeId: onboardingKpi.id,
-            properties: { seed: `${DEMO_OKR_SEED_KEY_2}:tracked_by` },
+            properties: {
+              seed: `${DEMO_OKR_SEED_KEY_2}:measured_by:objective`,
+            },
           });
         }
       }
@@ -1561,7 +1563,7 @@ async function seedDemoOkr(
       .limit(1);
 
     const kpiCatalogId = maps.nodeKeyToId.get("kpi");
-    const trackedById = maps.edgeKeyToId.get("tracked_by");
+    const fallbackMeasuredById = maps.edgeKeyToId.get("measured_by");
     if (objective2ForKpi?.id && kpiCatalogId) {
       const [onboardingKpi] = await db
         .insert(schema.nodes)
@@ -1582,13 +1584,15 @@ async function seedDemoOkr(
         })
         .returning({ id: schema.nodes.id });
 
-      if (onboardingKpi?.id && trackedById) {
+      if (onboardingKpi?.id && fallbackMeasuredById) {
         await db.insert(schema.edges).values({
           teamspaceId,
-          edgeCatalogId: trackedById,
+          edgeCatalogId: fallbackMeasuredById,
           sourceNodeId: objective2ForKpi.id,
           targetNodeId: onboardingKpi.id,
-          properties: { seed: `${DEMO_OKR_SEED_KEY_2}:tracked_by` },
+          properties: {
+            seed: `${DEMO_OKR_SEED_KEY_2}:measured_by:objective`,
+          },
         });
       }
       resolvedOnboardingKpiId = onboardingKpi?.id ?? null;

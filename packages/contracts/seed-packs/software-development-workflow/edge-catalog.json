@@ -1,19 +1,135 @@
 [
-  { "key": "informs", "label": "근거", "domainKeys": ["market_research", "market_segment"], "rangeKeys": ["hypothesis"] },
-  { "key": "motivates", "label": "동기", "domainKeys": [], "rangeKeys": [] },
-  { "key": "paired_with", "label": "1:1 쌍", "domainKeys": ["initiative"], "rangeKeys": ["release"] },
-  { "key": "for_initiative", "label": "소속", "domainKeys": [], "rangeKeys": ["initiative"] },
-  { "key": "for_release", "label": "릴리즈", "domainKeys": [], "rangeKeys": ["release"] },
-  { "key": "part_of", "label": "포함", "domainKeys": ["raw_source"], "rangeKeys": ["market_research"] },
-  { "key": "specifies", "label": "명세", "domainKeys": [], "rangeKeys": [] },
-  { "key": "spawns_story", "label": "스토리", "domainKeys": [], "rangeKeys": [] },
-  { "key": "defines", "label": "정의", "domainKeys": ["market_research"], "rangeKeys": ["market_segment"] },
-  { "key": "for_page", "label": "페이지", "domainKeys": [], "rangeKeys": [] },
-  { "key": "references", "label": "참조", "domainKeys": ["market_research", "raw_source"], "rangeKeys": ["competitor"] },
-  { "key": "measured_by", "label": "측정", "domainKeys": [], "rangeKeys": [] },
-  { "key": "tracked_by", "label": "추적", "domainKeys": [], "rangeKeys": [] },
-  { "key": "contributes_to", "label": "기여", "domainKeys": [], "rangeKeys": [] },
-  { "key": "reflects_on", "label": "회고", "domainKeys": [], "rangeKeys": [] },
-  { "key": "snapshotted_from", "label": "스냅샷", "domainKeys": [], "rangeKeys": [] },
-  { "key": "composed_of", "label": "구성", "domainKeys": ["ui_component"], "rangeKeys": ["ui_component"] }
+  {
+    "key": "informs",
+    "label": "근거",
+    "domainKeys": ["market_research", "market_segment", "roadmap", "product_roadmap", "raw_source", "user_research"],
+    "rangeKeys": ["hypothesis", "objective", "initiative", "prd", "feature"]
+  },
+  {
+    "key": "motivates",
+    "label": "동기",
+    "domainKeys": ["hypothesis", "objective", "key_result"],
+    "rangeKeys": ["initiative", "prd", "feature", "user_story"]
+  },
+  {
+    "key": "paired_with",
+    "label": "1:1 쌍",
+    "domainKeys": ["initiative"],
+    "rangeKeys": ["release"]
+  },
+  {
+    "key": "for_initiative",
+    "label": "소속",
+    "domainKeys": [
+      "prd",
+      "feature",
+      "user_story",
+      "task",
+      "implementation_plan",
+      "market_research",
+      "user_research",
+      "hypothesis",
+      "test_plan",
+      "pull_request",
+      "sprint",
+      "architecture_spec",
+      "data_spec",
+      "page_wireframe",
+      "user_flow",
+      "information_architecture",
+      "launch_plan",
+      "retrospective"
+    ],
+    "rangeKeys": ["initiative"]
+  },
+  {
+    "key": "for_release",
+    "label": "릴리즈",
+    "domainKeys": ["task", "pull_request", "sprint", "test_plan", "launch_plan", "release_note"],
+    "rangeKeys": ["release"]
+  },
+  {
+    "key": "part_of",
+    "label": "포함",
+    "domainKeys": ["raw_source", "feature", "user_story", "task", "key_result"],
+    "rangeKeys": ["market_research", "prd", "feature", "sprint", "objective", "initiative"]
+  },
+  {
+    "key": "specifies",
+    "label": "명세",
+    "domainKeys": ["prd", "architecture_spec", "data_spec", "integration_spec"],
+    "rangeKeys": ["feature", "user_story", "page", "ui_component"]
+  },
+  {
+    "key": "spawns_story",
+    "label": "스토리",
+    "domainKeys": ["feature"],
+    "rangeKeys": ["user_story"]
+  },
+  {
+    "key": "defines",
+    "label": "정의",
+    "domainKeys": ["market_research"],
+    "rangeKeys": ["market_segment"]
+  },
+  {
+    "key": "for_page",
+    "label": "페이지",
+    "domainKeys": ["page_wireframe", "user_flow", "ui_component", "information_architecture"],
+    "rangeKeys": ["page"]
+  },
+  {
+    "key": "references",
+    "label": "참조",
+    "domainKeys": ["market_research", "raw_source", "prd", "architecture_spec", "implementation_plan"],
+    "rangeKeys": ["competitor", "api_reference", "api_snapshot", "ui_component", "raw_source"]
+  },
+  {
+    "key": "measured_by",
+    "label": "측정",
+    "domainKeys": ["key_result", "objective", "initiative", "feature"],
+    "rangeKeys": ["kpi", "metric_snapshot"]
+  },
+  {
+    "key": "tracked_by",
+    "label": "추적",
+    "domainKeys": ["task"],
+    "rangeKeys": ["pull_request"]
+  },
+  {
+    "key": "contributes_to",
+    "label": "기여",
+    "domainKeys": ["key_result", "task", "feature", "user_story", "pull_request"],
+    "rangeKeys": ["objective", "initiative", "key_result", "feature"]
+  },
+  {
+    "key": "reflects_on",
+    "label": "회고",
+    "domainKeys": ["retrospective"],
+    "rangeKeys": ["sprint", "release", "initiative", "objective"]
+  },
+  {
+    "key": "snapshotted_from",
+    "label": "스냅샷",
+    "domainKeys": ["metric_snapshot", "api_snapshot"],
+    "rangeKeys": ["kpi", "api_reference"]
+  },
+  {
+    "key": "composed_of",
+    "label": "구성",
+    "domainKeys": ["ui_component"],
+    "rangeKeys": ["ui_component"]
+  },
+  {
+    "key": "blocked_by",
+    "label": "차단",
+    "domainKeys": ["task"],
+    "rangeKeys": ["task"]
+  },
+  {
+    "key": "implements",
+    "label": "구현",
+    "domainKeys": ["task", "pull_request"],
+    "rangeKeys": ["user_story", "feature"]
+  }
 ]

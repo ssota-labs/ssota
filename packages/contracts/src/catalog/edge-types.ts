@@ -18,6 +18,8 @@ export const EDGE_TYPES = [
   "reflects_on",
   "snapshotted_from",
   "composed_of",
+  "blocked_by",
+  "implements",
   "agent_owns_page",
 ] as const;
 
@@ -139,10 +141,22 @@ export const EDGE_CATALOG: Record<EdgeType, EdgeTypeCatalogEntry> = {
     description: "하위 구성요소로 구성됨.",
     keywords: ["구성", "composed of", "composition", "포함"],
   },
+  blocked_by: {
+    edgeType: "blocked_by",
+    label: "차단",
+    description: "다른 태스크에 의해 진행이 막힘.",
+    keywords: ["차단", "blocked by", "blocker", "의존", "dependency"],
+  },
+  implements: {
+    edgeType: "implements",
+    label: "구현",
+    description: "스토리·기능을 태스크 또는 PR이 구현함.",
+    keywords: ["구현", "implements", "delivers", "구현한다"],
+  },
   agent_owns_page: {
     edgeType: "agent_owns_page",
     label: "에이전트 대시보드",
-    description: "에이전트가 대시보드 페이지를 소유함.",
+    description: "에이전트가 대시보드 페이지를 소유함. (레거시/inert — Domain Pack 시드 비포함)",
     keywords: ["에이전트", "owns page", "대시보드", "dashboard"],
   },
 };

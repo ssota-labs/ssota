@@ -53,6 +53,7 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "developer",
   "workflow",
   "research",
+  "development",
   "executive",
   "manager",
   "connections",

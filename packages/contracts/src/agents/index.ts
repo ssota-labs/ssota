@@ -283,3 +283,13 @@ export {
   isSwdlAgentId,
   type SwdlAgentId,
 } from "./swdl-ids.js";
+export {
+  SWDL_AGENT_DEFINITION_SEEDS,
+  getSwdlAgentMeta,
+  listSwdlAgentIds,
+} from "./swdl-seed.js";
+export {
+  SWDL_SKILL_KEYS,
+  SWDL_AGENT_SKILL_KEYS,
+  type SwdlSkillKey,
+} from "./skills/swdl-skill-pack.js";

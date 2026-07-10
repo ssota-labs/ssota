@@ -8,7 +8,9 @@
 
 ## ⬛ 현재 상태 (2026-07-09, 한 줄)
 
-**WorkCycle + GatePolicy (org catalog) 착수·구현** — `work_cycle`/`gate_policy` L1 + path-expression evaluator + onPass spawn + `/work-cycle` UI + AX Step 0. 시드 A–G + SWDL 최소 게이트 세트. 상세: [swdl-work-cycles.md](swdl-work-cycles.md) · [swdl-operating-model.md](swdl-operating-model.md).
+## ⬛ 현재 상태 (2026-07-09, 한 줄)
+
+**WorkCycle + GatePolicy (org catalog) 구현** — `work_cycle`/`gate_policy` L1 + path-expression evaluator + onPass spawn + `/work-cycle` UI + AX Step 0. 기반: SWDL Domain Pack P0–P2 + 운영/게이트 문서. 상세: [swdl-work-cycles.md](swdl-work-cycles.md) · [swdl-operating-model.md](swdl-operating-model.md).
 
 ### WorkCycle + GatePolicy (2026-07-09)
 - Contracts: `work_cycle` / `gate_policy` schemas, `parseGatePath`, seed JSON (`work-cycles.json`, `gate-policies.json`), `swdl-ids` Delivery UUID.
@@ -17,6 +19,15 @@
 - Web: `/{orgSlug}/work-cycle` React Flow overview + topology; page action `spawn_task`; nav + i18n.
 - AX skill: Step 0 / 0b + `references/work-cycle-authoring.md` / `gate-policy-authoring.md` (ENV-02 mirrors).
 - E2E: `e2e/tests/work-cycle.spec.ts`.
+
+### 2026-07-09 — Operating model + work cycles docs
+- [swdl-operating-model.md](swdl-operating-model.md): GatePolicy = **팩 데이터 선언 + 제네릭 evaluator** (코어 SWDL `if` 금지). Human task vs ApprovalInbox. 페이지 갭 PR 순서.
+- [swdl-work-cycles.md](swdl-work-cycles.md): 서브그룹 다이어그램·트리거/루프/끝·업무 사이클 목록 SSOT.
+
+### 2026-07-09 — Domain Pack upgrade (P0–P2)
+- P0: edge domain/range + `blocked_by`/`implements`; task/sprint/PR fields; global backlog/sprints/PR inbox; applyTemplate without Main; Orchestrator-only schedules.
+- P1: plan/spec propertySchemas; hypothesis board; SWDL skill pack + bindings.
+- P2: api_snapshot page; agent node labeled legacy; agent_owns_page excluded from template catalog seed.
 
 ---
 
