@@ -1890,8 +1890,8 @@ async function seedInitiativeScopedNodes(
 ) {
   const forInitiativeId = maps.edgeKeyToId.get("for_initiative");
   const scopedSeeds = [
-    { catalogKey: "prd" as const, title: "Smoke PRD" },
-    { catalogKey: "feature" as const, title: "Smoke feature" },
+    { catalogKey: "prd" as const, title: "Smoke PRD", status: "draft" },
+    { catalogKey: "feature" as const, title: "Smoke feature", status: "draft" },
   ];
 
   for (const seed of scopedSeeds) {
@@ -1899,7 +1899,7 @@ async function seedInitiativeScopedNodes(
     if (!nodeCatalogId) continue;
 
     const existing = await db
-      .select({ id: schema.nodes.id })
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
       .from(schema.nodes)
       .where(
         and(
@@ -1920,11 +1920,26 @@ async function seedInitiativeScopedNodes(
           title: seed.title,
           properties: {
             lifecycleStatus: "Draft",
+            status: seed.status,
             seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${seed.catalogKey}`,
           },
         })
         .returning({ id: schema.nodes.id });
       nodeId = row?.id;
+    } else {
+      const props =
+        existing[0]?.properties && typeof existing[0].properties === "object"
+          ? (existing[0].properties as Record<string, unknown>)
+          : {};
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: {
+            ...props,
+            status: seed.status,
+          },
+        })
+        .where(eq(schema.nodes.id, nodeId));
     }
 
     if (!nodeId || !forInitiativeId) continue;
