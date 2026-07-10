@@ -115,6 +115,29 @@ const prdOnPassSpawn: GatePolicyRecord = {
   },
 };
 
+const featureBeforeStoryReady: GatePolicyRecord = {
+  id: "pol-4",
+  properties: {
+    policyKey: "swdl.feature-approved-before-story-ready",
+    when: "before_update_node",
+    match: {
+      catalogKey: "user_story",
+      property: { path: "status", in: ["ready", "approved"] },
+    },
+    require: [
+      {
+        path: "out:part_of[feature].status",
+        in: ["approved"],
+        ifMissing: "fail",
+      },
+    ],
+    onFail: {
+      code: "GATE_PENDING",
+      messageTemplate: "Feature approval required",
+    },
+  },
+};
+
 describe("gate policies", () => {
   const catalog = createContractsCatalogReadPort();
 
@@ -150,6 +173,40 @@ describe("gate policies", () => {
       },
     );
     return { graphRead, graphWrite, initiative, prd };
+  }
+
+  async function seedFeatureWithStory(
+    store: ReturnType<typeof createInMemoryGraphStore>,
+    featureStatus: string,
+  ) {
+    const graphRead = createInMemoryGraphReadPort(store);
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const feature = await graphWrite.createNode({
+      teamspaceId: TEAM,
+      nodeCatalogId: "cat-feature",
+      catalogKey: "feature",
+      title: "Feature",
+      properties: { lifecycleStatus: "Draft", status: featureStatus },
+      schemaVersion: 1,
+    });
+    const story = await graphWrite.createNode({
+      teamspaceId: TEAM,
+      nodeCatalogId: "cat-story",
+      catalogKey: "user_story",
+      title: "Story",
+      properties: { lifecycleStatus: "Draft", status: "draft" },
+      schemaVersion: 1,
+    });
+    await createEdge(
+      { catalog, graphRead, graphWrite },
+      {
+        teamspaceId: TEAM,
+        catalogKey: "part_of",
+        sourceNodeId: story.id,
+        targetNodeId: feature.id,
+      },
+    );
+    return { graphRead, graphWrite, story };
   }
 
   it("rejects create_node(task) when PRD is not approved", async () => {
@@ -266,5 +323,53 @@ describe("gate policies", () => {
     );
     const again = await tasks.listTasks({});
     expect(again).toHaveLength(1);
+  });
+
+  it("rejects ready story when its feature is not approved", async () => {
+    const store = createInMemoryGraphStore();
+    const { graphRead, graphWrite, story } = await seedFeatureWithStory(
+      store,
+      "draft",
+    );
+
+    await expect(
+      updateNode(
+        {
+          catalog,
+          graphRead,
+          graphWrite,
+          gatePolicies: staticPolicies([featureBeforeStoryReady]),
+        },
+        {
+          teamspaceId: TEAM,
+          nodeId: story.id,
+          properties: { ...story.properties, status: "ready" },
+        },
+      ),
+    ).rejects.toMatchObject({ code: "GATE_PENDING" });
+  });
+
+  it("allows ready story when its feature is approved", async () => {
+    const store = createInMemoryGraphStore();
+    const { graphRead, graphWrite, story } = await seedFeatureWithStory(
+      store,
+      "approved",
+    );
+
+    const updated = await updateNode(
+      {
+        catalog,
+        graphRead,
+        graphWrite,
+        gatePolicies: staticPolicies([featureBeforeStoryReady]),
+      },
+      {
+        teamspaceId: TEAM,
+        nodeId: story.id,
+        properties: { ...story.properties, status: "ready" },
+      },
+    );
+
+    expect(updated.properties.status).toBe("ready");
   });
 });
