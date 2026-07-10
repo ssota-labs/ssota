@@ -1890,8 +1890,8 @@ async function seedInitiativeScopedNodes(
 ) {
   const forInitiativeId = maps.edgeKeyToId.get("for_initiative");
   const scopedSeeds = [
-    { catalogKey: "prd" as const, title: "Smoke PRD" },
-    { catalogKey: "feature" as const, title: "Smoke feature" },
+    { catalogKey: "prd" as const, title: "Smoke PRD", status: "draft" },
+    { catalogKey: "feature" as const, title: "Smoke feature", status: "draft" },
   ];
 
   for (const seed of scopedSeeds) {
@@ -1899,7 +1899,7 @@ async function seedInitiativeScopedNodes(
     if (!nodeCatalogId) continue;
 
     const existing = await db
-      .select({ id: schema.nodes.id })
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
       .from(schema.nodes)
       .where(
         and(
@@ -1920,11 +1920,26 @@ async function seedInitiativeScopedNodes(
           title: seed.title,
           properties: {
             lifecycleStatus: "Draft",
+            status: seed.status,
             seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${seed.catalogKey}`,
           },
         })
         .returning({ id: schema.nodes.id });
       nodeId = row?.id;
+    } else {
+      const props =
+        existing[0]?.properties && typeof existing[0].properties === "object"
+          ? (existing[0].properties as Record<string, unknown>)
+          : {};
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: {
+            ...props,
+            status: seed.status,
+          },
+        })
+        .where(eq(schema.nodes.id, nodeId));
     }
 
     if (!nodeId || !forInitiativeId) continue;
@@ -1950,6 +1965,144 @@ async function seedInitiativeScopedNodes(
         targetNodeId: initiativeId,
         properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}for_initiative` },
       });
+    }
+  }
+
+  const featureNode = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .innerJoin(schema.nodeCatalog, eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id))
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodeCatalog.key, "feature"),
+        eq(schema.nodes.title, "Smoke feature"),
+      ),
+    )
+    .limit(1);
+
+  const spawnsStoryId = maps.edgeKeyToId.get("spawns_story");
+  const storyCatalogId = maps.nodeKeyToId.get("user_story");
+  if (featureNode[0]?.id && spawnsStoryId && storyCatalogId) {
+    const storyTitle = "Smoke story";
+    const existingStory = await db
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodes.nodeCatalogId, storyCatalogId),
+          eq(schema.nodes.title, storyTitle),
+        ),
+      )
+      .limit(1);
+
+    let storyId = existingStory[0]?.id;
+    if (!storyId) {
+      const [row] = await db
+        .insert(schema.nodes)
+        .values({
+          teamspaceId,
+          nodeCatalogId: storyCatalogId,
+          title: storyTitle,
+          properties: {
+            lifecycleStatus: "Draft",
+            status: "draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}user_story`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
+      storyId = row?.id;
+    } else {
+      const props =
+        existingStory[0]?.properties && typeof existingStory[0].properties === "object"
+          ? (existingStory[0].properties as Record<string, unknown>)
+          : {};
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: {
+            ...props,
+            status: "draft",
+          },
+        })
+        .where(eq(schema.nodes.id, storyId));
+    }
+
+    if (storyId) {
+      const storyEdge = await db
+        .select({ id: schema.edges.id })
+        .from(schema.edges)
+        .where(
+          and(
+            eq(schema.edges.teamspaceId, teamspaceId),
+            eq(schema.edges.edgeCatalogId, spawnsStoryId),
+            eq(schema.edges.sourceNodeId, featureNode[0].id),
+            eq(schema.edges.targetNodeId, storyId),
+          ),
+        )
+        .limit(1);
+
+      if (storyEdge.length === 0) {
+        await db.insert(schema.edges).values({
+          teamspaceId,
+          edgeCatalogId: spawnsStoryId,
+          sourceNodeId: featureNode[0].id,
+          targetNodeId: storyId,
+          properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}spawns_story` },
+        });
+      }
+
+      const partOfId = maps.edgeKeyToId.get("part_of");
+      if (partOfId) {
+        const partOfEdge = await db
+          .select({ id: schema.edges.id })
+          .from(schema.edges)
+          .where(
+            and(
+              eq(schema.edges.teamspaceId, teamspaceId),
+              eq(schema.edges.edgeCatalogId, partOfId),
+              eq(schema.edges.sourceNodeId, storyId),
+              eq(schema.edges.targetNodeId, featureNode[0].id),
+            ),
+          )
+          .limit(1);
+
+        if (partOfEdge.length === 0) {
+          await db.insert(schema.edges).values({
+            teamspaceId,
+            edgeCatalogId: partOfId,
+            sourceNodeId: storyId,
+            targetNodeId: featureNode[0].id,
+            properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}part_of` },
+          });
+        }
+      }
+
+      if (forInitiativeId) {
+        const initiativeEdge = await db
+          .select({ id: schema.edges.id })
+          .from(schema.edges)
+          .where(
+            and(
+              eq(schema.edges.teamspaceId, teamspaceId),
+              eq(schema.edges.edgeCatalogId, forInitiativeId),
+              eq(schema.edges.sourceNodeId, storyId),
+              eq(schema.edges.targetNodeId, initiativeId),
+            ),
+          )
+          .limit(1);
+
+        if (initiativeEdge.length === 0) {
+          await db.insert(schema.edges).values({
+            teamspaceId,
+            edgeCatalogId: forInitiativeId,
+            sourceNodeId: storyId,
+            targetNodeId: initiativeId,
+            properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}for_initiative` },
+          });
+        }
+      }
     }
   }
 }

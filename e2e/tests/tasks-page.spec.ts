@@ -54,4 +54,15 @@ test.describe("Tasks page", () => {
     await expect(page.getByText("Pending", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
   });
+
+  test("human executor filter hides agent tasks", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "tasks");
+
+    await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
+    await page.getByRole("button", { name: "Human", exact: true }).click();
+    await expect(page.getByText("E2E tasks page fixture")).toHaveCount(0);
+    await page.getByRole("button", { name: "Agent", exact: true }).click();
+    await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
+  });
 });

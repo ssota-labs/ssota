@@ -41,6 +41,58 @@ export async function getSmokeInitiativeId(): Promise<string> {
   return smoke.id;
 }
 
+type SmokeApprovalFixture = {
+  catalogKey: "prd" | "feature" | "user_story";
+  title: string;
+};
+
+const SMOKE_APPROVAL_FIXTURES: SmokeApprovalFixture[] = [
+  { catalogKey: "prd", title: "Smoke PRD" },
+  { catalogKey: "feature", title: "Smoke feature" },
+  { catalogKey: "user_story", title: "Smoke story" },
+];
+
+/** Reset smoke approval inbox nodes to draft (idempotent E2E fixture). */
+export async function resetSmokeApprovalFixtures(): Promise<void> {
+  const databaseUrl =
+    process.env.DATABASE_URL ??
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+  const { db } = createDb(databaseUrl);
+  const consolePort = createConsolePort(db);
+  const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
+  if (!org) throw new Error("Default org not found — run db:seed");
+
+  const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
+  if (!project) throw new Error("Default project not found — run db:seed");
+
+  const { graphRead, graphWrite } = createGraphPorts(db, {
+    organizationId: org.id,
+    teamspaceId: project.id,
+  });
+
+  for (const fixture of SMOKE_APPROVAL_FIXTURES) {
+    const nodes = await graphRead.queryNodes({
+      teamspaceId: project.id,
+      catalogKey: fixture.catalogKey,
+      limit: 100,
+    });
+    const node = nodes.find((n) => n.title === fixture.title);
+    if (!node) continue;
+
+    const props =
+      node.properties && typeof node.properties === "object"
+        ? (node.properties as Record<string, unknown>)
+        : {};
+
+    await graphWrite.updateNode({
+      teamspaceId: project.id,
+      nodeId: node.id,
+      properties: { ...props, status: "draft" },
+    });
+  }
+}
+
 let cachedHypothesisId: string | undefined;
 
 /** Smoke seed hypothesis id for generic node detail E2E. */
