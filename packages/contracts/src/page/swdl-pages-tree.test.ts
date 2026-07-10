@@ -42,6 +42,14 @@ describe("SWDL pages-tree delivery surfaces", () => {
     expect(types).toContain("KanbanBoard");
   });
 
+  it("seeds manager approvals inbox for teamspace-wide planning", () => {
+    const page = byKey.get("manager/approvals");
+    expect(page).toBeDefined();
+    const types = Object.values(page!.spec!.elements!).map((el) => el.type);
+    expect(types).toContain("ApprovalInbox");
+    expect(types).toContain("Tabs");
+  });
+
   it("seeds planning ApprovalInbox on PRD, features, and stories", () => {
     for (const key of [
       "tpl/initiative/planning/prd",
@@ -51,6 +59,34 @@ describe("SWDL pages-tree delivery surfaces", () => {
       const types = Object.values(byKey.get(key)!.spec!.elements!).map((el) => el.type);
       expect(types, key).toContain("ApprovalInbox");
       expect(types, key).toContain("Tabs");
+    }
+  });
+
+  it("seeds launch plan ApprovalInbox", () => {
+    const types = Object.values(
+      byKey.get("tpl/initiative/launch/plan")!.spec!.elements!,
+    ).map((el) => el.type);
+    expect(types).toContain("ApprovalInbox");
+    expect(types).toContain("Tabs");
+  });
+
+  it("seeds StatRow on L0 and initiative section hubs", () => {
+    for (const key of [
+      "executive",
+      "research",
+      "manager",
+      "development",
+      "design",
+      "tpl/initiative/planning",
+      "tpl/initiative/design",
+      "tpl/initiative/architecture",
+      "tpl/initiative/build",
+      "tpl/initiative/qa",
+      "tpl/initiative/launch",
+      "tpl/initiative/retrospective",
+    ]) {
+      const types = Object.values(byKey.get(key)!.spec!.elements!).map((el) => el.type);
+      expect(types, key).toContain("StatRow");
     }
   });
 });

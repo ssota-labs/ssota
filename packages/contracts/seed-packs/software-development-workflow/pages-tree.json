@@ -6,14 +6,69 @@
     "title": "Executive",
     "icon": "executive",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Executive"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "initiativesTile",
+            "objectivesTile",
+            "roadmapsTile"
+          ]
+        },
+        "initiativesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "initiatives",
+            "label": "Initiatives"
+          }
+        },
+        "objectivesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "objectives",
+            "label": "Objectives"
+          }
+        },
+        "roadmapsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "roadmaps",
+            "label": "Roadmaps"
+          }
         }
+      }
+    },
+    "bindings": {
+      "initiatives": {
+        "kind": "query",
+        "catalogKey": "initiative"
+      },
+      "objectives": {
+        "kind": "query",
+        "catalogKey": "objective"
+      },
+      "roadmaps": {
+        "kind": "query",
+        "catalogKey": "product_roadmap"
       }
     }
   },
@@ -464,14 +519,57 @@
     "title": "Research",
     "icon": "research",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Research"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "hypothesesTile",
+            "marketTile"
+          ]
+        },
+        "hypothesesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "hypotheses",
+            "label": "Hypotheses"
+          }
+        },
+        "marketTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "marketResearch",
+            "label": "Market research"
+          }
         }
+      }
+    },
+    "bindings": {
+      "hypotheses": {
+        "kind": "query",
+        "catalogKey": "hypothesis"
+      },
+      "marketResearch": {
+        "kind": "query",
+        "catalogKey": "market_research"
       }
     }
   },
@@ -982,14 +1080,83 @@
     "title": "Manager",
     "icon": "manager",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Manager"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "initiativesTile",
+            "pendingPrdTile",
+            "pendingFeaturesTile"
+          ]
+        },
+        "initiativesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "initiatives",
+            "label": "Initiatives"
+          }
+        },
+        "pendingPrdTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "pendingPrds",
+            "label": "PRD pending"
+          }
+        },
+        "pendingFeaturesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "pendingFeatures",
+            "label": "Features pending"
+          }
         }
+      }
+    },
+    "bindings": {
+      "initiatives": {
+        "kind": "query",
+        "catalogKey": "initiative"
+      },
+      "pendingPrds": {
+        "kind": "query",
+        "catalogKey": "prd",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
+      },
+      "pendingFeatures": {
+        "kind": "query",
+        "catalogKey": "feature",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     }
   },
@@ -1082,20 +1249,283 @@
     }
   },
   {
+    "key": "manager/approvals",
+    "parentKey": "manager",
+    "appliesToNodeType": null,
+    "title": "Approvals",
+    "icon": "manager_initiatives",
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "tabs"
+          ]
+        },
+        "header": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Approvals",
+            "subtitle": "Teamspace-wide planning approvals"
+          }
+        },
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "prd",
+            "items": [
+              {
+                "value": "prd",
+                "label": "PRD",
+                "panel": "prdPanel"
+              },
+              {
+                "value": "features",
+                "label": "Features",
+                "panel": "featuresPanel"
+              },
+              {
+                "value": "stories",
+                "label": "Stories",
+                "panel": "storiesPanel"
+              }
+            ]
+          }
+        },
+        "prdPanel": {
+          "type": "Section",
+          "props": {
+            "title": "PRD 승인",
+            "subtitle": "승인 대기 PRD (전체 initiative)"
+          },
+          "children": [
+            "prdInbox"
+          ]
+        },
+        "prdInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingPrds",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setPrdStatus",
+            "rejectAction": "setPrdStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 PRD가 없습니다."
+          }
+        },
+        "featuresPanel": {
+          "type": "Section",
+          "props": {
+            "title": "기능 승인",
+            "subtitle": "승인 대기 기능 (전체 initiative)"
+          },
+          "children": [
+            "featureInbox"
+          ]
+        },
+        "featureInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingFeatures",
+            "titleField": "title",
+            "metaFields": [
+              "priority",
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setFeatureStatus",
+            "rejectAction": "setFeatureStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 기능이 없습니다."
+          }
+        },
+        "storiesPanel": {
+          "type": "Section",
+          "props": {
+            "title": "스토리 승인",
+            "subtitle": "Ready로 올릴 draft 스토리"
+          },
+          "children": [
+            "storyInbox"
+          ]
+        },
+        "storyInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingStories",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setStoryStatus",
+            "rejectAction": "setStoryStatus",
+            "approveLabel": "Ready",
+            "rejectLabel": "반려",
+            "approveValue": "ready",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 스토리가 없습니다."
+          }
+        }
+      }
+    },
+    "bindings": {
+      "pendingPrds": {
+        "kind": "query",
+        "catalogKey": "prd",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
+      },
+      "pendingFeatures": {
+        "kind": "query",
+        "catalogKey": "feature",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
+      },
+      "pendingStories": {
+        "kind": "query",
+        "catalogKey": "user_story",
+        "filter": [
+          {
+            "key": "status",
+            "op": "eq",
+            "value": "draft"
+          }
+        ]
+      }
+    },
+    "actions": {
+      "setPrdStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      },
+      "setFeatureStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      },
+      "setStoryStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      }
+    }
+  },
+  {
     "key": "development",
     "parentKey": null,
     "appliesToNodeType": null,
     "title": "Development",
     "icon": "development",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Development"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "tasksTile",
+            "prsTile",
+            "sprintsTile"
+          ]
+        },
+        "tasksTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "tasks",
+            "label": "Graph tasks"
+          }
+        },
+        "prsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "pullRequests",
+            "label": "Pull requests"
+          }
+        },
+        "sprintsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "sprints",
+            "label": "Sprints"
+          }
         }
+      }
+    },
+    "bindings": {
+      "tasks": {
+        "kind": "query",
+        "catalogKey": "task"
+      },
+      "pullRequests": {
+        "kind": "query",
+        "catalogKey": "pull_request"
+      },
+      "sprints": {
+        "kind": "query",
+        "catalogKey": "sprint"
       }
     }
   },
@@ -1759,14 +2189,57 @@
     "title": "Design",
     "icon": "design",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Design"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "componentsTile",
+            "wireframesTile"
+          ]
+        },
+        "componentsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "uiComponents",
+            "label": "UI components"
+          }
+        },
+        "wireframesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "wireframes",
+            "label": "Wireframes"
+          }
         }
+      }
+    },
+    "bindings": {
+      "uiComponents": {
+        "kind": "query",
+        "catalogKey": "ui_component"
+      },
+      "wireframes": {
+        "kind": "query",
+        "catalogKey": "page_wireframe"
       }
     }
   },
@@ -2094,14 +2567,88 @@
     "title": "Planning",
     "icon": "planning_prd",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Planning"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "prdTile",
+            "featuresTile",
+            "storiesTile",
+            "pendingPrdTile"
+          ]
+        },
+        "prdTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "prds",
+            "label": "PRDs"
+          }
+        },
+        "featuresTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "features",
+            "label": "Features"
+          }
+        },
+        "storiesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "stories",
+            "label": "Stories"
+          }
+        },
+        "pendingPrdTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "pendingPrds",
+            "label": "PRD pending"
+          }
         }
+      }
+    },
+    "bindings": {
+      "prds": {
+        "kind": "initiative_scope",
+        "catalogKey": "prd"
+      },
+      "features": {
+        "kind": "initiative_scope",
+        "catalogKey": "feature"
+      },
+      "stories": {
+        "kind": "initiative_scope",
+        "catalogKey": "user_story"
+      },
+      "pendingPrds": {
+        "kind": "initiative_scope",
+        "catalogKey": "prd",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     }
   },
@@ -2527,14 +3074,69 @@
     "title": "Design",
     "icon": "design",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Design"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "wireframesTile",
+            "flowsTile",
+            "componentsTile"
+          ]
+        },
+        "wireframesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "wireframes",
+            "label": "Wireframes"
+          }
+        },
+        "flowsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "flows",
+            "label": "User flows"
+          }
+        },
+        "componentsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "components",
+            "label": "UI components"
+          }
         }
+      }
+    },
+    "bindings": {
+      "wireframes": {
+        "kind": "initiative_scope",
+        "catalogKey": "page_wireframe"
+      },
+      "flows": {
+        "kind": "initiative_scope",
+        "catalogKey": "user_flow"
+      },
+      "components": {
+        "kind": "initiative_scope",
+        "catalogKey": "ui_component"
       }
     }
   },
@@ -2760,14 +3362,69 @@
     "title": "Architecture",
     "icon": "architecture_spec",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Architecture"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "specTile",
+            "dataTile",
+            "integrationTile"
+          ]
+        },
+        "specTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "archSpecs",
+            "label": "Specs"
+          }
+        },
+        "dataTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "dataSpecs",
+            "label": "Data"
+          }
+        },
+        "integrationTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "integrationSpecs",
+            "label": "Integrations"
+          }
         }
+      }
+    },
+    "bindings": {
+      "archSpecs": {
+        "kind": "initiative_scope",
+        "catalogKey": "architecture_spec"
+      },
+      "dataSpecs": {
+        "kind": "initiative_scope",
+        "catalogKey": "data_spec"
+      },
+      "integrationSpecs": {
+        "kind": "initiative_scope",
+        "catalogKey": "integration_spec"
       }
     }
   },
@@ -2980,14 +3637,57 @@
     "title": "Build",
     "icon": "build_plan",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Build"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "tasksTile",
+            "prsTile"
+          ]
+        },
+        "tasksTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "tasks",
+            "label": "Tasks"
+          }
+        },
+        "prsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "pullRequests",
+            "label": "Pull requests"
+          }
         }
+      }
+    },
+    "bindings": {
+      "tasks": {
+        "kind": "initiative_scope",
+        "catalogKey": "task"
+      },
+      "pullRequests": {
+        "kind": "initiative_scope",
+        "catalogKey": "pull_request"
       }
     }
   },
@@ -3314,14 +4014,45 @@
     "title": "QA",
     "icon": "qa_test_plan",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "QA"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "testPlansTile"
+          ]
+        },
+        "testPlansTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "testPlans",
+            "label": "Test plans"
+          }
         }
+      }
+    },
+    "bindings": {
+      "testPlans": {
+        "kind": "initiative_scope",
+        "catalogKey": "test_plan"
       }
     }
   },
@@ -3382,14 +4113,57 @@
     "title": "Launch",
     "icon": "launch_plan",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Launch"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "launchPlansTile",
+            "releaseNotesTile"
+          ]
+        },
+        "launchPlansTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "launchPlans",
+            "label": "Launch plans"
+          }
+        },
+        "releaseNotesTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "releaseNotes",
+            "label": "Release notes"
+          }
         }
+      }
+    },
+    "bindings": {
+      "launchPlans": {
+        "kind": "initiative_scope",
+        "catalogKey": "launch_plan"
+      },
+      "releaseNotes": {
+        "kind": "initiative_scope",
+        "catalogKey": "release_note"
       }
     }
   },
@@ -3400,9 +4174,27 @@
     "title": "Launch plan",
     "icon": "launch_plan",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "document",
+            "items": [
+              {
+                "value": "document",
+                "label": "Document",
+                "panel": "documentPanel"
+              },
+              {
+                "value": "approval",
+                "label": "Approval",
+                "panel": "approvalPanel"
+              }
+            ]
+          }
+        },
+        "documentPanel": {
           "type": "Section",
           "props": {
             "title": "Launch plan"
@@ -3418,6 +4210,35 @@
             "field": "content",
             "action": "saveDoc"
           }
+        },
+        "approvalPanel": {
+          "type": "Section",
+          "props": {
+            "title": "Launch 승인",
+            "subtitle": "승인 대기 launch plan"
+          },
+          "children": [
+            "inbox"
+          ]
+        },
+        "inbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingLaunch",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setLaunchStatus",
+            "rejectAction": "setLaunchStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 launch plan이 없습니다."
+          }
         }
       }
     },
@@ -3426,6 +4247,17 @@
         "kind": "initiative_scope",
         "catalogKey": "launch_plan",
         "limit": 1
+      },
+      "pendingLaunch": {
+        "kind": "initiative_scope",
+        "catalogKey": "launch_plan",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     },
     "actions": {
@@ -3440,6 +4272,16 @@
           }
         },
         "merge": true
+      },
+      "setLaunchStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -3544,14 +4386,57 @@
     "title": "Retrospective",
     "icon": "retro_review",
     "spec": {
-      "root": "h",
+      "root": "stack",
       "elements": {
-        "h": {
+        "stack": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "header",
+            "stats"
+          ]
+        },
+        "header": {
           "type": "PageHeader",
           "props": {
             "title": "Retrospective"
           }
+        },
+        "stats": {
+          "type": "StatRow",
+          "props": {},
+          "children": [
+            "retrosTile",
+            "metricsTile"
+          ]
+        },
+        "retrosTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "retros",
+            "label": "Retrospectives"
+          }
+        },
+        "metricsTile": {
+          "type": "StatTile",
+          "props": {
+            "binding": "metrics",
+            "label": "Metric snapshots"
+          }
         }
+      }
+    },
+    "bindings": {
+      "retros": {
+        "kind": "initiative_scope",
+        "catalogKey": "retrospective"
+      },
+      "metrics": {
+        "kind": "initiative_scope",
+        "catalogKey": "metric_snapshot"
       }
     }
   },
