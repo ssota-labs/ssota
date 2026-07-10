@@ -235,13 +235,16 @@ export async function resolvePageBindings(
           value = def.limit === 1 ? null : [];
           break;
         }
-        const scoped = await resolveInitiativeScopedNodes(
+        let scoped = await resolveInitiativeScopedNodes(
           graph,
           teamspaceId,
           subjectId,
           def.catalogKey,
           def.limit,
         );
+        if (def.filter?.length) {
+          scoped = scoped.filter((n) => matchesFilter(n, def.filter as QueryFilter));
+        }
         if (def.attachChildren) {
           const enriched = await attachChildrenToNodes(
             graph,

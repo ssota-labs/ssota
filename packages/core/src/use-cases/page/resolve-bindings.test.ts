@@ -61,6 +61,71 @@ describe("resolvePageBindings", () => {
     ]);
   });
 
+  it("filters initiative_scope nodes by property", async () => {
+    const store = createInMemoryGraphStore();
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const graphRead = createInMemoryGraphReadPort(store);
+
+    const initiative = await graphWrite.createNode({
+      teamspaceId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000009",
+      catalogKey: "initiative",
+      title: "Initiative",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
+    });
+    const approved = await graphWrite.createNode({
+      teamspaceId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000011",
+      catalogKey: "feature",
+      title: "Approved feature",
+      properties: { status: "approved" },
+      schemaVersion: 1,
+    });
+    const pending = await graphWrite.createNode({
+      teamspaceId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000011",
+      catalogKey: "feature",
+      title: "Pending feature",
+      properties: { status: "draft" },
+      schemaVersion: 1,
+    });
+    for (const feature of [approved, pending]) {
+      await graphWrite.createEdge({
+        teamspaceId: PROJECT_ID,
+        edgeCatalogId: "00000000-0000-4000-9000-000000000004",
+        catalogKey: "for_initiative",
+        sourceNodeId: feature.id,
+        targetNodeId: initiative.id,
+        properties: {},
+      });
+    }
+
+    const data = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        pendingFeatures: {
+          kind: "initiative_scope",
+          catalogKey: "feature",
+          filter: [{ key: "status", op: "neq", value: "approved" }],
+        },
+      },
+      {
+        subject: {
+          id: initiative.id,
+          catalogKey: "initiative",
+          title: initiative.title,
+          properties: initiative.properties,
+        },
+      },
+    );
+
+    expect(data.pendingFeatures).toEqual([
+      expect.objectContaining({ id: pending.id, title: "Pending feature" }),
+    ]);
+  });
+
   it("attaches child nodes from graph edges onto parent rows", async () => {
     const store = createInMemoryGraphStore();
     const graphWrite = createInMemoryGraphWritePort(store);

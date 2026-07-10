@@ -38,6 +38,7 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     kind: z.literal("initiative_scope"),
     catalogKey: z.string().min(1),
     limit: z.number().int().positive().optional(),
+    filter: z.array(propertyFilterSchema).optional(),
     attachChildren: attachChildrenSchema.optional(),
   }),
   z.object({
