@@ -18,11 +18,9 @@ import { MinusIcon, PlusIcon } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
 import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/components/flow-toolbar";
 import { layoutFlow } from "@/lib/page-runtime/flow-layout";
-import type { FlowModel } from "@/lib/page-runtime/flow-model";
 import {
   SUBFLOW_HEADER_H,
   SUBFLOW_PAD,
-  buildExpandCollapseModel,
   buildSubflowModel,
   type GatePolicyInstance,
   type OverviewNodeData,
@@ -31,8 +29,6 @@ import {
 } from "./work-cycle-model";
 
 const DIAGRAM_HEIGHT = 720;
-
-export type WorkCycleDiagramMode = "expand-collapse" | "subflow";
 
 type CycleCardData = OverviewNodeData & {
   onToggleExpand?: (cycleKey: string) => void;
@@ -110,7 +106,7 @@ function CycleCardNode({ data, selected }: NodeProps) {
   );
 }
 
-/** Parent group for Sub Flow mode — children sit inside this box. */
+/** Parent group — children nest inside via React Flow `parentId`. */
 function CycleGroupNode({ data, selected }: NodeProps) {
   const d = data as unknown as CycleCardData;
   return (
@@ -231,71 +227,8 @@ function FitViewWhenReady({
   return null;
 }
 
-function WorkCycleFlowCanvas({
-  nodes,
-  edges,
-  height = DIAGRAM_HEIGHT,
-  fitKey,
-  testId = "work-cycle-flow-canvas",
-}: {
-  nodes: Node[];
-  edges: Edge[];
-  height?: number;
-  fitKey: string;
-  testId?: string;
-}) {
-  const hostRef = React.useRef<HTMLDivElement | null>(null);
-  return (
-    <div
-      ref={hostRef}
-      className="border-border bg-muted/20 relative w-full overflow-hidden rounded-xl border"
-      style={{ height }}
-      data-testid={testId}
-    >
-      <ReactFlowProvider>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={NODE_TYPES}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable
-          fitView
-          minZoom={0.1}
-          proOptions={{ hideAttribution: true }}
-          style={{ width: "100%", height }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <FlowTopToolbar locked={false} onToggleLock={() => {}} />
-          <FlowViewportToolbar />
-          <FitViewWhenReady hostRef={hostRef} depsKey={fitKey} />
-        </ReactFlow>
-      </ReactFlowProvider>
-    </div>
-  );
-}
-
-function useToggleExpanded() {
-  const [expandedCycleKeys, setExpandedCycleKeys] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-  const toggleExpand = React.useCallback((cycleKey: string) => {
-    setExpandedCycleKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(cycleKey)) next.delete(cycleKey);
-      else next.add(cycleKey);
-      return next;
-    });
-  }, []);
-  const fitKey = React.useMemo(
-    () => [...expandedCycleKeys].toSorted().join(","),
-    [expandedCycleKeys],
-  );
-  return { expandedCycleKeys, toggleExpand, fitKey };
-}
-
 function edgeStyle(kind: string) {
-  const dashed = kind === "feed" || kind === "handoff" || kind === "expand";
+  const dashed = kind === "feed" || kind === "handoff";
   return {
     style: dashed
       ? { strokeDasharray: "6 4" }
@@ -307,104 +240,11 @@ function edgeStyle(kind: string) {
 }
 
 /**
- * Flat expand/collapse: children are siblings on the canvas; visibility via `hidden`.
- * @see https://reactflow.dev/examples/layout/expand-collapse
- */
-export function WorkCycleExpandCollapseDiagram({
-  cycles,
-  policies,
-}: {
-  cycles: WorkCycleInstance[];
-  policies: GatePolicyInstance[];
-}) {
-  const policiesByKey = React.useMemo(() => {
-    const map = new Map<string, GatePolicyInstance>();
-    for (const p of policies) map.set(p.properties.policyKey, p);
-    return map;
-  }, [policies]);
-
-  const { expandedCycleKeys, toggleExpand, fitKey } = useToggleExpanded();
-
-  const model = React.useMemo(
-    () => buildExpandCollapseModel(cycles, policiesByKey, expandedCycleKeys),
-    [cycles, policiesByKey, expandedCycleKeys],
-  );
-
-  const [nodes, setNodes] = React.useState<Node[]>([]);
-  const [edges, setEdges] = React.useState<Edge[]>([]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    const visibleNodes = model.nodes.filter((n) => !n.hidden);
-    const visibleIds = new Set(visibleNodes.map((n) => n.id));
-    const visibleEdges = model.edges.filter(
-      (e) => !e.hidden && visibleIds.has(e.source) && visibleIds.has(e.target),
-    );
-
-    const flowModel: FlowModel = {
-      nodes: visibleNodes.map((n) => ({
-        id: n.id,
-        title:
-          n.data.kind === "cycle" ? n.data.title : (n.data as TopologyNodeData).label,
-        width: n.width,
-        height: n.height,
-      })),
-      edges: visibleEdges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-      })),
-    };
-
-    void layoutFlow(flowModel, "LR").then((positions) => {
-      if (cancelled) return;
-      setNodes(
-        model.nodes.map((n) => {
-          const baseData =
-            n.data.kind === "cycle"
-              ? ({ ...n.data, onToggleExpand: toggleExpand } satisfies CycleCardData)
-              : n.data;
-          return {
-            id: n.id,
-            type: n.rfType,
-            position: positions[n.id] ?? { x: 0, y: 0 },
-            hidden: n.hidden,
-            data: baseData,
-          };
-        }),
-      );
-      setEdges(
-        model.edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          hidden: e.hidden,
-          label: e.label,
-          ...edgeStyle(e.kind),
-        })),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [model, toggleExpand]);
-
-  return (
-    <WorkCycleFlowCanvas
-      nodes={nodes}
-      edges={edges}
-      fitKey={fitKey || "collapsed"}
-      testId="work-cycle-flow-canvas-expand"
-    />
-  );
-}
-
-/**
- * Parent/child Sub Flow: topology steps nest inside an expanded cycle group
- * via React Flow `parentId` + relative positions.
+ * Work-cycle map as React Flow Sub Flows: topology steps nest inside an
+ * expanded cycle group via `parentId` + relative positions.
  * @see https://reactflow.dev/learn/layouting/sub-flows
  */
-export function WorkCycleSubflowDiagram({
+export function WorkCycleDiagram({
   cycles,
   policies,
 }: {
@@ -417,7 +257,23 @@ export function WorkCycleSubflowDiagram({
     return map;
   }, [policies]);
 
-  const { expandedCycleKeys, toggleExpand, fitKey } = useToggleExpanded();
+  const [expandedCycleKeys, setExpandedCycleKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleExpand = React.useCallback((cycleKey: string) => {
+    setExpandedCycleKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(cycleKey)) next.delete(cycleKey);
+      else next.add(cycleKey);
+      return next;
+    });
+  }, []);
+
+  const fitKey = React.useMemo(
+    () => [...expandedCycleKeys].toSorted().join(","),
+    [expandedCycleKeys],
+  );
 
   const model = React.useMemo(
     () => buildSubflowModel(cycles, policiesByKey, expandedCycleKeys),
@@ -426,12 +282,12 @@ export function WorkCycleSubflowDiagram({
 
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const [edges, setEdges] = React.useState<Edge[]>([]);
+  const hostRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
 
     async function run() {
-      // 1) Layout each nested topology (relative coords for children).
       const nestedPositions = new Map<
         string,
         { positions: Record<string, { x: number; y: number }>; width: number; height: number }
@@ -457,7 +313,6 @@ export function WorkCycleSubflowDiagram({
           maxX = Math.max(maxX, p.x + n.width);
           maxY = Math.max(maxY, p.y + n.height);
         }
-        // Offset children below the group header inside the parent.
         const offsetPositions: Record<string, { x: number; y: number }> = {};
         for (const [id, p] of Object.entries(laid)) {
           offsetPositions[id] = {
@@ -474,7 +329,6 @@ export function WorkCycleSubflowDiagram({
 
       if (cancelled) return;
 
-      // 2) Layout top-level cycle nodes (only parents; children are relative).
       const topLevel = model.nodes.filter((n) => !n.parentId);
       const topWithSize = topLevel.map((n) => {
         const nest = nestedPositions.get(n.id);
@@ -555,26 +409,31 @@ export function WorkCycleSubflowDiagram({
   }, [model, toggleExpand]);
 
   return (
-    <WorkCycleFlowCanvas
-      nodes={nodes}
-      edges={edges}
-      fitKey={`sub:${fitKey || "collapsed"}`}
-      testId="work-cycle-flow-canvas-subflow"
-    />
+    <div
+      ref={hostRef}
+      className="border-border bg-muted/20 relative w-full overflow-hidden rounded-xl border"
+      style={{ height: DIAGRAM_HEIGHT }}
+      data-testid="work-cycle-flow-canvas"
+    >
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={NODE_TYPES}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable
+          fitView
+          minZoom={0.1}
+          proOptions={{ hideAttribution: true }}
+          style={{ width: "100%", height: DIAGRAM_HEIGHT }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <FlowTopToolbar locked={false} onToggleLock={() => {}} />
+          <FlowViewportToolbar />
+          <FitViewWhenReady hostRef={hostRef} depsKey={fitKey || "collapsed"} />
+        </ReactFlow>
+      </ReactFlowProvider>
+    </div>
   );
-}
-
-export function WorkCycleDiagram({
-  cycles,
-  policies,
-  mode,
-}: {
-  cycles: WorkCycleInstance[];
-  policies: GatePolicyInstance[];
-  mode: WorkCycleDiagramMode;
-}) {
-  if (mode === "subflow") {
-    return <WorkCycleSubflowDiagram cycles={cycles} policies={policies} />;
-  }
-  return <WorkCycleExpandCollapseDiagram cycles={cycles} policies={policies} />;
 }
