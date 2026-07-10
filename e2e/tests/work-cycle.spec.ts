@@ -52,4 +52,17 @@ test.describe("Work cycle map", () => {
       contentType: "image/png",
     });
   });
+
+  test("delivery cycle shows the PRD delivery-spawn gate", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "work-cycle");
+
+    const expand = page.getByTestId("work-cycle-expand-delivery");
+    await expect(expand).toBeVisible({ timeout: 15_000 });
+    await expand.click();
+
+    await expect(page.getByText("PRD before Delivery spawn")).toBeVisible({
+      timeout: 15_000,
+    });
+  });
 });
