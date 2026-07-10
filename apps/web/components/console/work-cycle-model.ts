@@ -81,9 +81,9 @@ export function topologyNodeId(cycleKey: string, localId: string): string {
 
 export const SUBFLOW_HEADER_H = 52;
 export const SUBFLOW_PAD = 16;
-export const SUBFLOW_CHILD_W = 180;
+export const SUBFLOW_CHILD_W = 240;
 export const SUBFLOW_CHILD_H = 72;
-export const SUBFLOW_GATE_H = 88;
+export const SUBFLOW_GATE_H = 120;
 export const CYCLE_COLLAPSED_W = 240;
 export const CYCLE_COLLAPSED_H = 96;
 
