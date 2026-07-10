@@ -6,7 +6,7 @@ import {
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createScheduleForMcp,
   listSchedulesForMcp,
@@ -54,7 +54,7 @@ describe("schedule-services (DB-backed)", () => {
 
   it("creates a schedule against an existing agent, then lists it", async () => {
     const created = await createScheduleForMcp(teamspaceId, {
-      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
+      agentDefinitionId: SWDL_AGENT_IDS.orchestrator,
       cronExpression: "0 9 * * *",
     });
     createdScheduleIds.push(created.id);
@@ -68,7 +68,7 @@ describe("schedule-services (DB-backed)", () => {
   it("rejects an invalid cron expression", async () => {
     await expect(
       createScheduleForMcp(teamspaceId, {
-        agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
+        agentDefinitionId: SWDL_AGENT_IDS.orchestrator,
         cronExpression: "not a cron",
       }),
     ).rejects.toThrow(/Invalid cronExpression/);

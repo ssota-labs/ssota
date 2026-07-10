@@ -6,7 +6,20 @@
 
 ---
 
-## ⬛ 현재 상태 (2026-07-08, 한 줄)
+## ⬛ 현재 상태 (2026-07-09, 한 줄)
+
+**SWDL Domain Pack P0–P2 구현 + 운영 모델 설계 문서화** — 엣지·Delivery 표면·Main 제거·스킬. 운영/게이트: [swdl-operating-model.md](swdl-operating-model.md). 스킬: [swdl-runtime-skills.md](swdl-runtime-skills.md).
+
+### 2026-07-09 — Operating model + work cycles docs
+- [swdl-operating-model.md](swdl-operating-model.md): GatePolicy = **팩 데이터 선언 + 제네릭 evaluator** (코어 SWDL `if` 금지). Human task vs ApprovalInbox. 페이지 갭 PR 순서.
+- [swdl-work-cycles.md](swdl-work-cycles.md): 서브그룹 다이어그램·트리거/루프/끝·업무 사이클 목록 SSOT.
+
+### 2026-07-09 — Domain Pack upgrade (P0–P2)
+- P0: edge domain/range + `blocked_by`/`implements`; task/sprint/PR fields; global backlog/sprints/PR inbox; applyTemplate without Main; Orchestrator-only schedules.
+- P1: plan/spec propertySchemas; hypothesis board; SWDL skill pack + bindings.
+- P2: api_snapshot page; agent node labeled legacy; agent_owns_page excluded from template catalog seed.
+
+## ⬛ 이전 상태 (2026-07-08)
 
 **Task 1·2·3 완료 — AX 능력 + 3도메인 실증(HR·개인재무·SWDL) + 반복 friction 수정까지.** 남은 후보: 라이브 web 렌더 데모, 코드 템플릿 캡처(선택), PR.
 

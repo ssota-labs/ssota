@@ -50,6 +50,15 @@ export const graphTaskStatusSchema = z.enum([
   "cancelled",
 ]);
 
+export const graphPrioritySchema = z.enum(["low", "medium", "high", "urgent"]);
+
+export const sprintStatusSchema = z.enum([
+  "planned",
+  "active",
+  "completed",
+  "cancelled",
+]);
+
 export const roadmapKindSchema = z.enum(["annual", "quarter"]);
 
 export const roadmapQuarterSchema = z.union([
@@ -246,25 +255,50 @@ const NODE_PROPERTY_SCHEMAS: Record<
   }),
   page_wireframe: loosePropertiesSchema,
   user_flow: loosePropertiesSchema,
-  architecture_spec: loosePropertiesSchema,
-  data_spec: loosePropertiesSchema,
+  architecture_spec: propertiesWithKnownKeys({
+    status: docStatusSchema.optional(),
+    summary: z.string().optional(),
+  }),
+  data_spec: propertiesWithKnownKeys({
+    status: docStatusSchema.optional(),
+    summary: z.string().optional(),
+  }),
   integration_spec: loosePropertiesSchema,
-  implementation_plan: loosePropertiesSchema,
+  implementation_plan: propertiesWithKnownKeys({
+    status: docStatusSchema.optional(),
+    summary: z.string().optional(),
+    target_sprint: z.string().optional(),
+  }),
   sprint: propertiesWithKnownKeys({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
+    status: sprintStatusSchema.optional(),
+    assignee: z.string().optional(),
+    priority: graphPrioritySchema.optional(),
   }),
   task: propertiesWithKnownKeys({
     task_kind: z.string().optional(),
     route: z.string().optional(),
     status: graphTaskStatusSchema.optional(),
+    assignee: z.string().optional(),
+    startAt: z.string().optional(),
+    endAt: z.string().optional(),
+    priority: graphPrioritySchema.optional(),
+    blocked: z.boolean().optional(),
   }),
   pull_request: propertiesWithKnownKeys({
     url: z.string().optional(),
     status: z.string().optional(),
+    assignee: z.string().optional(),
+    title: z.string().optional(),
+    branch: z.string().optional(),
+    startAt: z.string().optional(),
+    endAt: z.string().optional(),
   }),
   test_plan: propertiesWithKnownKeys({
     status: z.string().optional(),
+    scope: z.string().optional(),
+    coverage_notes: z.string().optional(),
   }),
   launch_plan: loosePropertiesSchema,
   release_note: loosePropertiesSchema,
@@ -576,9 +610,10 @@ const NODE_CATALOG_META: Record<
     contentRequired: false,
   },
   agent: {
-    label: "에이전트",
-    description: "워크스페이스에서 동작하는 에이전트 정의.",
-    keywords: ["에이전트", "agent", "AI", "봇", "bot", "persona"],
+    label: "에이전트(그래프)",
+    description:
+      "레거시 그래프 페르소나 노드. 런타임 agent_definitions와 혼동하지 말 것. Domain Pack은 이 타입을 운영 표면에 쓰지 않는다.",
+    keywords: ["에이전트", "agent", "AI", "봇", "bot", "persona", "legacy"],
     mutability: "living",
     contentRequired: false,
   },

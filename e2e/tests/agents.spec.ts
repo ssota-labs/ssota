@@ -3,10 +3,10 @@ import { resetMainAgentConnectorBindingSeed } from "../helpers/agent-main-config
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
 const PROJECT_AGENT_CARD = "main-agent-card";
-const TASK_AGENT_CARD = `agent-item-${BUILTIN_AGENT_IDS.implementFeature}`;
+const TASK_AGENT_CARD = `agent-item-${SWDL_AGENT_IDS.delivery}`;
 
 test.describe("Agents", () => {
   test.beforeAll(async () => {

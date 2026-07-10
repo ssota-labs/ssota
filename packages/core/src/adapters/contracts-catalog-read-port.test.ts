@@ -7,7 +7,7 @@ describe("createContractsCatalogReadPort", () => {
 
   it("lists all node and edge catalog entries from contracts SSOT", async () => {
     expect((await catalog.listNodeCatalog()).length).toBe(39);
-    expect((await catalog.listEdgeCatalog()).length).toBe(18);
+    expect((await catalog.listEdgeCatalog()).length).toBe(20);
   });
 
   it("returns null for unknown catalog key", async () => {

@@ -21,9 +21,39 @@ import {
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 39 node types and 18 edge types", () => {
+  it("defines 39 node types and 20 edge types", () => {
     expect(NODE_TYPES).toHaveLength(39);
-    expect(EDGE_TYPES).toHaveLength(18);
+    expect(EDGE_TYPES).toHaveLength(20);
+  });
+
+  it("parses task execution fields used by Delivery boards", () => {
+    const parsed = parseNodeProperties("task", {
+      status: "in_progress",
+      assignee: "00000000-0000-4000-8000-000000000099",
+      startAt: "2026-07-01",
+      endAt: "2026-07-05",
+      priority: "high",
+      blocked: true,
+    });
+    expect(parsed.startAt).toBe("2026-07-01");
+    expect(parsed.blocked).toBe(true);
+    expect(parsed.priority).toBe("high");
+  });
+
+  it("parses implementation_plan and architecture_spec summaries", () => {
+    expect(
+      parseNodeProperties("implementation_plan", {
+        status: "draft",
+        summary: "Ship auth cutover",
+        target_sprint: "S24",
+      }).summary,
+    ).toBe("Ship auth cutover");
+    expect(
+      parseNodeProperties("architecture_spec", {
+        status: "review",
+        summary: "Hexagonal ports",
+      }).status,
+    ).toBe("review");
   });
 
   it("authors a description and keywords for every node and edge type", () => {

@@ -6,7 +6,7 @@ import {
   mcpToolCall,
   mcpToolCallExpectError,
 } from "../helpers/mcp";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -31,9 +31,7 @@ test.describe("MCP agent tools", () => {
     )) as { agents: Array<{ id: string; name: string }> };
 
     expect(
-      listed.agents.some(
-        (entry) => entry.id === BUILTIN_AGENT_IDS.implementFeature,
-      ),
+      listed.agents.some((entry) => entry.id === SWDL_AGENT_IDS.delivery),
     ).toBe(true);
     for (const agent of listed.agents) {
       expect(agent).not.toHaveProperty("instruction");
@@ -45,10 +43,10 @@ test.describe("MCP agent tools", () => {
       mcpUrl,
       token,
       "get_agent",
-      { agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature },
+      { agentDefinitionId: SWDL_AGENT_IDS.delivery },
       scope,
     )) as { id: string; name: string };
-    expect(agent.id).toBe(BUILTIN_AGENT_IDS.implementFeature);
+    expect(agent.id).toBe(SWDL_AGENT_IDS.delivery);
     expect(agent).not.toHaveProperty("instruction");
     expect(agent).not.toHaveProperty("content");
 
@@ -57,13 +55,11 @@ test.describe("MCP agent tools", () => {
       mcpUrl,
       token,
       "get_agent_instruction",
-      { agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature },
+      { agentDefinitionId: SWDL_AGENT_IDS.delivery },
       scope,
     )) as { agentDefinitionId: string; instruction: string };
-    expect(instruction.agentDefinitionId).toBe(
-      BUILTIN_AGENT_IDS.implementFeature,
-    );
-    expect(instruction.instruction).toContain("implement");
+    expect(instruction.agentDefinitionId).toBe(SWDL_AGENT_IDS.delivery);
+    expect(instruction.instruction.toLowerCase()).toContain("delivery");
     expect(instruction.instruction.length).toBeGreaterThan(50);
   });
 

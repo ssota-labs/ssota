@@ -5,7 +5,17 @@
     "appliesToNodeType": null,
     "title": "Executive",
     "icon": "executive",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Executive" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Executive"
+          }
+        }
+      }
+    }
   },
   {
     "key": "executive/roadmap",
@@ -18,8 +28,14 @@
       "elements": {
         "layout": {
           "type": "Stack",
-          "props": { "gap": "md", "padding": "none" },
-          "children": ["productSection", "planningSection"]
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "productSection",
+            "planningSection"
+          ]
         },
         "productSection": {
           "type": "Section",
@@ -28,7 +44,9 @@
             "subtitle": "Long-term strategic direction",
             "padding": "none"
           },
-          "children": ["product"]
+          "children": [
+            "product"
+          ]
         },
         "product": {
           "type": "DocumentCardListSheet",
@@ -57,7 +75,9 @@
             "subtitle": "Annual and quarterly execution plans",
             "padding": "none"
           },
-          "children": ["planning"]
+          "children": [
+            "planning"
+          ]
         },
         "planning": {
           "type": "DocumentCardListSheet",
@@ -80,20 +100,38 @@
       }
     },
     "bindings": {
-      "productRoadmaps": { "kind": "query", "catalogKey": "product_roadmap" },
-      "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
+      "productRoadmaps": {
+        "kind": "query",
+        "catalogKey": "product_roadmap"
+      },
+      "planningRoadmaps": {
+        "kind": "query",
+        "catalogKey": "roadmap"
+      }
     },
     "actions": {
       "saveProductDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       },
       "savePlanningDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -109,8 +147,14 @@
       "elements": {
         "layout": {
           "type": "Stack",
-          "props": { "gap": "md", "padding": "none" },
-          "children": ["okrSection", "metricsSection"]
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "okrSection",
+            "metricsSection"
+          ]
         },
         "okrSection": {
           "type": "Section",
@@ -119,7 +163,10 @@
             "subtitle": "Expand a row to view and edit key results",
             "padding": "none"
           },
-          "children": ["periodSelect", "okr"]
+          "children": [
+            "periodSelect",
+            "okr"
+          ]
         },
         "periodSelect": {
           "type": "PeriodSelect",
@@ -138,14 +185,33 @@
             "childProperty": "keyResults",
             "childLabel": "Key results",
             "columns": [
-              { "key": "title", "header": "Objective", "type": "text", "editable": true, "width": 320 },
-              { "key": "period", "header": "Period", "type": "text", "editable": true, "width": 120 },
+              {
+                "key": "title",
+                "header": "Objective",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
+              {
+                "key": "period",
+                "header": "Period",
+                "type": "text",
+                "editable": true,
+                "width": 120
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "badge",
                 "editable": true,
-                "options": ["draft", "on_track", "at_risk", "achieved", "partial", "missed"],
+                "options": [
+                  "draft",
+                  "on_track",
+                  "at_risk",
+                  "achieved",
+                  "partial",
+                  "missed"
+                ],
                 "labels": {
                   "draft": "Draft",
                   "on_track": "On track",
@@ -165,16 +231,43 @@
               }
             ],
             "childColumns": [
-              { "key": "title", "header": "Key result", "type": "text", "editable": true, "width": 320 },
-              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
-              { "key": "target", "header": "Target", "type": "number", "editable": true },
-              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "title",
+                "header": "Key result",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
+              {
+                "key": "current_value",
+                "header": "Current",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "target",
+                "header": "Target",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "unit",
+                "header": "Unit",
+                "type": "text"
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "badge",
                 "editable": true,
-                "options": ["draft", "on_track", "at_risk", "achieved", "partial", "missed"],
+                "options": [
+                  "draft",
+                  "on_track",
+                  "at_risk",
+                  "achieved",
+                  "partial",
+                  "missed"
+                ],
                 "labels": {
                   "draft": "Draft",
                   "on_track": "On track",
@@ -202,7 +295,10 @@
             "subtitle": "Metric snapshots for the selected period",
             "padding": "none"
           },
-          "children": ["kpiTable", "metricsGrid"]
+          "children": [
+            "kpiTable",
+            "metricsGrid"
+          ]
         },
         "kpiTable": {
           "type": "DataTable",
@@ -210,16 +306,40 @@
             "binding": "kpis",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
-              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
-              { "key": "target", "header": "Target", "type": "number", "editable": true },
-              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "title",
+                "header": "KPI",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "current_value",
+                "header": "Current",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "target",
+                "header": "Target",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "unit",
+                "header": "Unit",
+                "type": "text"
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "badge",
                 "editable": true,
-                "options": ["active", "paused", "archived"],
+                "options": [
+                  "active",
+                  "paused",
+                  "archived"
+                ],
                 "labels": {
                   "active": "Active",
                   "paused": "Paused",
@@ -236,8 +356,15 @@
         },
         "metricsGrid": {
           "type": "Grid",
-          "props": { "columns": 2, "gap": "sm", "padding": "none" },
-          "children": ["chartWorkspace", "chartOnboarding"]
+          "props": {
+            "columns": 2,
+            "gap": "sm",
+            "padding": "none"
+          },
+          "children": [
+            "chartWorkspace",
+            "chartOnboarding"
+          ]
         },
         "chartWorkspace": {
           "type": "ChartLine",
@@ -274,7 +401,11 @@
         "kind": "query",
         "catalogKey": "kpi",
         "filter": [
-          { "key": "seed", "op": "eq", "value": "seed:graph:demo_okr:kpi" }
+          {
+            "key": "seed",
+            "op": "eq",
+            "value": "seed:graph:demo_okr:kpi"
+          }
         ],
         "attachChildren": {
           "edgeCatalogKey": "snapshotted_from",
@@ -287,7 +418,11 @@
         "kind": "query",
         "catalogKey": "kpi",
         "filter": [
-          { "key": "seed", "op": "eq", "value": "seed:graph:demo_okr_2:kpi" }
+          {
+            "key": "seed",
+            "op": "eq",
+            "value": "seed:graph:demo_okr_2:kpi"
+          }
         ],
         "attachChildren": {
           "edgeCatalogKey": "snapshotted_from",
@@ -299,15 +434,26 @@
       "kpis": {
         "kind": "query",
         "catalogKey": "kpi",
-        "filter": [{ "key": "seed", "op": "exists" }]
+        "filter": [
+          {
+            "key": "seed",
+            "op": "exists"
+          }
+        ]
       }
     },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -317,7 +463,17 @@
     "appliesToNodeType": null,
     "title": "Research",
     "icon": "research",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Research" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Research"
+          }
+        }
+      }
+    }
   },
   {
     "key": "research/market",
@@ -333,10 +489,26 @@
           "props": {
             "defaultValue": "studies",
             "items": [
-              { "value": "studies", "label": "Studies", "panel": "studiesPanel" },
-              { "value": "competitors", "label": "Competitors", "panel": "competitorsPanel" },
-              { "value": "segments", "label": "Segments", "panel": "segmentsPanel" },
-              { "value": "sources", "label": "Sources", "panel": "sourcesPanel" }
+              {
+                "value": "studies",
+                "label": "Studies",
+                "panel": "studiesPanel"
+              },
+              {
+                "value": "competitors",
+                "label": "Competitors",
+                "panel": "competitorsPanel"
+              },
+              {
+                "value": "segments",
+                "label": "Segments",
+                "panel": "segmentsPanel"
+              },
+              {
+                "value": "sources",
+                "label": "Sources",
+                "panel": "sourcesPanel"
+              }
             ]
           }
         },
@@ -357,18 +529,54 @@
             "binding": "competitors",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "Name", "type": "text", "editable": true, "width": 200 },
-              { "key": "category", "header": "Category", "type": "text", "editable": true, "width": 120 },
-              { "key": "positioning", "header": "Positioning", "type": "text", "editable": true, "width": 220 },
-              { "key": "website_url", "header": "Website", "type": "text", "editable": true, "width": 180 },
-              { "key": "last_reviewed_at", "header": "Reviewed", "type": "date", "editable": true, "width": 120 }
+              {
+                "key": "title",
+                "header": "Name",
+                "type": "text",
+                "editable": true,
+                "width": 200
+              },
+              {
+                "key": "category",
+                "header": "Category",
+                "type": "text",
+                "editable": true,
+                "width": 120
+              },
+              {
+                "key": "positioning",
+                "header": "Positioning",
+                "type": "text",
+                "editable": true,
+                "width": 220
+              },
+              {
+                "key": "website_url",
+                "header": "Website",
+                "type": "text",
+                "editable": true,
+                "width": 180
+              },
+              {
+                "key": "last_reviewed_at",
+                "header": "Reviewed",
+                "type": "date",
+                "editable": true,
+                "width": 120
+              }
             ]
           }
         },
         "segmentsPanel": {
           "type": "Stack",
-          "props": { "gap": "md", "padding": "none" },
-          "children": ["segmentsTable", "segmentDetailCol"]
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "segmentsTable",
+            "segmentDetailCol"
+          ]
         },
         "segmentsTable": {
           "type": "DataTable",
@@ -377,25 +585,67 @@
             "setAction": "setCell",
             "selectionParam": "segment",
             "columns": [
-              { "key": "title", "header": "Segment", "type": "text", "editable": true, "width": 220 },
-              { "key": "segment_type", "header": "Type", "type": "text", "editable": true, "width": 120 },
-              { "key": "tam", "header": "TAM", "type": "text", "editable": true, "width": 100 },
-              { "key": "sam", "header": "SAM", "type": "text", "editable": true, "width": 100 },
-              { "key": "som", "header": "SOM", "type": "text", "editable": true, "width": 100 },
-              { "key": "geography", "header": "Geography", "type": "text", "editable": true, "width": 120 },
+              {
+                "key": "title",
+                "header": "Segment",
+                "type": "text",
+                "editable": true,
+                "width": 220
+              },
+              {
+                "key": "segment_type",
+                "header": "Type",
+                "type": "text",
+                "editable": true,
+                "width": 120
+              },
+              {
+                "key": "tam",
+                "header": "TAM",
+                "type": "text",
+                "editable": true,
+                "width": 100
+              },
+              {
+                "key": "sam",
+                "header": "SAM",
+                "type": "text",
+                "editable": true,
+                "width": 100
+              },
+              {
+                "key": "som",
+                "header": "SOM",
+                "type": "text",
+                "editable": true,
+                "width": 100
+              },
+              {
+                "key": "geography",
+                "header": "Geography",
+                "type": "text",
+                "editable": true,
+                "width": 120
+              },
               {
                 "key": "confidence",
                 "header": "Confidence",
                 "type": "badge",
                 "editable": true,
-                "options": ["low", "medium", "high"]
+                "options": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
               }
             ]
           }
         },
         "segmentDetailCol": {
           "type": "Section",
-          "children": ["segmentEditor"]
+          "children": [
+            "segmentEditor"
+          ]
         },
         "segmentEditor": {
           "type": "DocumentEditor",
@@ -413,7 +663,10 @@
             "subtitleField": "summary",
             "platformField": "platform"
           },
-          "children": ["sourcesTable", "sourceSheetBody"]
+          "children": [
+            "sourcesTable",
+            "sourceSheetBody"
+          ]
         },
         "sourcesTable": {
           "type": "DataTable",
@@ -424,23 +677,58 @@
             "addLabel": "Add source",
             "selectionParam": "source",
             "columns": [
-              { "key": "title", "header": "Title", "type": "text", "editable": true, "width": 200 },
+              {
+                "key": "title",
+                "header": "Title",
+                "type": "text",
+                "editable": true,
+                "width": 200
+              },
               {
                 "key": "platform",
                 "header": "Platform",
                 "type": "badge",
-                "options": ["youtube", "x", "article", "other"]
+                "options": [
+                  "youtube",
+                  "x",
+                  "article",
+                  "other"
+                ]
               },
-              { "key": "url", "header": "URL", "type": "text", "editable": true, "width": 240 },
-              { "key": "publisher", "header": "Publisher", "type": "text", "editable": true, "width": 140 },
-              { "key": "captured_at", "header": "Captured", "type": "date", "editable": true, "width": 120 }
+              {
+                "key": "url",
+                "header": "URL",
+                "type": "text",
+                "editable": true,
+                "width": 240
+              },
+              {
+                "key": "publisher",
+                "header": "Publisher",
+                "type": "text",
+                "editable": true,
+                "width": 140
+              },
+              {
+                "key": "captured_at",
+                "header": "Captured",
+                "type": "date",
+                "editable": true,
+                "width": 120
+              }
             ]
           }
         },
         "sourceSheetBody": {
           "type": "Stack",
-          "props": { "gap": "md", "padding": "none" },
-          "children": ["sourceEmbed", "sourceEditor"]
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "sourceEmbed",
+            "sourceEditor"
+          ]
         },
         "sourceEmbed": {
           "type": "MediaEmbed",
@@ -462,10 +750,22 @@
       }
     },
     "bindings": {
-      "studies": { "kind": "query", "catalogKey": "market_research" },
-      "competitors": { "kind": "query", "catalogKey": "competitor" },
-      "segments": { "kind": "query", "catalogKey": "market_segment" },
-      "sources": { "kind": "query", "catalogKey": "raw_source" },
+      "studies": {
+        "kind": "query",
+        "catalogKey": "market_research"
+      },
+      "competitors": {
+        "kind": "query",
+        "catalogKey": "competitor"
+      },
+      "segments": {
+        "kind": "query",
+        "catalogKey": "market_segment"
+      },
+      "sources": {
+        "kind": "query",
+        "catalogKey": "raw_source"
+      },
       "selectedSegment": {
         "kind": "url_selection",
         "param": "segment",
@@ -480,15 +780,27 @@
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       },
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       },
       "addSource": {
         "kind": "create_node",
@@ -515,7 +827,9 @@
             "title": "User research",
             "subtitle": "Interviews, surveys, and usability findings"
           },
-          "children": ["list"]
+          "children": [
+            "list"
+          ]
         },
         "list": {
           "type": "DocumentCardListSheet",
@@ -530,12 +844,23 @@
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "user_research" } },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "user_research"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -547,36 +872,106 @@
     "title": "Hypotheses",
     "icon": "research_hypotheses",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
-          "type": "Section",
+        "tabs": {
+          "type": "Tabs",
           "props": {
-            "title": "Hypotheses",
-            "subtitle": "Product bets to validate with research and delivery"
-          },
-          "children": ["list"]
+            "defaultValue": "board",
+            "items": [
+              {
+                "value": "board",
+                "label": "Board",
+                "panel": "boardPanel"
+              },
+              {
+                "value": "docs",
+                "label": "Docs",
+                "panel": "docsPanel"
+              }
+            ]
+          }
         },
-        "list": {
+        "boardPanel": {
+          "type": "KanbanBoard",
+          "props": {
+            "binding": "rows",
+            "groupField": "status",
+            "moveAction": "moveCard",
+            "metaField": "summary",
+            "columns": [
+              {
+                "value": "draft",
+                "label": "Draft",
+                "color": "gray"
+              },
+              {
+                "value": "testing",
+                "label": "Testing",
+                "color": "amber"
+              },
+              {
+                "value": "validated",
+                "label": "Validated",
+                "color": "green"
+              },
+              {
+                "value": "rejected",
+                "label": "Rejected",
+                "color": "red"
+              },
+              {
+                "value": "parked",
+                "label": "Parked",
+                "color": "purple"
+              }
+            ],
+            "emptyLabel": "No hypotheses"
+          }
+        },
+        "docsPanel": {
           "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
             "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
+            "statusField": "status",
             "editable": true,
             "action": "saveDoc"
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "hypothesis" } },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "hypothesis"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
+      },
+      "moveCard": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -586,7 +981,17 @@
     "appliesToNodeType": null,
     "title": "Manager",
     "icon": "manager",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Manager" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Manager"
+          }
+        }
+      }
+    }
   },
   {
     "key": "manager/initiatives",
@@ -599,12 +1004,21 @@
       "elements": {
         "page": {
           "type": "Section",
-          "props": { "title": "Initiatives" },
-          "children": ["createForm", "table"]
+          "props": {
+            "title": "Initiatives"
+          },
+          "children": [
+            "createForm",
+            "table"
+          ]
         },
         "createForm": {
           "type": "Form",
-          "children": ["titleField", "versionField", "createBtn"]
+          "children": [
+            "titleField",
+            "versionField",
+            "createBtn"
+          ]
         },
         "titleField": {
           "type": "Field",
@@ -624,7 +1038,10 @@
         },
         "createBtn": {
           "type": "Button",
-          "props": { "label": "Create initiative", "action": "createBundle" }
+          "props": {
+            "label": "Create initiative",
+            "action": "createBundle"
+          }
         },
         "table": {
           "type": "NodeTable",
@@ -633,19 +1050,34 @@
             "title": "All initiatives",
             "rowHref": "n",
             "columns": [
-              { "key": "title", "header": "Initiative" },
-              { "key": "lifecycleStatus", "header": "Status" }
+              {
+                "key": "title",
+                "header": "Initiative"
+              },
+              {
+                "key": "lifecycleStatus",
+                "header": "Status"
+              }
             ]
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "initiative"
+      }
+    },
     "actions": {
       "createBundle": {
         "kind": "create_initiative_bundle",
-        "initiativeTitle": { "$input": "initiativeTitle" },
-        "releaseVersion": { "$input": "releaseVersion" }
+        "initiativeTitle": {
+          "$input": "initiativeTitle"
+        },
+        "releaseVersion": {
+          "$input": "releaseVersion"
+        }
       }
     }
   },
@@ -655,7 +1087,470 @@
     "appliesToNodeType": null,
     "title": "Development",
     "icon": "development",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Development" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Development"
+          }
+        }
+      }
+    }
+  },
+  {
+    "key": "development/backlog",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "Backlog",
+    "icon": "build_tasks",
+    "spec": {
+      "root": "tabs",
+      "elements": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "board",
+            "items": [
+              {
+                "value": "board",
+                "label": "Board",
+                "panel": "boardPanel"
+              },
+              {
+                "value": "table",
+                "label": "Table",
+                "panel": "tablePanel"
+              }
+            ]
+          }
+        },
+        "boardPanel": {
+          "type": "KanbanBoard",
+          "props": {
+            "binding": "tasks",
+            "groupField": "status",
+            "moveAction": "moveCard",
+            "metaField": "assignee",
+            "columns": [
+              {
+                "value": "open",
+                "label": "Open",
+                "color": "gray"
+              },
+              {
+                "value": "in_progress",
+                "label": "In progress",
+                "color": "amber"
+              },
+              {
+                "value": "done",
+                "label": "Done",
+                "color": "green"
+              },
+              {
+                "value": "cancelled",
+                "label": "Cancelled",
+                "color": "red"
+              }
+            ],
+            "emptyLabel": "No tasks"
+          }
+        },
+        "tablePanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "tasks",
+            "title": "Backlog",
+            "setAction": "setCell",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Task",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": [
+                  "open",
+                  "in_progress",
+                  "done",
+                  "cancelled"
+                ]
+              },
+              {
+                "key": "assignee",
+                "header": "Assignee",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "priority",
+                "header": "Priority",
+                "type": "select",
+                "options": [
+                  "low",
+                  "medium",
+                  "high",
+                  "urgent"
+                ]
+              },
+              {
+                "key": "startAt",
+                "header": "Start",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "endAt",
+                "header": "End",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "blocked",
+                "header": "Blocked",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": {
+      "tasks": {
+        "kind": "query",
+        "catalogKey": "task"
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "moveCard": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      }
+    }
+  },
+  {
+    "key": "development/sprints",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "Sprints",
+    "icon": "build_tasks",
+    "spec": {
+      "root": "tabs",
+      "elements": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "board",
+            "items": [
+              {
+                "value": "board",
+                "label": "Board",
+                "panel": "sprintBoard"
+              },
+              {
+                "value": "sprints",
+                "label": "Sprints",
+                "panel": "sprintList"
+              }
+            ]
+          }
+        },
+        "sprintList": {
+          "type": "DataTable",
+          "props": {
+            "binding": "sprints",
+            "title": "Sprints",
+            "setAction": "setSprintCell",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Sprint",
+                "type": "text",
+                "editable": true,
+                "width": 220
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": [
+                  "planned",
+                  "active",
+                  "completed",
+                  "cancelled"
+                ]
+              },
+              {
+                "key": "start_date",
+                "header": "Start",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "end_date",
+                "header": "End",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "assignee",
+                "header": "Lead",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        },
+        "sprintBoard": {
+          "type": "KanbanBoard",
+          "props": {
+            "binding": "tasks",
+            "groupField": "status",
+            "moveAction": "moveTaskCard",
+            "metaField": "assignee",
+            "columns": [
+              {
+                "value": "open",
+                "label": "Open",
+                "color": "gray"
+              },
+              {
+                "value": "in_progress",
+                "label": "In progress",
+                "color": "amber"
+              },
+              {
+                "value": "done",
+                "label": "Done",
+                "color": "green"
+              },
+              {
+                "value": "cancelled",
+                "label": "Cancelled",
+                "color": "red"
+              }
+            ],
+            "emptyLabel": "No sprint tasks"
+          }
+        }
+      }
+    },
+    "bindings": {
+      "sprints": {
+        "kind": "query",
+        "catalogKey": "sprint"
+      },
+      "tasks": {
+        "kind": "query",
+        "catalogKey": "task"
+      }
+    },
+    "actions": {
+      "setSprintCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "moveTaskCard": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      }
+    }
+  },
+  {
+    "key": "development/pull-requests",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "Pull requests",
+    "icon": "build_pull_requests",
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "PR inbox",
+            "subtitle": "Open and recently updated pull requests across initiatives"
+          },
+          "children": [
+            "table"
+          ]
+        },
+        "table": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "Pull requests",
+            "setAction": "setCell",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Pull request",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              {
+                "key": "assignee",
+                "header": "Assignee",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "branch",
+                "header": "Branch",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "url",
+                "header": "URL",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "pull_request"
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      }
+    }
+  },
+  {
+    "key": "development/api-snapshots",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "API snapshots",
+    "icon": "dev_api_reference",
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "API snapshots",
+            "subtitle": "Captured API contract versions"
+          },
+          "children": [
+            "table"
+          ]
+        },
+        "table": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "Snapshots",
+            "setAction": "setCell",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Snapshot",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "version",
+                "header": "Version",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "api_snapshot"
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      }
+    }
   },
   {
     "key": "development/data-model",
@@ -668,21 +1563,41 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "Data model", "subtitle": "Evergreen data specification" },
-          "children": ["editor"]
+          "props": {
+            "title": "Data model",
+            "subtitle": "Evergreen data specification"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "data_spec" } },
+    "bindings": {
+      "doc": {
+        "kind": "evergreen",
+        "catalogKey": "data_spec"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -698,21 +1613,41 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "System model", "subtitle": "Evergreen architecture specification" },
-          "children": ["editor"]
+          "props": {
+            "title": "System model",
+            "subtitle": "Evergreen architecture specification"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "architecture_spec" } },
+    "bindings": {
+      "doc": {
+        "kind": "evergreen",
+        "catalogKey": "architecture_spec"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -728,21 +1663,41 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "API reference", "subtitle": "Evergreen API documentation" },
-          "children": ["editor"]
+          "props": {
+            "title": "API reference",
+            "subtitle": "Evergreen API documentation"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "api_reference" } },
+    "bindings": {
+      "doc": {
+        "kind": "evergreen",
+        "catalogKey": "api_reference"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -758,21 +1713,41 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "Integration", "subtitle": "Evergreen integration specification" },
-          "children": ["editor"]
+          "props": {
+            "title": "Integration",
+            "subtitle": "Evergreen integration specification"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "integration_spec" } },
+    "bindings": {
+      "doc": {
+        "kind": "evergreen",
+        "catalogKey": "integration_spec"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -783,7 +1758,17 @@
     "appliesToNodeType": null,
     "title": "Design",
     "icon": "design",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Design"
+          }
+        }
+      }
+    }
   },
   {
     "key": "design/ia",
@@ -800,7 +1785,9 @@
             "title": "Information architecture",
             "subtitle": "Site maps, navigation models, and content hierarchy"
           },
-          "children": ["list"]
+          "children": [
+            "list"
+          ]
         },
         "list": {
           "type": "DocumentCardListSheet",
@@ -815,12 +1802,23 @@
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "information_architecture" } },
+    "bindings": {
+      "rows": {
+        "kind": "query",
+        "catalogKey": "information_architecture"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -844,13 +1842,19 @@
       }
     },
     "bindings": {
-      "rows": { "kind": "query", "catalogKey": "ui_component" },
+      "rows": {
+        "kind": "query",
+        "catalogKey": "ui_component"
+      },
       "selected": {
         "kind": "url_selection",
         "param": "component",
         "catalogKey": "ui_component"
       },
-      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+      "theme": {
+        "kind": "evergreen",
+        "catalogKey": "design_theme"
+      }
     },
     "actions": {}
   },
@@ -865,8 +1869,13 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "Design theme", "subtitle": "Semantic design tokens" },
-          "children": ["tokens"]
+          "props": {
+            "title": "Design theme",
+            "subtitle": "Semantic design tokens"
+          },
+          "children": [
+            "tokens"
+          ]
         },
         "tokens": {
           "type": "TokenList",
@@ -875,23 +1884,52 @@
             "field": "tokens",
             "action": "saveTokens",
             "manifest": [
-              { "name": "--background", "label": "Background", "kind": "color" },
-              { "name": "--foreground", "label": "Foreground", "kind": "color" },
-              { "name": "--primary", "label": "Primary", "kind": "color" },
-              { "name": "--primary-foreground", "label": "Primary foreground", "kind": "color" },
-              { "name": "--radius", "label": "Radius", "kind": "length" }
+              {
+                "name": "--background",
+                "label": "Background",
+                "kind": "color"
+              },
+              {
+                "name": "--foreground",
+                "label": "Foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--primary",
+                "label": "Primary",
+                "kind": "color"
+              },
+              {
+                "name": "--primary-foreground",
+                "label": "Primary foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--radius",
+                "label": "Radius",
+                "kind": "length"
+              }
             ]
           }
         }
       }
     },
-    "bindings": { "theme": { "kind": "evergreen", "catalogKey": "design_theme" } },
+    "bindings": {
+      "theme": {
+        "kind": "evergreen",
+        "catalogKey": "design_theme"
+      }
+    },
     "actions": {
       "saveTokens": {
         "kind": "set_node_property",
-        "nodeId": { "$binding": "theme.id" },
+        "nodeId": {
+          "$binding": "theme.id"
+        },
         "field": "tokens",
-        "value": { "$input": "tokens" }
+        "value": {
+          "$input": "tokens"
+        }
       }
     }
   },
@@ -906,26 +1944,45 @@
       "elements": {
         "section": {
           "type": "Section",
-          "props": { "title": "Design toolchain", "subtitle": "Figma, tokens, and handoff workflow" },
-          "children": ["editor"]
+          "props": {
+            "title": "Design toolchain",
+            "subtitle": "Figma, tokens, and handoff workflow"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "design_toolchain" } },
+    "bindings": {
+      "doc": {
+        "kind": "evergreen",
+        "catalogKey": "design_toolchain"
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
   },
-
   {
     "key": "tpl/initiative/overview",
     "parentKey": null,
@@ -937,8 +1994,20 @@
       "elements": {
         "layout": {
           "type": "Resizable",
-          "props": { "defaultSizes": [50, 50], "minSizes": [25, 25] },
-          "children": ["initiativeCol", "releaseCol"]
+          "props": {
+            "defaultSizes": [
+              50,
+              50
+            ],
+            "minSizes": [
+              25,
+              25
+            ]
+          },
+          "children": [
+            "initiativeCol",
+            "releaseCol"
+          ]
         },
         "initiativeCol": {
           "type": "Section",
@@ -946,15 +2015,26 @@
             "title": "Overview",
             "subtitle": "Initiative summary and status"
           },
-          "children": ["status", "summary"]
+          "children": [
+            "status",
+            "summary"
+          ]
         },
         "status": {
           "type": "NodeField",
-          "props": { "binding": "subject", "field": "lifecycleStatus", "label": "Status" }
+          "props": {
+            "binding": "subject",
+            "field": "lifecycleStatus",
+            "label": "Status"
+          }
         },
         "summary": {
           "type": "NodeField",
-          "props": { "binding": "subject", "field": "summary", "label": "Summary" }
+          "props": {
+            "binding": "subject",
+            "field": "summary",
+            "label": "Summary"
+          }
         },
         "releaseCol": {
           "type": "Section",
@@ -962,24 +2042,42 @@
             "title": "Release",
             "subtitle": "Paired release for this initiative"
           },
-          "children": ["releaseTitle", "releaseVersion", "releaseStatus"]
+          "children": [
+            "releaseTitle",
+            "releaseVersion",
+            "releaseStatus"
+          ]
         },
         "releaseTitle": {
           "type": "NodeField",
-          "props": { "binding": "release", "field": "title", "label": "Release" }
+          "props": {
+            "binding": "release",
+            "field": "title",
+            "label": "Release"
+          }
         },
         "releaseVersion": {
           "type": "NodeField",
-          "props": { "binding": "release", "field": "version", "label": "Version" }
+          "props": {
+            "binding": "release",
+            "field": "version",
+            "label": "Version"
+          }
         },
         "releaseStatus": {
           "type": "NodeField",
-          "props": { "binding": "release", "field": "lifecycleStatus", "label": "Release status" }
+          "props": {
+            "binding": "release",
+            "field": "lifecycleStatus",
+            "label": "Release status"
+          }
         }
       }
     },
     "bindings": {
-      "subject": { "kind": "subject" },
+      "subject": {
+        "kind": "subject"
+      },
       "release": {
         "kind": "traverse",
         "from": "subject",
@@ -995,7 +2093,17 @@
     "appliesToNodeType": "initiative",
     "title": "Planning",
     "icon": "planning_prd",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Planning" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Planning"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/planning/prd",
@@ -1006,19 +2114,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "PRD" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "PRD"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "prd", "limit": 1 } },
+    "bindings": {
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "prd",
+        "limit": 1
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1042,27 +2174,54 @@
             "childProperty": "userStories",
             "childLabel": "User stories",
             "columns": [
-              { "key": "title", "header": "Feature", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "title",
+                "header": "Feature",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
               {
                 "key": "priority",
                 "header": "Priority",
                 "type": "select",
-                "options": ["P0", "P1", "P2", "P3"]
+                "options": [
+                  "P0",
+                  "P1",
+                  "P2",
+                  "P3"
+                ]
               },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["draft", "approved", "in_progress", "done"]
+                "options": [
+                  "draft",
+                  "approved",
+                  "in_progress",
+                  "done"
+                ]
               }
             ],
             "childColumns": [
-              { "key": "title", "header": "Story", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "title",
+                "header": "Story",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["draft", "ready", "in_progress", "done"]
+                "options": [
+                  "draft",
+                  "ready",
+                  "in_progress",
+                  "done"
+                ]
               }
             ]
           }
@@ -1084,9 +2243,15 @@
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1106,25 +2271,47 @@
             "title": "User stories",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "Story", "type": "text", "editable": true, "width": 360 },
+              {
+                "key": "title",
+                "header": "Story",
+                "type": "text",
+                "editable": true,
+                "width": 360
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["draft", "ready", "in_progress", "done"]
+                "options": [
+                  "draft",
+                  "ready",
+                  "in_progress",
+                  "done"
+                ]
               }
             ]
           }
         }
       }
     },
-    "bindings": { "stories": { "kind": "initiative_scope", "catalogKey": "user_story" } },
+    "bindings": {
+      "stories": {
+        "kind": "initiative_scope",
+        "catalogKey": "user_story"
+      }
+    },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1134,7 +2321,17 @@
     "appliesToNodeType": "initiative",
     "title": "Design",
     "icon": "design",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Design"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/design/ia",
@@ -1145,21 +2342,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Information architecture" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Information architecture"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
-      "doc": { "kind": "initiative_scope", "catalogKey": "information_architecture", "limit": 1 }
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "information_architecture",
+        "limit": 1
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1175,8 +2394,20 @@
       "elements": {
         "layout": {
           "type": "Resizable",
-          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
-          "children": ["canvas", "linkedTable"]
+          "props": {
+            "defaultSizes": [
+              62,
+              38
+            ],
+            "minSizes": [
+              30,
+              25
+            ]
+          },
+          "children": [
+            "canvas",
+            "linkedTable"
+          ]
         },
         "canvas": {
           "type": "WireframeCanvas",
@@ -1192,13 +2423,26 @@
             "binding": "linked",
             "title": "Linked UI components",
             "columns": [
-              { "key": "title", "header": "Component", "type": "text", "width": 280 },
-              { "key": "slug", "header": "Slug", "type": "text" },
+              {
+                "key": "title",
+                "header": "Component",
+                "type": "text",
+                "width": 280
+              },
+              {
+                "key": "slug",
+                "header": "Slug",
+                "type": "text"
+              },
               {
                 "key": "tier",
                 "header": "Tier",
                 "type": "select",
-                "options": ["primitive", "composite", "page"]
+                "options": [
+                  "primitive",
+                  "composite",
+                  "page"
+                ]
               }
             ]
           }
@@ -1222,7 +2466,10 @@
         "direction": "out",
         "catalogKey": "ui_component"
       },
-      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+      "theme": {
+        "kind": "evergreen",
+        "catalogKey": "design_theme"
+      }
     }
   },
   {
@@ -1234,7 +2481,15 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["canvas"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Flows"
+          },
+          "children": [
+            "canvas"
+          ]
+        },
         "canvas": {
           "type": "FlowCanvas",
           "props": {
@@ -1242,9 +2497,28 @@
             "property": "flow",
             "height": 520,
             "nodePresentation": [
-              { "match": { "nodeType": "section" }, "variant": "section", "color": "purple" },
-              { "match": { "nodeType": "page" }, "variant": "page", "color": "blue" },
-              { "match": { "nodeType": "action" }, "variant": "action", "color": "gray", "shape": "pill" }
+              {
+                "match": {
+                  "nodeType": "section"
+                },
+                "variant": "section",
+                "color": "purple"
+              },
+              {
+                "match": {
+                  "nodeType": "page"
+                },
+                "variant": "page",
+                "color": "blue"
+              },
+              {
+                "match": {
+                  "nodeType": "action"
+                },
+                "variant": "action",
+                "color": "gray",
+                "shape": "pill"
+              }
             ],
             "editable": true,
             "setAction": "saveFlowNode"
@@ -1252,13 +2526,25 @@
         }
       }
     },
-    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "user_flow", "limit": 1 } },
+    "bindings": {
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "user_flow",
+        "limit": 1
+      }
+    },
     "actions": {
       "saveFlowNode": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1268,7 +2554,17 @@
     "appliesToNodeType": "initiative",
     "title": "Architecture",
     "icon": "architecture_spec",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Architecture" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Architecture"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/architecture/spec",
@@ -1281,45 +2577,93 @@
       "elements": {
         "layout": {
           "type": "Resizable",
-          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
-          "children": ["editorCol", "metaCol"]
+          "props": {
+            "defaultSizes": [
+              62,
+              38
+            ],
+            "minSizes": [
+              30,
+              25
+            ]
+          },
+          "children": [
+            "editorCol",
+            "metaCol"
+          ]
         },
         "editorCol": {
           "type": "Section",
-          "props": { "title": "Architecture spec" },
-          "children": ["editor"]
+          "props": {
+            "title": "Architecture spec"
+          },
+          "children": [
+            "editor"
+          ]
         },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         },
         "metaCol": {
           "type": "Section",
-          "props": { "title": "Metadata" },
-          "children": ["status", "version", "owner"]
+          "props": {
+            "title": "Metadata"
+          },
+          "children": [
+            "status",
+            "version",
+            "owner"
+          ]
         },
         "status": {
           "type": "NodeField",
-          "props": { "binding": "doc", "field": "lifecycleStatus", "label": "Status" }
+          "props": {
+            "binding": "doc",
+            "field": "lifecycleStatus",
+            "label": "Status"
+          }
         },
         "version": {
           "type": "NodeField",
-          "props": { "binding": "doc", "field": "version", "label": "Version" }
+          "props": {
+            "binding": "doc",
+            "field": "version",
+            "label": "Version"
+          }
         },
         "owner": {
           "type": "NodeField",
-          "props": { "binding": "doc", "field": "owner", "label": "Owner" }
+          "props": {
+            "binding": "doc",
+            "field": "owner",
+            "label": "Owner"
+          }
         }
       }
     },
     "bindings": {
-      "doc": { "kind": "initiative_scope", "catalogKey": "architecture_spec", "limit": 1 }
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "architecture_spec",
+        "limit": 1
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1333,19 +2677,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Data" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Data"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "data_spec", "limit": 1 } },
+    "bindings": {
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "data_spec",
+        "limit": 1
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1359,21 +2727,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Integration" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Integration"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
-      "doc": { "kind": "initiative_scope", "catalogKey": "integration_spec", "limit": 1 }
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "integration_spec",
+        "limit": 1
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1384,7 +2774,17 @@
     "appliesToNodeType": "initiative",
     "title": "Build",
     "icon": "build_plan",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Build" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Build"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/build/plan",
@@ -1395,21 +2795,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Build plan" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Build plan"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
-      "doc": { "kind": "initiative_scope", "catalogKey": "implementation_plan", "limit": 1 }
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "implementation_plan",
+        "limit": 1
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1426,10 +2848,23 @@
         "tabs": {
           "type": "Tabs",
           "props": {
-            "defaultValue": "table",
+            "defaultValue": "board",
             "items": [
-              { "value": "table", "label": "Table", "panel": "tablePanel" },
-              { "value": "gantt", "label": "Gantt", "panel": "ganttPanel" }
+              {
+                "value": "board",
+                "label": "Board",
+                "panel": "boardPanel"
+              },
+              {
+                "value": "table",
+                "label": "Table",
+                "panel": "tablePanel"
+              },
+              {
+                "value": "gantt",
+                "label": "Gantt",
+                "panel": "ganttPanel"
+              }
             ]
           }
         },
@@ -1440,14 +2875,59 @@
             "title": "Tasks",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "Task", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "title",
+                "header": "Task",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["open", "in_progress", "done", "cancelled"]
+                "options": [
+                  "open",
+                  "in_progress",
+                  "done",
+                  "cancelled"
+                ]
               },
-              { "key": "route", "header": "Route", "type": "text", "editable": true }
+              {
+                "key": "route",
+                "header": "Route",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "assignee",
+                "header": "Assignee",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "priority",
+                "header": "Priority",
+                "type": "select",
+                "options": [
+                  "low",
+                  "medium",
+                  "high",
+                  "urgent"
+                ]
+              },
+              {
+                "key": "startAt",
+                "header": "Start",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "endAt",
+                "header": "End",
+                "type": "date",
+                "editable": true
+              }
             ]
           }
         },
@@ -1467,22 +2947,81 @@
             },
             "moveAction": "moveTask"
           }
+        },
+        "boardPanel": {
+          "type": "KanbanBoard",
+          "props": {
+            "binding": "tasks",
+            "groupField": "status",
+            "moveAction": "moveCard",
+            "metaField": "assignee",
+            "columns": [
+              {
+                "value": "open",
+                "label": "Open",
+                "color": "gray"
+              },
+              {
+                "value": "in_progress",
+                "label": "In progress",
+                "color": "amber"
+              },
+              {
+                "value": "done",
+                "label": "Done",
+                "color": "green"
+              },
+              {
+                "value": "cancelled",
+                "label": "Cancelled",
+                "color": "red"
+              }
+            ],
+            "emptyLabel": "No tasks"
+          }
         }
       }
     },
-    "bindings": { "tasks": { "kind": "initiative_scope", "catalogKey": "task" } },
+    "bindings": {
+      "tasks": {
+        "kind": "initiative_scope",
+        "catalogKey": "task"
+      }
+    },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       },
       "moveTask": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
+        "nodeId": {
+          "$input": "nodeId"
+        },
         "field": "startAt",
-        "value": { "$input": "startAt" }
+        "value": {
+          "$input": "startAt"
+        }
+      },
+      "moveCard": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1502,26 +3041,64 @@
             "title": "Pull requests",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "Pull request", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "title",
+                "header": "Pull request",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["open", "merged", "closed"]
+                "options": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
               },
-              { "key": "url", "header": "URL", "type": "text", "editable": true }
+              {
+                "key": "url",
+                "header": "URL",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "assignee",
+                "header": "Assignee",
+                "type": "text",
+                "editable": true
+              },
+              {
+                "key": "branch",
+                "header": "Branch",
+                "type": "text",
+                "editable": true
+              }
             ]
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "pull_request" } },
+    "bindings": {
+      "rows": {
+        "kind": "initiative_scope",
+        "catalogKey": "pull_request"
+      }
+    },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1531,7 +3108,17 @@
     "appliesToNodeType": "initiative",
     "title": "QA",
     "icon": "qa_test_plan",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "QA" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "QA"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/qa/test-plan",
@@ -1542,19 +3129,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Test plan" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Test plan"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "test_plan", "limit": 1 } },
+    "bindings": {
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "test_plan",
+        "limit": 1
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1565,7 +3176,17 @@
     "appliesToNodeType": "initiative",
     "title": "Launch",
     "icon": "launch_plan",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Launch" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Launch"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/launch/plan",
@@ -1576,19 +3197,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Launch plan" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Launch plan"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
-    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "launch_plan", "limit": 1 } },
+    "bindings": {
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "launch_plan",
+        "limit": 1
+      }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1607,15 +3252,27 @@
           "props": {
             "defaultValue": "release_notes",
             "items": [
-              { "value": "release_notes", "label": "Release notes", "panel": "releasePanel" },
-              { "value": "runbooks", "label": "Runbooks", "panel": "runbookPanel" }
+              {
+                "value": "release_notes",
+                "label": "Release notes",
+                "panel": "releasePanel"
+              },
+              {
+                "value": "runbooks",
+                "label": "Runbooks",
+                "panel": "runbookPanel"
+              }
             ]
           }
         },
         "releasePanel": {
           "type": "Section",
-          "props": { "title": "Release notes" },
-          "children": ["releaseList"]
+          "props": {
+            "title": "Release notes"
+          },
+          "children": [
+            "releaseList"
+          ]
         },
         "releaseList": {
           "type": "DocumentCardListSheet",
@@ -1630,8 +3287,12 @@
         },
         "runbookPanel": {
           "type": "Section",
-          "props": { "title": "Runbooks" },
-          "children": ["runbookList"]
+          "props": {
+            "title": "Runbooks"
+          },
+          "children": [
+            "runbookList"
+          ]
         },
         "runbookList": {
           "type": "DocumentCardListSheet",
@@ -1647,14 +3308,26 @@
       }
     },
     "bindings": {
-      "releaseNotes": { "kind": "initiative_scope", "catalogKey": "release_note" },
-      "runbooks": { "kind": "initiative_scope", "catalogKey": "runbook" }
+      "releaseNotes": {
+        "kind": "initiative_scope",
+        "catalogKey": "release_note"
+      },
+      "runbooks": {
+        "kind": "initiative_scope",
+        "catalogKey": "runbook"
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }
@@ -1665,7 +3338,17 @@
     "appliesToNodeType": "initiative",
     "title": "Retrospective",
     "icon": "retro_review",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Retrospective" } } } }
+    "spec": {
+      "root": "h",
+      "elements": {
+        "h": {
+          "type": "PageHeader",
+          "props": {
+            "title": "Retrospective"
+          }
+        }
+      }
+    }
   },
   {
     "key": "tpl/initiative/retrospective/metrics",
@@ -1681,8 +3364,16 @@
           "props": {
             "defaultValue": "kpis",
             "items": [
-              { "value": "kpis", "label": "KPIs", "panel": "kpiPanel" },
-              { "value": "snapshots", "label": "Snapshots", "panel": "snapshotPanel" }
+              {
+                "value": "kpis",
+                "label": "KPIs",
+                "panel": "kpiPanel"
+              },
+              {
+                "value": "snapshots",
+                "label": "Snapshots",
+                "panel": "snapshotPanel"
+              }
             ]
           }
         },
@@ -1693,15 +3384,39 @@
             "title": "KPIs",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
-              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
-              { "key": "target", "header": "Target", "type": "number", "editable": true },
-              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "title",
+                "header": "KPI",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "current_value",
+                "header": "Current",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "target",
+                "header": "Target",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "unit",
+                "header": "Unit",
+                "type": "text"
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["active", "paused", "archived"]
+                "options": [
+                  "active",
+                  "paused",
+                  "archived"
+                ]
               }
             ]
           }
@@ -1713,15 +3428,38 @@
             "title": "Metric snapshots",
             "setAction": "setCell",
             "columns": [
-              { "key": "title", "header": "Snapshot", "type": "text", "editable": true, "width": 280 },
-              { "key": "recorded_at", "header": "Recorded", "type": "date", "editable": true },
-              { "key": "value", "header": "Value", "type": "number", "editable": true },
-              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "title",
+                "header": "Snapshot",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "recorded_at",
+                "header": "Recorded",
+                "type": "date",
+                "editable": true
+              },
+              {
+                "key": "value",
+                "header": "Value",
+                "type": "number",
+                "editable": true
+              },
+              {
+                "key": "unit",
+                "header": "Unit",
+                "type": "text"
+              },
               {
                 "key": "status",
                 "header": "Status",
                 "type": "select",
-                "options": ["draft", "final"]
+                "options": [
+                  "draft",
+                  "final"
+                ]
               }
             ]
           }
@@ -1729,15 +3467,27 @@
       }
     },
     "bindings": {
-      "kpis": { "kind": "initiative_scope", "catalogKey": "kpi" },
-      "snapshots": { "kind": "initiative_scope", "catalogKey": "metric_snapshot" }
+      "kpis": {
+        "kind": "initiative_scope",
+        "catalogKey": "kpi"
+      },
+      "snapshots": {
+        "kind": "initiative_scope",
+        "catalogKey": "metric_snapshot"
+      }
     },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
-        "nodeId": { "$input": "nodeId" },
-        "field": { "$input": "field" },
-        "value": { "$input": "value" }
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
       }
     }
   },
@@ -1750,21 +3500,43 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Review" }, "children": ["editor"] },
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Review"
+          },
+          "children": [
+            "editor"
+          ]
+        },
         "editor": {
           "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+          "props": {
+            "binding": "doc",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
-      "doc": { "kind": "initiative_scope", "catalogKey": "retrospective", "limit": 1 }
+      "doc": {
+        "kind": "initiative_scope",
+        "catalogKey": "retrospective",
+        "limit": 1
+      }
     },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
+        "nodeId": {
+          "$binding": "doc.id"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
         "merge": true
       }
     }

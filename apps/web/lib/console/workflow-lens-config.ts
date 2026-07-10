@@ -95,7 +95,7 @@ export const WORKFLOW_LENS_PHASES: WorkflowLensPhaseConfig[] = [
       TYPE("data_spec", "development/data-model", "Data model specifications"),
       TYPE("integration_spec", "development/integration", "Integration specifications"),
       TYPE("api_reference", "development/api-reference", "API reference docs"),
-      TYPE("api_snapshot", "development/api-reference", "API snapshots"),
+      TYPE("api_snapshot", "development/api-snapshots", "API snapshots"),
       TYPE("implementation_plan", "initiatives", "Implementation plans"),
       TYPE("sprint", "initiatives", "Sprint plans"),
       TYPE("pull_request", "initiatives", "Pull requests"),

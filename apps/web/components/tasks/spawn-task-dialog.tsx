@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 import { spawnTaskAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -43,7 +43,7 @@ export function SpawnTaskDialog({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [agentDefinitionId, setAgentDefinitionId] = useState(
-    agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
+    agentOptions[0]?.agentDefinitionId ?? SWDL_AGENT_IDS.delivery,
   );
   const [assignee, setAssignee] = useState("");
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
@@ -57,7 +57,7 @@ export function SpawnTaskDialog({
     setAssignee("");
     setExecutorType("Human");
     setAgentDefinitionId(
-      agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
+      agentOptions[0]?.agentDefinitionId ?? SWDL_AGENT_IDS.delivery,
     );
     setError(null);
   }
