@@ -9,6 +9,7 @@ export const SWDL_SKILL_KEYS = [
   "swdl-planning-pipeline",
   "swdl-delivery-pipeline",
   "swdl-qa-pipeline",
+  "swdl-direction-cycle",
   "swdl-orchestrate",
 ] as const;
 
@@ -36,5 +37,10 @@ export const SWDL_AGENT_SKILL_KEYS: Record<SwdlAgentId, readonly SwdlSkillKey[]>
       "swdl-delivery-pipeline",
     ],
     [SWDL_AGENT_IDS.qa]: [...SHARED_SPECIALIST, "swdl-qa-pipeline"],
+    [SWDL_AGENT_IDS.direction]: [
+      "swdl-graph-ops",
+      "swdl-task-contract",
+      "swdl-direction-cycle",
+    ],
     [SWDL_AGENT_IDS.orchestrator]: ["swdl-task-contract", "swdl-orchestrate"],
   };

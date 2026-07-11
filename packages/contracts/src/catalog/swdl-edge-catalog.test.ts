@@ -49,11 +49,16 @@ describe("SWDL edge-catalog seed", () => {
 });
 
 describe("SWDL skill pack matrix", () => {
-  it("defines 8 skills and binds every SWDL agent", () => {
-    expect(SWDL_SKILL_KEYS).toHaveLength(8);
+  it("defines 9 skills and binds every SWDL agent", () => {
+    expect(SWDL_SKILL_KEYS).toHaveLength(9);
     for (const id of Object.values(SWDL_AGENT_IDS)) {
       expect(SWDL_AGENT_SKILL_KEYS[id]?.length).toBeGreaterThan(0);
     }
+    expect(SWDL_AGENT_SKILL_KEYS[SWDL_AGENT_IDS.direction]).toEqual([
+      "swdl-graph-ops",
+      "swdl-task-contract",
+      "swdl-direction-cycle",
+    ]);
     expect(SWDL_AGENT_SKILL_KEYS[SWDL_AGENT_IDS.orchestrator]).toEqual([
       "swdl-task-contract",
       "swdl-orchestrate",

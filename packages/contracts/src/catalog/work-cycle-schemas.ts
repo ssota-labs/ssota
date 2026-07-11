@@ -15,6 +15,7 @@ export type WorkCycleGroup = z.infer<typeof workCycleGroupSchema>;
 export const workCycleOwnerSchema = z.enum([
   "human",
   "orchestrator",
+  "direction",
   "research",
   "planning",
   "delivery",

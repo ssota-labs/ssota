@@ -61,6 +61,15 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     allowedTriggers: ["task", "manual"],
   },
   {
+    id: SWDL_AGENT_IDS.direction,
+    title: "SWDL Direction",
+    description:
+      "Use when running Cycle A cadences: quarterly planning, weekly KPI review, or roadmap rebalance via schedule and Slack.",
+    instructionFile: "swdl.direction.md",
+    toolBundles: ["graph.read", "graph.write", "tasks.manage", "connectors"],
+    allowedTriggers: ["schedule", "chat", "chatbot", "manual"],
+  },
+  {
     id: SWDL_AGENT_IDS.orchestrator,
     title: "SWDL Orchestrator",
     description:

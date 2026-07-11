@@ -11,9 +11,9 @@ import {
 } from "./swdl-ids.js";
 
 describe("SWDL domain agent seeds", () => {
-  it("seeds four specialists plus one orchestrator", () => {
-    expect(listSwdlAgentIds()).toHaveLength(5);
-    expect(SWDL_AGENT_DEFINITION_SEEDS).toHaveLength(5);
+  it("seeds four specialists, direction steward, and orchestrator", () => {
+    expect(listSwdlAgentIds()).toHaveLength(6);
+    expect(SWDL_AGENT_DEFINITION_SEEDS).toHaveLength(6);
   });
 
   it("uses stable a100… ids distinct from built-in a000… namespace", () => {
@@ -35,6 +35,9 @@ describe("SWDL domain agent seeds", () => {
       const meta = getSwdlAgentMeta(id)!;
       expect(meta.allowedTriggers).toContain("task");
     }
+    const direction = getSwdlAgentMeta(SWDL_AGENT_IDS.direction)!;
+    expect(direction.allowedTriggers).toContain("schedule");
+    expect(direction.allowedTriggers).toContain("chat");
     const orch = getSwdlAgentMeta(SWDL_AGENT_IDS.orchestrator)!;
     expect(orch.allowedTriggers).toContain("schedule");
     expect(orch.allowedTriggers).toContain("heartbeat");
