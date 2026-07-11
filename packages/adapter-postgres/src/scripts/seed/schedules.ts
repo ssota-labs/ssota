@@ -5,9 +5,25 @@ import * as schema from "../../db/schema.js";
 import { createDbAccountReadPort } from "../../ports/account-read-port.js";
 
 /**
- * SWDL Domain Pack schedules — Orchestrator cadence only (no Main heartbeat).
+ * SWDL Domain Pack schedules — Direction cadence (Cycle A) + Orchestrator (B–D/G).
  */
 const SCHEDULE_SEEDS = [
+  {
+    agentDefinitionId: SWDL_AGENT_IDS.direction,
+    targetType: "agent" as const,
+    cronExpression: "0 8 * * 1",
+    timezone: "Asia/Seoul",
+    enabled: true,
+    idempotencyPrefix: "swdl:direction:weekly-kpi",
+  },
+  {
+    agentDefinitionId: SWDL_AGENT_IDS.direction,
+    targetType: "agent" as const,
+    cronExpression: "0 8 1 1,4,7,10 *",
+    timezone: "Asia/Seoul",
+    enabled: true,
+    idempotencyPrefix: "swdl:direction:quarterly",
+  },
   {
     agentDefinitionId: SWDL_AGENT_IDS.orchestrator,
     targetType: "agent" as const,
@@ -60,6 +76,8 @@ export async function seedScheduleFixtures(
       cronExpression: seed.cronExpression,
       timezone: seed.timezone,
       enabled: seed.enabled,
+      idempotencyPrefix:
+        "idempotencyPrefix" in seed ? seed.idempotencyPrefix : "",
     });
   }
 }
