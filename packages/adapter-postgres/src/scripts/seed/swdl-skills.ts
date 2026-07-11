@@ -154,13 +154,6 @@ export async function seedSwdlSkillsAndBindings(
       .filter((id): id is string => Boolean(id));
     if (skillIds.length === 0) continue;
 
-    const existing = await db
-      .select({ skillId: schema.agentDefinitionSkills.skillId })
-      .from(schema.agentDefinitionSkills)
-      .where(eq(schema.agentDefinitionSkills.agentDefinitionId, agentId))
-      .limit(1);
-    if (existing.length > 0) continue;
-
     await port.updateAgentSkillBindings(teamspaceId, agentId, skillIds);
     bindings += skillIds.length;
   }

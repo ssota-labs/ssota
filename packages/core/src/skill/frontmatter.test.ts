@@ -35,4 +35,31 @@ Body`;
     expect(frontmatter.description).toBe("MCP guardrails");
     expect(body).toBe("Body");
   });
+
+  it("parses folded block scalar descriptions (>-)", () => {
+    const raw = `---
+name: swdl-research-pipeline
+description: >-
+  SWDL research pipeline for graph authoring in the software-development workflow.
+  Use for research work orders — not for other specialist roles.
+---
+
+# research pipeline`;
+    const { frontmatter } = splitSkillFrontmatter(raw);
+    expect(frontmatter.name).toBe("swdl-research-pipeline");
+    expect(frontmatter.description).toBe(
+      "SWDL research pipeline for graph authoring in the software-development workflow. Use for research work orders — not for other specialist roles.",
+    );
+  });
+
+  it("parses literal block scalar descriptions (|)", () => {
+    const raw = `---
+description: |
+  Line one
+  Line two
+---
+Body`;
+    const { frontmatter } = splitSkillFrontmatter(raw);
+    expect(frontmatter.description).toBe("Line one\nLine two");
+  });
 });
