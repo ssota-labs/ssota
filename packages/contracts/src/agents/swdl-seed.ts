@@ -1,5 +1,9 @@
-import type { AgentDefinitionSeed, ToolBundle } from "../agent-definition.js";
-import { textToBlockNoteContent } from "../agent-definition.js";
+import type {
+  AgentConnectorBinding,
+  AgentDefinitionSeed,
+  ToolBundle,
+} from "../agent-definition.js";
+import { deriveEnabledConnectorProviders, textToBlockNoteContent } from "../agent-definition.js";
 import { loadAgentInstruction } from "./load-instruction.js";
 import {
   SWDL_AGENT_IDS,
@@ -17,6 +21,15 @@ type SwdlAgentMeta = {
     AgentDefinitionSeed["runPolicy"]
   >["allowedTriggers"];
   linkedWorkerAgentIds?: string[];
+  connectorBindings?: AgentConnectorBinding[];
+};
+
+/** Dev/stub Slack org account — matches `AGENT_TOOLS_CONNECTION_SEED` in web console. */
+export const SWDL_DIRECTION_SLACK_BINDING: AgentConnectorBinding = {
+  connectionId: "seed-slack-org-1",
+  provider: "slack",
+  scope: "org",
+  accountLabel: "ssota-labs.slack.com",
 };
 
 /**
@@ -30,7 +43,7 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when advancing market/user research, competitors, or hypotheses in the software-development workflow.",
     instructionFile: "swdl.research.md",
-    toolBundles: ["graph.read", "graph.write", "tasks.manage", "connectors"],
+    toolBundles: [],
     allowedTriggers: ["task", "manual"],
   },
   {
@@ -39,7 +52,7 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when shaping initiatives, PRDs, features, or user stories for human review on Manager/planning pages.",
     instructionFile: "swdl.planning.md",
-    toolBundles: ["graph.read", "graph.write", "tasks.manage", "pages.author"],
+    toolBundles: [],
     allowedTriggers: ["task", "manual"],
   },
   {
@@ -48,7 +61,7 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when creating or advancing build tasks, sprints, or pull requests for an initiative.",
     instructionFile: "swdl.delivery.md",
-    toolBundles: ["graph.read", "graph.write", "tasks.manage", "sandbox.code"],
+    toolBundles: ["sandbox.code"],
     allowedTriggers: ["task", "manual"],
   },
   {
@@ -57,7 +70,7 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when verifying delivery against acceptance criteria, test plans, or launch readiness.",
     instructionFile: "swdl.qa.md",
-    toolBundles: ["graph.read", "graph.write", "tasks.manage"],
+    toolBundles: [],
     allowedTriggers: ["task", "manual"],
   },
   {
@@ -66,8 +79,9 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when running Cycle A cadences: quarterly planning, weekly KPI review, or roadmap rebalance via schedule and Slack.",
     instructionFile: "swdl.direction.md",
-    toolBundles: ["graph.read", "graph.write", "tasks.manage", "connectors"],
+    toolBundles: [],
     allowedTriggers: ["schedule", "chat", "chatbot", "manual"],
+    connectorBindings: [SWDL_DIRECTION_SLACK_BINDING],
   },
   {
     id: SWDL_AGENT_IDS.orchestrator,
@@ -75,7 +89,7 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     description:
       "Use when running the weekday SWDL cadence: scan research→planning→delivery→QA and spawn_task to specialists.",
     instructionFile: "swdl.orchestrator.md",
-    toolBundles: ["graph.read", "tasks.manage", "delegate", "workers"],
+    toolBundles: ["delegate"],
     allowedTriggers: ["schedule", "heartbeat", "manual"],
     linkedWorkerAgentIds: [...SWDL_SPECIALIST_IDS],
   },
@@ -96,6 +110,14 @@ export const SWDL_AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] =
       allowedTriggers: entry.allowedTriggers,
       ...(entry.linkedWorkerAgentIds
         ? { linkedWorkerAgentIds: entry.linkedWorkerAgentIds }
+        : {}),
+      ...(entry.connectorBindings
+        ? {
+            connectorBindings: entry.connectorBindings,
+            enabledConnectorProviders: deriveEnabledConnectorProviders({
+              connectorBindings: entry.connectorBindings,
+            }),
+          }
         : {}),
       ...(entry.id === SWDL_AGENT_IDS.delivery
         ? { sandboxPolicy: "required" as const }
