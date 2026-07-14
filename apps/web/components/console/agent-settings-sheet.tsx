@@ -606,7 +606,12 @@ export function AgentSettingsSheet({
           updatedAt: new Date().toISOString(),
         });
       }
-      onClose();
+      // 페이지 프레젠테이션(디테일 페이지 설정 탭)은 저장 후 제자리 유지.
+      // onClose가 unsaved 가드를 경유하므로, refresh 전 dirty 상태에서 호출하면
+      // 저장 직후 discard 다이얼로그가 뜬다.
+      if (presentation !== "page") {
+        onClose();
+      }
     });
   };
 

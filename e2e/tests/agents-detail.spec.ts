@@ -44,7 +44,10 @@ test.describe("Agent detail page", () => {
     await runRow.click();
     const sheet = page.getByTestId("run-detail-sheet");
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByTestId("run-transcript")).toBeVisible();
+    // /api/agent-runs/[runId] 콜드 컴파일 여유
+    await expect(sheet.getByTestId("run-transcript")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(sheet.getByText("스케줄 실행을 시작합니다.")).toBeVisible();
     await expect(
       sheet.getByText("처리할 태스크가 없어 종료합니다."),

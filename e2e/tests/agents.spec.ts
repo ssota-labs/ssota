@@ -46,9 +46,7 @@ test.describe("Agents", () => {
 
     const sheet = page.getByTestId("agent-settings-sheet");
     await expect(sheet).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Settings", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByTestId("agent-detail-workspace")).toBeVisible();
     await expect(
       page.getByTestId("agent-settings-triggers-card"),
     ).toBeVisible();
@@ -324,7 +322,7 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(
       popover.getByTestId("agent-tool-permission-row-NOTION_SEARCH_NOTION_PAGE"),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       popover.getByText("Search Notion pages and databases"),
     ).toBeVisible();
@@ -378,7 +376,7 @@ test.describe("Agents", () => {
     }
 
     await page.keyboard.press("Escape");
-    await page.getByTestId("agent-detail-back").click();
+    await page.getByTestId("card-list-sheet-close").click();
 
     await gotoProject(page, "agents");
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -413,7 +411,7 @@ test.describe("Agents", () => {
       await restoreSwitch.click();
     }
     await page.keyboard.press("Escape");
-    await page.getByTestId("agent-detail-back").click();
+    await page.getByTestId("card-list-sheet-close").click();
 
     await gotoProject(page, "agents");
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -475,7 +473,7 @@ test.describe("Agents", () => {
       await expect(org1Switch).toHaveAttribute("aria-checked", "true");
     }
     await page.keyboard.press("Escape");
-    await page.getByTestId("agent-detail-back").click();
+    await page.getByTestId("card-list-sheet-close").click();
   });
 
   test("unlinks bound connection from tools card and persists on save", async ({
@@ -504,6 +502,12 @@ test.describe("Agents", () => {
 
     await page.getByTestId("agent-settings-save").click();
     await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
+    // save 후 router.refresh가 draft를 재구성할 때까지 대기 (dirty 잔존 시 back이 discard 다이얼로그를 연다)
+    await expect(page.getByTestId("agent-settings-sheet")).not.toHaveAttribute(
+      "data-unsaved",
+      "true",
+      { timeout: 15_000 },
+    );
 
     await page.getByTestId("agent-detail-back").click();
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
@@ -544,7 +548,8 @@ test.describe("Agents", () => {
       .fill("Use for automated E2E agent creation tests.");
     await page.getByTestId("agent-settings-save").click();
 
-    await expect(sheet).not.toBeVisible();
+    // 생성 저장은 schedules/skills PATCH + router.refresh까지 포함 — 느린 dev 서버 여유
+    await expect(sheet).not.toBeVisible({ timeout: 20_000 });
     await expect(
       page.getByRole("main").locator("span.text-sm.font-medium", {
         hasText: agentName,
