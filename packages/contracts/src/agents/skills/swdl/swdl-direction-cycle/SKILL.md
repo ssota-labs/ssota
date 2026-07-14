@@ -1,9 +1,6 @@
 ---
 name: swdl-direction-cycle
-description: >-
-  Run Cycle A direction cadences: quarterly planning, weekly KPI review, and
-  roadmap rebalance proposals. Use on every Direction schedule or Slack thread
-  about goals, KPIs, or roadmap priority — not for research/planning/delivery work.
+description: Run Cycle A direction cadences — quarterly planning, weekly KPI review, and roadmap rebalance proposals. Use on every Direction schedule or Slack thread about goals, KPIs, or roadmap priority — not for research/planning/delivery work.
 ---
 
 # Direction cycle
@@ -11,7 +8,13 @@ description: >-
 ## Open when
 - Schedule trigger: `quarterly_planning` or `weekly_kpi_review`
 - Chat trigger: Slack thread on an active direction review
-- Manual: operator asks to rebalance roadmap or refresh goals
+- Manual: operator creates a `roadmap_rebalance` task or asks in chat to rebalance/refresh goals
+- Launch feedback: Cycle E → A is passive — the weekly review reads closed `retrospective` / `metric_snapshot` nodes as input (nothing spawns Direction)
+
+## Cycle A topology
+- `s-signals` (KPI/신호 해석) and `s-strategy` (OKR/로드맵 초안) are separate stages: weekly KPI review is signal interpretation — on-track ends the loop, drift routes into strategy drafting.
+- KPI drift is judged from `current_value` vs `target` (plus latest `metric_snapshot`) — `kpi.status` is only `active`/`archived`, never "on-track".
+- Strategy drafts pass the `g-okr` Human gate (`swdl.objective-approved-before-kr-active`, traversing the KR's `contributes_to` edge): the objective goes `draft` → `approved` in the `executive/goals` 승인 tab, and key results cannot go `active` before that.
 
 ## Procedure
 1. Read `references/catalog-surface.md` for allowed node types.

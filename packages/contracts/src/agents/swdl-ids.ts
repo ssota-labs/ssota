@@ -9,6 +9,7 @@ export const SWDL_AGENT_IDS = {
   delivery: "a1000000-0000-4000-8000-000000000003",
   qa: "a1000000-0000-4000-8000-000000000004",
   direction: "a1000000-0000-4000-8000-000000000005",
+  design: "a1000000-0000-4000-8000-000000000006",
   orchestrator: "a1000000-0000-4000-8000-000000000010",
 } as const;
 
@@ -26,4 +27,5 @@ export const SWDL_SPECIALIST_IDS: SwdlAgentId[] = [
   SWDL_AGENT_IDS.planning,
   SWDL_AGENT_IDS.delivery,
   SWDL_AGENT_IDS.qa,
+  SWDL_AGENT_IDS.design,
 ];

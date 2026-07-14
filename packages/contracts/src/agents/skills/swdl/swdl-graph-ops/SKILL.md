@@ -1,9 +1,6 @@
 ---
 name: swdl-graph-ops
-description: >-
-  Create/update/query SWDL graph nodes and edges with catalogKey, properties
-  conventions, and org/teamspace scope. Use whenever reading or writing nodes/edges
-  in the software-development workflow.
+description: Create/update/query SWDL graph nodes and edges with catalogKey, properties conventions, and org/teamspace scope. Use whenever reading or writing nodes/edges in the software-development workflow.
 ---
 
 # Graph ops

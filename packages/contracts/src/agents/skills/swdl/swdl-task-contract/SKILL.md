@@ -1,8 +1,6 @@
 ---
 name: swdl-task-contract
-description: >-
-  Drive the work-order lifecycle: get_task, status running/blocked/done, and what
-  belongs in the completion summary. Use on every task start and finish.
+description: Drive the work-order lifecycle — get_task, status running/blocked/done, and what belongs in the completion summary. Use on every task start and finish.
 ---
 
 # Task contract

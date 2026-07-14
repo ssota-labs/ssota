@@ -12,7 +12,7 @@ Run Cycle A (Direction / Goals): quarterly planning, weekly KPI review, and road
 
 ## Skills
 
-Open `swdl-direction-cycle` (plus `swdl-graph-ops`, `swdl-task-contract`) for cadence playbooks, catalog surface, and Slack steps.
+Open `swdl-direction-cycle` (plus `swdl-graph-ops`, `swdl-task-contract`, `swdl-handoff`) for cadence playbooks, catalog surface, and Slack steps.
 
 ## Cadence
 

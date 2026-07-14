@@ -74,6 +74,15 @@ const SWDL_AGENT_META: SwdlAgentMeta[] = [
     allowedTriggers: ["task", "manual"],
   },
   {
+    id: SWDL_AGENT_IDS.design,
+    title: "SWDL Design",
+    description:
+      "Use when advancing the design track: IA, user flows, wireframes/prototypes, design crit prep, or ui_component/design_theme upkeep.",
+    instructionFile: "swdl.design.md",
+    toolBundles: [],
+    allowedTriggers: ["task", "manual"],
+  },
+  {
     id: SWDL_AGENT_IDS.direction,
     title: "SWDL Direction",
     description:
