@@ -26,7 +26,7 @@
     }
   },
   {
-    "title": "PRD approved before Delivery spawn",
+    "title": "PRD approved before Delivery spawn (initiative scope — hygiene spawns pass)",
     "properties": {
       "policyKey": "swdl.prd-approved-before-delivery-spawn",
       "sortOrder": 20,
@@ -39,7 +39,7 @@
         {
           "path": "in:for_initiative[prd].status",
           "in": ["approved"],
-          "ifMissing": "fail"
+          "ifMissing": "pass"
         }
       ],
       "onFail": {
@@ -91,6 +91,64 @@
     }
   },
   {
+    "title": "Objective approved before key result active",
+    "properties": {
+      "policyKey": "swdl.objective-approved-before-kr-active",
+      "sortOrder": 5,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "key_result",
+        "property": { "path": "status", "in": ["active"] }
+      },
+      "require": [
+        {
+          "path": "out:contributes_to[objective].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Objective must be approved before activating a key result",
+        "suggest": {
+          "approvalCatalogKey": "objective",
+          "pageKey": "executive/goals",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
+    "title": "Launch plan approved before release cut ships",
+    "properties": {
+      "policyKey": "swdl.launch-approved-before-release",
+      "sortOrder": 50,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "release",
+        "property": { "path": "status", "in": ["shipped"] }
+      },
+      "require": [
+        {
+          "path": "in:paired_with[initiative]/in:for_initiative[launch_plan].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Launch plan must be approved before the release cut ships",
+        "suggest": {
+          "approvalCatalogKey": "launch_plan",
+          "pageKey": "tpl/initiative/launch/plan",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
     "title": "Feature approved before story ready",
     "properties": {
       "policyKey": "swdl.feature-approved-before-story-ready",
@@ -103,7 +161,7 @@
       },
       "require": [
         {
-          "path": "out:part_of[feature].status",
+          "path": "in:spawns_story[feature].status",
           "in": ["approved"],
           "ifMissing": "fail"
         }
@@ -116,6 +174,80 @@
           "pageKey": "tpl/initiative/planning/features",
           "spawnHumanTask": false
         }
+      }
+    }
+  },
+  {
+    "title": "Feature approved → story DoR Delivery spawn",
+    "properties": {
+      "policyKey": "swdl.feature-approved-onpass-dor",
+      "sortOrder": 45,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "feature",
+        "property": { "path": "status", "in": ["approved"] }
+      },
+      "require": [
+        {
+          "path": "self.status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Feature status transition blocked"
+      },
+      "onPass": {
+        "effects": [
+          {
+            "kind": "spawn_task",
+            "agentDefinitionId": "a1000000-0000-4000-8000-000000000003",
+            "titleTemplate": "{{nodeTitle}} — story DoR",
+            "idempotencyKeyTemplate": "gate:{{policyKey}}:{{nodeId}}:dor",
+            "executorType": "Agent",
+            "includeSubjectNode": true,
+            "targetNodePath": "out:for_initiative[initiative]"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "title": "PR approved → launch plan Planning spawn",
+    "properties": {
+      "policyKey": "swdl.pr-approved-onpass-launch",
+      "sortOrder": 60,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "pull_request",
+        "property": { "path": "status", "in": ["approved"] }
+      },
+      "require": [
+        {
+          "path": "self.status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Pull request status transition blocked"
+      },
+      "onPass": {
+        "effects": [
+          {
+            "kind": "spawn_task",
+            "agentDefinitionId": "a1000000-0000-4000-8000-000000000002",
+            "titleTemplate": "{{nodeTitle}} — launch plan",
+            "idempotencyKeyTemplate": "gate:{{policyKey}}:{{nodeId}}:launch",
+            "executorType": "Agent",
+            "includeSubjectNode": true,
+            "targetNodePath": "out:for_initiative[initiative]"
+          }
+        ]
       }
     }
   }
