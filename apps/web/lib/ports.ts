@@ -21,6 +21,7 @@ import {
   createConnectorToolSettingsPort,
   createSandboxEnvironmentPort,
   createOrgMembershipPort,
+  createAgentRunPort,
   registerTeamspaceOrganization,
   resolveOrganizationIdForTeamspace,
   getCachedOrganizationIdForTeamspace,
@@ -136,6 +137,25 @@ export async function getSkillPort(teamspaceId: string) {
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
   return createSchedulePort(getDb(), { teamspaceId, accountId });
+}
+
+/**
+ * 런 로그 조회용. 쓰기(claim/finish)는 워크플로우 step이 adapter 포트를 직접
+ * 쓰므로 여기서는 read 메서드만 스코프를 바인딩해 노출한다.
+ */
+export function getAgentRunPort(teamspaceId: string, accountId?: string | null) {
+  const port = createAgentRunPort(getDb());
+  return {
+    listRuns: (
+      input: Omit<
+        Parameters<typeof port.listRuns>[0],
+        "teamspaceId" | "accountId"
+      >,
+    ) => port.listRuns({ ...input, teamspaceId, accountId }),
+    getRun: (runId: string) => port.getRun(teamspaceId, runId, accountId),
+    listRunMessages: (runId: string) =>
+      port.listRunMessages(teamspaceId, runId, accountId),
+  };
 }
 
 export function getWorkerPort(teamspaceId: string) {
