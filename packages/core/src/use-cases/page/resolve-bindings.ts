@@ -8,6 +8,12 @@ export interface ResolvedNode {
   catalogKey: string;
   title: string;
   properties: Record<string, unknown>;
+  /**
+   * `traverse` 바인딩 전용 (additive): 이 노드를 subject 에 연결한 edge 의 id.
+   * RelationEditor 같은 링크 편집 UI 가 `delete_edge` 액션에 넘길 수 있도록
+   * 직렬화 시 함께 실어 보낸다. 다른 바인딩 kind 에서는 없다.
+   */
+  __edgeId?: string;
 }
 
 function serialize(node: GraphNode): ResolvedNode {
@@ -293,28 +299,38 @@ export async function resolvePageBindings(
           catalogKey: def.edgeCatalogKey,
           direction: def.direction === "in" ? "incoming" : "outgoing",
         });
-        const targetIds = edges.map((edge) =>
-          def.direction === "in" ? edge.sourceNodeId : edge.targetNodeId,
+        // edge ↔ target 짝을 유지한 채 필터링해, 각 직렬화 노드에 연결 edge id
+        // (`__edgeId`)를 additive 로 실어 보낸다 (delete_edge 액션 wiring 용).
+        const pairs = await Promise.all(
+          edges.map(async (edge) => ({
+            edgeId: edge.id,
+            node: await graph.getNodeById(
+              def.direction === "in" ? edge.sourceNodeId : edge.targetNodeId,
+            ),
+          })),
         );
-        const targets = await Promise.all(
-          targetIds.map((id) => graph.getNodeById(id)),
-        );
-        const nodes = filterByCatalogKey(
-          targets.filter(
-            (n): n is GraphNode =>
-              n !== null && canReadNodeInTeamspace(n, teamspaceId),
-          ),
-          def.catalogKey,
+        const linked = pairs.filter(
+          (pair): pair is { edgeId: string; node: GraphNode } =>
+            pair.node !== null &&
+            canReadNodeInTeamspace(pair.node, teamspaceId) &&
+            (!def.catalogKey || pair.node.catalogKey === def.catalogKey),
         );
         if (def.attachChildren) {
-          value = await attachChildrenToNodes(
+          const enriched = await attachChildrenToNodes(
             graph,
             teamspaceId,
-            nodes,
+            linked.map((pair) => pair.node),
             def.attachChildren,
           );
+          value = enriched.map((node, i) => ({
+            ...node,
+            __edgeId: linked[i]?.edgeId,
+          }));
         } else {
-          value = nodes.map(serialize);
+          value = linked.map((pair) => ({
+            ...serialize(pair.node),
+            __edgeId: pair.edgeId,
+          }));
         }
         break;
       }
