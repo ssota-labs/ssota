@@ -96,6 +96,8 @@ export type MainWorkflowDispatch = (
   toolName: string,
   input: unknown,
   context: { ssota: AgentRunContext },
+  /** AI SDK tool call id — run-transcript 기록의 idempotency 키. */
+  toolCallId?: string,
 ) => Promise<unknown>;
 
 export interface BuildMainWorkflowAgentInput {
@@ -148,7 +150,10 @@ export function buildMainWorkflowAgent(
     {
       description: string;
       inputSchema: ZodTypeAny;
-      execute: (i: unknown) => Promise<unknown>;
+      execute: (
+        i: unknown,
+        options?: { toolCallId?: string },
+      ) => Promise<unknown>;
     }
   > = {};
 
@@ -159,7 +164,8 @@ export function buildMainWorkflowAgent(
     tools[name] = {
       description,
       inputSchema: schema,
-      execute: (i: unknown) => input.dispatch(name, i, ctx),
+      execute: (i: unknown, options?: { toolCallId?: string }) =>
+        input.dispatch(name, i, ctx, options?.toolCallId),
     };
   }
 
@@ -167,7 +173,8 @@ export function buildMainWorkflowAgent(
     tools[name] = {
       description: SANDBOX_TOOL_DESCRIPTIONS[name],
       inputSchema: sandboxToolSchemas[name],
-      execute: (i: unknown) => input.dispatch(name, i, ctx),
+      execute: (i: unknown, options?: { toolCallId?: string }) =>
+        input.dispatch(name, i, ctx, options?.toolCallId),
     };
   }
 

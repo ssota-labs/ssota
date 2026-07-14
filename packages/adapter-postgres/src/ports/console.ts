@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { ConsolePort, Organization, OrganizationMembership, Teamspace } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -39,7 +39,9 @@ export function createConsolePort(db: Db): ConsolePort {
           schema.organizations,
           eq(schema.organizationMemberships.organizationId, schema.organizations.id),
         )
-        .where(eq(schema.organizationMemberships.userId, userId));
+        .where(eq(schema.organizationMemberships.userId, userId))
+        // 가입 오래된 순 — post-login 기본 org 랜딩이 plan 순서에 따라 흔들리지 않게 고정
+        .orderBy(asc(schema.organizationMemberships.createdAt));
       return rows.map(
         (row) =>
           ({ id: row.id, slug: row.slug, name: row.name }) satisfies Organization,
@@ -136,7 +138,9 @@ export function createConsolePort(db: Db): ConsolePort {
       const rows = await db
         .select()
         .from(schema.teamspaces)
-        .where(eq(schema.teamspaces.organizationId, organizationId));
+        .where(eq(schema.teamspaces.organizationId, organizationId))
+        // 오래된 순 — 기본 teamspace 랜딩이 plan 순서에 따라 흔들리지 않게 고정
+        .orderBy(asc(schema.teamspaces.createdAt));
       return rows.map(
         (row) =>
           ({

@@ -10,6 +10,7 @@ import {
   sumStepUsage,
   type RunTaskAgentInput,
 } from "./task-agent-steps";
+import { persistRunTranscriptStep } from "./run-transcript-steps";
 import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 export type { RunTaskAgentInput };
@@ -66,11 +67,17 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
 
   try {
     const result = await agent.stream({ messages });
+    await persistRunTranscriptStep(workflowRunId, result.messages, messages.length);
     await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
     return {
       messageCount: result.messages.length,
       stepCount: result.steps.length,
     };
+  } catch (error) {
+    // 에이전트 루프가 던져도 task/run이 running으로 남지 않게 failed로 finalize.
+    // dispatch가 남긴 incremental 툴 이벤트가 크래시 런의 로그가 된다.
+    await finalizeTaskRun(input, workflowRunId, {});
+    throw error;
   } finally {
     if (sandboxSessionId) {
       await stopSandboxStep(sandboxSessionId, input.teamspaceId);

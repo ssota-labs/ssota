@@ -12,6 +12,7 @@ import {
   finalizeMainWorkflowRun,
 } from "./main-workflow-agent-steps";
 import type { RunMainAgentInput } from "./main-agent-core";
+import { persistRunTranscriptStep } from "./run-transcript-steps";
 import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 export type { RunMainAgentInput };
@@ -57,6 +58,7 @@ export async function runMainWorkflowAgent(input: RunMainAgentInput) {
   });
 
   await persistMainWorkflowAssistant(input, result.messages, messages.length);
+  await persistRunTranscriptStep(workflowRunId, result.messages, messages.length);
 
   const usage = result.steps.reduce(
     (acc, step) => ({
