@@ -203,26 +203,41 @@ function TokenFieldEl({
   );
 }
 
-/** Token grid bound to an action; debounced, sends the full token map `{ tokens }`. */
+/**
+ * Token grid bound to an action; debounced. 저장 시 **로컬에서 편집한 키만** 노드에
+ * 저장된 전체 토큰 맵(`stored`) 위에 merge해 `{ tokens }`로 보낸다 — 이 TokenList의
+ * manifest 밖 토큰(다른 그룹·다른 TokenList가 다루는 토큰)을 지우지 않기 위함이다.
+ */
 function TokenListEl({
   actionKey,
   manifest,
   initial,
+  stored,
 }: {
   actionKey?: string;
   manifest: TokenFieldDef[];
   initial: Record<string, string>;
+  /** 바인딩된 노드의 전체 토큰 맵 (manifest 밖 키 포함). */
+  stored: Record<string, string>;
 }) {
   const onAction = useAction();
   const [map, setMap] = useState<Record<string, string>>(initial);
+  // 사용자가 실제로 만진 키만 저장 페이로드에 올린다 (빈 초기값 "" 오염 방지).
+  const edits = useRef<Record<string, string>>({});
+  // debounce 발화 시점에 최신 stored를 쓰도록 ref로 미러링한다.
+  const storedRef = useRef(stored);
+  storedRef.current = stored;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const set = (name: string, value: string) => {
+    edits.current[name] = value;
     setMap((prev) => {
       const next = { ...prev, [name]: value };
       if (onAction && actionKey) {
         if (timer.current) clearTimeout(timer.current);
         timer.current = setTimeout(() => {
-          void onAction(actionKey, { tokens: next });
+          void onAction(actionKey, {
+            tokens: { ...storedRef.current, ...edits.current },
+          });
         }, 500);
       }
       return next;
@@ -270,6 +285,7 @@ export const tokenComponents: Record<string, CatalogComponent> = {
         actionKey={typeof props.action === "string" ? props.action : undefined}
         manifest={manifest}
         initial={initial}
+        stored={stored}
       />
     );
   },

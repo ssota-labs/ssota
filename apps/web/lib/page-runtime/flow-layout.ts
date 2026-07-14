@@ -54,8 +54,61 @@ function explicitPositions(model: FlowModel): Positioned {
 }
 
 /**
+ * ELK 로드/실행 실패 시(dev 청크 로드 실패 등) 사용할 저해상도 레이아웃:
+ * 엣지 BFS 랭크를 열(column)로, 랭크 내 순서를 행으로 배치한다.
+ */
+function rankedFallbackPositions(
+  model: FlowModel,
+  direction: FlowLayoutDirection,
+  spacing: number,
+): Positioned {
+  const incoming = new Map<string, number>();
+  const adjacency = new Map<string, string[]>();
+  for (const n of model.nodes) incoming.set(n.id, 0);
+  for (const e of model.edges) {
+    if (!incoming.has(e.source) || !incoming.has(e.target)) continue;
+    adjacency.set(e.source, [...(adjacency.get(e.source) ?? []), e.target]);
+    incoming.set(e.target, (incoming.get(e.target) ?? 0) + 1);
+  }
+  const rank = new Map<string, number>();
+  const queue = model.nodes.filter((n) => (incoming.get(n.id) ?? 0) === 0).map((n) => n.id);
+  for (const id of queue) rank.set(id, 0);
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const next of adjacency.get(cur) ?? []) {
+      const candidate = (rank.get(cur) ?? 0) + 1;
+      if (candidate > (rank.get(next) ?? 0) && candidate < model.nodes.length) {
+        rank.set(next, candidate);
+        queue.push(next);
+      }
+    }
+  }
+  const byRank = new Map<number, string[]>();
+  for (const n of model.nodes) {
+    const r = rank.get(n.id) ?? 0;
+    byRank.set(r, [...(byRank.get(r) ?? []), n.id]);
+  }
+  const sizeById = new Map(model.nodes.map((n) => [n.id, nodeSize(n)]));
+  const horizontal = direction === "LR" || direction === "RL";
+  const positions: Positioned = {};
+  for (const [r, ids] of byRank) {
+    let cross = 0;
+    for (const id of ids) {
+      const { width, height } = sizeById.get(id)!;
+      positions[id] = horizontal
+        ? { x: r * (width + spacing + 24), y: cross }
+        : { x: cross, y: r * (height + spacing + 24) };
+      cross += (horizontal ? height : width) + spacing;
+    }
+  }
+  return positions;
+}
+
+/**
  * Compute positions for every node. Returns persisted coordinates as-is when all
  * nodes have them; otherwise runs ELK layered in the given direction.
+ * ELK 청크 로드가 실패해도 reject하지 않고 랭크 기반 폴백 좌표를 돌려준다 —
+ * 레이아웃 실패가 캔버스 전체를 빈 화면으로 만들면 안 된다.
  */
 export async function layoutFlow(
   model: FlowModel,
@@ -66,8 +119,14 @@ export async function layoutFlow(
   if (model.nodes.length === 0) return {};
   if (hasExplicitCoords(model)) return explicitPositions(model);
 
-  const Elk = (await import("elkjs/lib/elk.bundled.js")).default;
-  const elk = new Elk();
+  let elk: InstanceType<Awaited<typeof import("elkjs/lib/elk.bundled.js")>["default"]>;
+  try {
+    const Elk = (await import("elkjs/lib/elk.bundled.js")).default;
+    elk = new Elk();
+  } catch (error) {
+    console.error("[flow-layout] ELK load failed — ranked fallback 사용", error);
+    return rankedFallbackPositions(model, direction, spacing);
+  }
 
   const children = model.nodes.map((n) => {
     const { width, height } = nodeSize(n);
@@ -82,17 +141,23 @@ export async function layoutFlow(
   // `mrtree` gives the classic top-down org-chart look; `layered` is the generic
   // DAG default. Both honour `elk.direction` + node spacing.
   const elkAlgorithm = algorithm === "tree" ? "mrtree" : "layered";
-  const laidOut = await elk.layout({
-    id: "root",
-    layoutOptions: {
-      "elk.algorithm": elkAlgorithm,
-      "elk.direction": toElkDirection(direction),
-      "elk.spacing.nodeNode": String(spacing),
-      "elk.layered.spacing.nodeNodeBetweenLayers": String(spacing + 24),
-    },
-    children,
-    edges,
-  });
+  let laidOut: Awaited<ReturnType<typeof elk.layout>>;
+  try {
+    laidOut = await elk.layout({
+      id: "root",
+      layoutOptions: {
+        "elk.algorithm": elkAlgorithm,
+        "elk.direction": toElkDirection(direction),
+        "elk.spacing.nodeNode": String(spacing),
+        "elk.layered.spacing.nodeNodeBetweenLayers": String(spacing + 24),
+      },
+      children,
+      edges,
+    });
+  } catch (error) {
+    console.error("[flow-layout] ELK layout failed — ranked fallback 사용", error);
+    return rankedFallbackPositions(model, direction, spacing);
+  }
 
   const positions: Positioned = {};
   for (const child of laidOut.children ?? []) {

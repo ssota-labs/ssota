@@ -201,6 +201,61 @@ export function coerceSchemaDoc(value: unknown): SchemaDoc {
   return { endpoints };
 }
 
+/** compare 모드 diff 태그: 현재 스키마 vs 베이스라인 스키마의 엔트리별 상태. */
+export type SchemaDiffTag = "ADDED" | "REMOVED" | "CHANGED";
+
+/** diff 주석이 붙은 endpoint. `diff` 없음 = 양쪽 동일(UNCHANGED). */
+export type DiffedEndpoint = ApiEndpoint & { diff?: SchemaDiffTag };
+
+/** 엔트리 identity: method + path (diff 매칭 키). */
+function endpointKey(ep: ApiEndpoint): string {
+  return `${ep.method} ${ep.path}`;
+}
+
+/**
+ * CHANGED 판정용 시그니처: parameters / requestBody / responses / auth 를
+ * 정규화 JSON 으로 비교한다. summary·description·tag 같은 문서용 필드 변경은
+ * CHANGED 로 치지 않는다.
+ */
+function endpointSignature(ep: ApiEndpoint): string {
+  return JSON.stringify({
+    auth: ep.auth ?? null,
+    parameters: ep.parameters ?? [],
+    requestBody: ep.requestBody ?? [],
+    responses: ep.responses ?? [],
+  });
+}
+
+/**
+ * 현재(current) 스키마를 베이스라인(baseline)과 비교해 엔트리별 diff 태그를
+ * 계산한다. current 에만 있으면 ADDED, 같은 method+path 인데 시그니처가 다르면
+ * CHANGED, baseline 에만 있으면 REMOVED (current 목록 뒤에 dimmed 렌더용으로
+ * 덧붙임). 순서는 current 순서 + REMOVED 순서를 유지한다.
+ */
+export function diffSchemaDocs(
+  current: SchemaDoc,
+  baseline: SchemaDoc,
+): DiffedEndpoint[] {
+  const baseByKey = new Map(
+    baseline.endpoints.map((ep) => [endpointKey(ep), ep]),
+  );
+  const currentKeys = new Set(current.endpoints.map(endpointKey));
+  const out: DiffedEndpoint[] = current.endpoints.map((ep) => {
+    const base = baseByKey.get(endpointKey(ep));
+    if (!base) return { ...ep, diff: "ADDED" };
+    if (endpointSignature(base) !== endpointSignature(ep)) {
+      return { ...ep, diff: "CHANGED" };
+    }
+    return ep;
+  });
+  for (const base of baseline.endpoints) {
+    if (!currentKeys.has(endpointKey(base))) {
+      out.push({ ...base, id: `removed-${base.id}`, diff: "REMOVED" });
+    }
+  }
+  return out;
+}
+
 /** Tailwind classes for an HTTP method badge (surface/text). */
 export const METHOD_BADGE_CLASSES: Record<HttpMethod, string> = {
   GET: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",

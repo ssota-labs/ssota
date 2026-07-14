@@ -9,6 +9,8 @@ const variantByStatus: Record<
   "default" | "secondary" | "destructive" | "outline"
 > = {
   draft: "outline",
+  approved: "default",
+  active: "secondary",
   on_track: "secondary",
   at_risk: "destructive",
   achieved: "default",
