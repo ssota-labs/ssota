@@ -20,6 +20,7 @@ export const EDGE_TYPES = [
   "composed_of",
   "blocked_by",
   "implements",
+  "verifies",
   "agent_owns_page",
 ] as const;
 
@@ -152,6 +153,12 @@ export const EDGE_CATALOG: Record<EdgeType, EdgeTypeCatalogEntry> = {
     label: "구현",
     description: "스토리·기능을 태스크 또는 PR이 구현함.",
     keywords: ["구현", "implements", "delivers", "구현한다"],
+  },
+  verifies: {
+    edgeType: "verifies",
+    label: "검증",
+    description: "테스트 계획이 PR·스토리를 검증함.",
+    keywords: ["검증", "verifies", "QA", "테스트", "test plan", "확인"],
   },
   agent_owns_page: {
     edgeType: "agent_owns_page",

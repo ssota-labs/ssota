@@ -52,6 +52,36 @@ export const graphTaskStatusSchema = z.enum([
   "cancelled",
 ]);
 
+/** PR 리뷰 사이클 상태 — "approved"가 merge-ready 상태다. */
+export const pullRequestStatusSchema = z.enum([
+  "open",
+  "in_review",
+  "changes_requested",
+  "approved",
+  "merged",
+  "closed",
+]);
+
+/** QA 테스트 계획 실행 상태. */
+export const testPlanStatusSchema = z.enum([
+  "draft",
+  "in_progress",
+  "pass",
+  "fail",
+  "blocked",
+]);
+
+/** 릴리즈 라이프사이클 — 생성 시 planned, 배포 컷 시 shipped. */
+export const releaseStatusSchema = z.enum(["planned", "shipped"]);
+
+/** 와이어프레임 crit 사이클 상태. */
+export const pageWireframeStatusSchema = z.enum([
+  "draft",
+  "in_crit",
+  "approved",
+  "rework",
+]);
+
 export const graphPrioritySchema = z.enum(["low", "medium", "high", "urgent"]);
 
 export const sprintStatusSchema = z.enum([
@@ -230,6 +260,7 @@ const NODE_PROPERTY_SCHEMAS: Record<
   user_research: propertiesWithKnownKeys({
     method: z.string().optional(),
     conducted_at: z.string().optional(),
+    summary: z.string().optional(),
   }),
   hypothesis: propertiesWithKnownKeys({
     status: hypothesisStatusSchema.optional(),
@@ -241,7 +272,7 @@ const NODE_PROPERTY_SCHEMAS: Record<
   }),
   release: propertiesWithKnownKeys({
     version: z.string().optional(),
-    status: z.string().optional(),
+    status: releaseStatusSchema.optional(),
   }),
   prd: propertiesWithKnownKeys({
     status: z.string().optional(),
@@ -257,7 +288,9 @@ const NODE_PROPERTY_SCHEMAS: Record<
   page: propertiesWithKnownKeys({
     path: z.string().optional(),
   }),
-  page_wireframe: loosePropertiesSchema,
+  page_wireframe: propertiesWithKnownKeys({
+    status: pageWireframeStatusSchema.optional(),
+  }),
   user_flow: loosePropertiesSchema,
   architecture_spec: propertiesWithKnownKeys({
     status: docStatusSchema.optional(),
@@ -292,7 +325,7 @@ const NODE_PROPERTY_SCHEMAS: Record<
   }),
   pull_request: propertiesWithKnownKeys({
     url: z.string().optional(),
-    status: z.string().optional(),
+    status: pullRequestStatusSchema.optional(),
     assignee: z.string().optional(),
     title: z.string().optional(),
     branch: z.string().optional(),
@@ -300,7 +333,7 @@ const NODE_PROPERTY_SCHEMAS: Record<
     endAt: z.string().optional(),
   }),
   test_plan: propertiesWithKnownKeys({
-    status: z.string().optional(),
+    status: testPlanStatusSchema.optional(),
     scope: z.string().optional(),
     coverage_notes: z.string().optional(),
   }),
