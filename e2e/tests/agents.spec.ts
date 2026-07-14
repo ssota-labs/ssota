@@ -270,7 +270,7 @@ test.describe("Agents", () => {
       .getByRole("switch")
       .click();
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
 
     const dialog = page.getByTestId("agent-settings-discard-dialog");
     await expect(dialog).toBeVisible();
@@ -278,25 +278,27 @@ test.describe("Agents", () => {
     await expect(dialog).not.toBeVisible();
     await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
     await expect(dialog).toBeVisible();
     await page.getByTestId("agent-settings-discard-confirm").click();
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+    await expect(page.getByTestId("agents-workspace")).toBeVisible();
   });
 
-  test("closes when clicking outside the sheet", async ({ page }) => {
+  test("card click navigates to detail page and back returns to list", async ({
+    page,
+  }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
     await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await expect(page).toHaveURL(/\/agents\/main(\?.*)?$/);
+    await expect(page.getByTestId("agent-detail-workspace")).toBeVisible();
     await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
 
-    const workspace = page.getByTestId("agents-workspace");
-    const box = await workspace.boundingBox();
-    if (!box) throw new Error("agents workspace not visible");
-    await page.mouse.click(box.x + 24, box.y + 96);
-
-    await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+    await page.getByTestId("agent-detail-back").click();
+    await expect(page).toHaveURL(/\/agents$/);
+    await expect(page.getByTestId("agents-workspace")).toBeVisible();
   });
 
   test("opens tool permissions popover from bound connection row", async ({
@@ -376,7 +378,7 @@ test.describe("Agents", () => {
     }
 
     await page.keyboard.press("Escape");
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
 
     await gotoProject(page, "agents");
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -411,7 +413,7 @@ test.describe("Agents", () => {
       await restoreSwitch.click();
     }
     await page.keyboard.press("Escape");
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
 
     await gotoProject(page, "agents");
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -473,7 +475,7 @@ test.describe("Agents", () => {
       await expect(org1Switch).toHaveAttribute("aria-checked", "true");
     }
     await page.keyboard.press("Escape");
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
   });
 
   test("unlinks bound connection from tools card and persists on save", async ({
@@ -503,7 +505,7 @@ test.describe("Agents", () => {
     await page.getByTestId("agent-settings-save").click();
     await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
 
     await page.getByTestId(PROJECT_AGENT_CARD).click();
