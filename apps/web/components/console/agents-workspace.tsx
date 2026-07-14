@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { PlusIcon } from "@phosphor-icons/react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
@@ -35,18 +36,17 @@ export function AgentsWorkspace({
   skillLinks,
   connectionsHref,
 }: AgentsWorkspaceProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<AgentDefinition | null>(null);
   const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
+  // 카드 클릭 = 디테일 페이지(설정/로그 탭)로 이동. docked sheet는 생성 플로우 전용.
   const isCreating = isCreateAgentSheetId(activeId);
-  const activeDefinition = isCreating
-    ? createDraft
-    : activeId === MAIN_AGENT_ID
-      ? mainAgent
-      : (definitions.find((entry) => entry.id === activeId) ?? null);
+  const activeDefinition = isCreating ? createDraft : null;
   const open = activeDefinition !== null;
 
   const workers = useMemo(
@@ -72,30 +72,29 @@ export function AgentsWorkspace({
     setActiveId(CREATE_AGENT_SHEET_ID);
   }, [teamspaceId]);
 
+  const detailHref = useCallback(
+    (id: string) => `${pathname}/${id === MAIN_AGENT_ID ? "main" : id}`,
+    [pathname],
+  );
+
   const handleActiveIdChange = useCallback(
     (nextId: string | null) => {
-      if (activeId === null) {
-        setActiveId(nextId);
-        return;
-      }
-      if (nextId === activeId) {
-        return;
-      }
       const applyChange = () => {
         if (isCreateAgentSheetId(nextId)) {
           openCreateSheet();
           return;
         }
         setCreateDraft(null);
-        setActiveId(nextId);
+        setActiveId(null);
+        if (nextId) router.push(detailHref(nextId));
       };
-      if (requestCloseRef.current) {
+      if (activeId !== null && nextId !== activeId && requestCloseRef.current) {
         requestCloseRef.current(applyChange);
         return;
       }
       applyChange();
     },
-    [activeId, openCreateSheet],
+    [activeId, openCreateSheet, router, detailHref],
   );
 
   const registerRequestClose = useCallback(
@@ -178,8 +177,8 @@ export function AgentsWorkspace({
       {open && activeDefinition ? (
         <AgentSettingsSheet
           definition={activeDefinition}
-          mode={isCreating ? "create" : "edit"}
-          settingsTarget={activeId === MAIN_AGENT_ID ? "main" : "agent"}
+          mode="create"
+          settingsTarget="agent"
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
           linkedWorkerIds={workerLinks[activeDefinition.id] ?? []}
