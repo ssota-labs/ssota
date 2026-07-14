@@ -198,7 +198,7 @@
     "title": "Goals",
     "icon": "executive_goals",
     "spec": {
-      "root": "layout",
+      "root": "tabs",
       "elements": {
         "layout": {
           "type": "Stack",
@@ -392,17 +392,14 @@
                 "editable": true,
                 "options": [
                   "active",
-                  "paused",
                   "archived"
                 ],
                 "labels": {
                   "active": "Active",
-                  "paused": "Paused",
                   "archived": "Archived"
                 },
                 "colors": {
                   "active": "oklch(0.9 0.07 150)",
-                  "paused": "oklch(0.92 0.06 70)",
                   "archived": "oklch(0.94 0.01 260)"
                 }
               }
@@ -437,6 +434,54 @@
             "height": 128,
             "title": "Time to first value",
             "respectPeriodFilter": true
+          }
+        },
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "goals",
+            "items": [
+              {
+                "value": "goals",
+                "label": "Goals",
+                "panel": "layout"
+              },
+              {
+                "value": "approval",
+                "label": "승인",
+                "panel": "approvalPanel"
+              }
+            ]
+          }
+        },
+        "approvalPanel": {
+          "type": "Section",
+          "props": {
+            "title": "목표 승인",
+            "subtitle": "승인 대기 중인 objective"
+          },
+          "children": [
+            "objectiveInbox"
+          ]
+        },
+        "objectiveInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingObjectives",
+            "titleField": "title",
+            "metaFields": [
+              "period",
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setObjectiveStatus",
+            "rejectAction": "setObjectiveStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "반려",
+            "approveValue": "approved",
+            "rejectValue": "draft",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "승인 대기 objective가 없습니다."
           }
         }
       }
@@ -495,6 +540,17 @@
             "op": "exists"
           }
         ]
+      },
+      "pendingObjectives": {
+        "kind": "query",
+        "catalogKey": "objective",
+        "filter": [
+          {
+            "key": "status",
+            "op": "neq",
+            "value": "approved"
+          }
+        ]
       }
     },
     "actions": {
@@ -506,6 +562,16 @@
         "field": {
           "$input": "field"
         },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "setObjectiveStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
         "value": {
           "$input": "value"
         }
@@ -611,15 +677,15 @@
           }
         },
         "studiesPanel": {
-          "type": "DocumentCardListSheet",
+          "type": "Stack",
           "props": {
-            "binding": "studies",
-            "field": "content",
-            "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
-            "editable": true,
-            "action": "saveDoc"
-          }
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "studiesToolbar",
+            "studiesList"
+          ]
         },
         "competitorsPanel": {
           "type": "DataTable",
@@ -662,7 +728,9 @@
                 "editable": true,
                 "width": 120
               }
-            ]
+            ],
+            "addAction": "addCompetitor",
+            "addLabel": "New competitor"
           }
         },
         "segmentsPanel": {
@@ -844,6 +912,29 @@
             "field": "content",
             "action": "saveDoc"
           }
+        },
+        "studiesList": {
+          "type": "DocumentCardListSheet",
+          "props": {
+            "binding": "studies",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        },
+        "studiesToolbar": {
+          "type": "Toolbar",
+          "props": {
+            "title": "Studies",
+            "actions": [
+              {
+                "label": "New study",
+                "action": "addStudy"
+              }
+            ]
+          }
         }
       }
     },
@@ -907,6 +998,16 @@
         "properties": {
           "url": "https://"
         }
+      },
+      "addCompetitor": {
+        "kind": "create_node",
+        "catalogKey": "competitor",
+        "title": "New competitor"
+      },
+      "addStudy": {
+        "kind": "create_node",
+        "catalogKey": "market_research",
+        "title": "새 시장 리서치"
       }
     }
   },
@@ -917,24 +1018,71 @@
     "title": "User research",
     "icon": "research_user",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
-          "type": "Section",
+        "tabs": {
+          "type": "Tabs",
           "props": {
-            "title": "User research",
-            "subtitle": "Interviews, surveys, and usability findings"
-          },
-          "children": [
-            "list"
-          ]
+            "defaultValue": "interviews",
+            "items": [
+              {
+                "value": "interviews",
+                "label": "Interviews",
+                "panel": "interviewsPanel"
+              },
+              {
+                "value": "docs",
+                "label": "Docs",
+                "panel": "docsPanel"
+              }
+            ]
+          }
         },
-        "list": {
+        "interviewsPanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "User research",
+            "setAction": "setCell",
+            "addAction": "createInterview",
+            "addLabel": "New interview",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Title",
+                "type": "text",
+                "editable": true,
+                "width": 280
+              },
+              {
+                "key": "method",
+                "header": "Method",
+                "type": "text",
+                "editable": true,
+                "width": 140
+              },
+              {
+                "key": "conducted_at",
+                "header": "Conducted",
+                "type": "date",
+                "editable": true,
+                "width": 130
+              },
+              {
+                "key": "summary",
+                "header": "Summary",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        },
+        "docsPanel": {
           "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
-            "subtitleField": "summary",
+            "subtitleField": "method",
             "statusField": "lifecycleStatus",
             "editable": true,
             "action": "saveDoc"
@@ -960,6 +1108,26 @@
           }
         },
         "merge": true
+      },
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "createInterview": {
+        "kind": "create_node",
+        "catalogKey": "user_research",
+        "title": "새 인터뷰",
+        "properties": {
+          "method": "interview"
+        }
       }
     }
   },
@@ -986,6 +1154,11 @@
                 "value": "docs",
                 "label": "Docs",
                 "panel": "docsPanel"
+              },
+              {
+                "value": "list",
+                "label": "목록",
+                "panel": "listPanel"
               }
             ]
           }
@@ -1037,6 +1210,68 @@
             "editable": true,
             "action": "saveDoc"
           }
+        },
+        "listPanel": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "hypothesesTable",
+            "evidenceEditor"
+          ]
+        },
+        "hypothesesTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "Hypotheses",
+            "setAction": "setCell",
+            "addAction": "addHypothesis",
+            "addLabel": "New hypothesis",
+            "selectionParam": "hypothesis",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Hypothesis",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": [
+                  "draft",
+                  "testing",
+                  "validated",
+                  "rejected",
+                  "parked"
+                ]
+              },
+              {
+                "key": "summary",
+                "header": "Summary",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        },
+        "evidenceEditor": {
+          "type": "RelationEditor",
+          "props": {
+            "binding": "selectedHypothesis",
+            "linked": "evidence",
+            "candidates": "rawSources",
+            "addAction": "linkEvidence",
+            "removeAction": "unlinkEvidence",
+            "title": "근거 연결",
+            "emptyLabel": "연결된 근거가 없습니다",
+            "direction": "in"
+          }
         }
       }
     },
@@ -1044,6 +1279,21 @@
       "rows": {
         "kind": "query",
         "catalogKey": "hypothesis"
+      },
+      "selectedHypothesis": {
+        "kind": "url_selection",
+        "param": "hypothesis",
+        "catalogKey": "hypothesis"
+      },
+      "evidence": {
+        "kind": "traverse",
+        "from": "selectedHypothesis",
+        "edgeCatalogKey": "informs",
+        "direction": "in"
+      },
+      "rawSources": {
+        "kind": "query",
+        "catalogKey": "raw_source"
       }
     },
     "actions": {
@@ -1069,6 +1319,42 @@
         },
         "value": {
           "$input": "value"
+        }
+      },
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "addHypothesis": {
+        "kind": "create_node",
+        "catalogKey": "hypothesis",
+        "title": "새 가설",
+        "properties": {
+          "status": "draft"
+        }
+      },
+      "linkEvidence": {
+        "kind": "create_edge",
+        "catalogKey": "informs",
+        "sourceNodeId": {
+          "$input": "targetNodeId"
+        },
+        "targetNodeId": {
+          "$input": "sourceNodeId"
+        }
+      },
+      "unlinkEvidence": {
+        "kind": "delete_edge",
+        "edgeId": {
+          "$input": "edgeId"
         }
       }
     }
@@ -1708,7 +1994,7 @@
               {
                 "value": "sprints",
                 "label": "Sprints",
-                "panel": "sprintList"
+                "panel": "sprintsPanel"
               }
             ]
           }
@@ -1756,7 +2042,8 @@
                 "type": "text",
                 "editable": true
               }
-            ]
+            ],
+            "selectionParam": "sprint"
           }
         },
         "sprintBoard": {
@@ -1790,6 +2077,30 @@
             ],
             "emptyLabel": "No sprint tasks"
           }
+        },
+        "sprintsPanel": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "sprintList",
+            "sprintTasksEditor"
+          ]
+        },
+        "sprintTasksEditor": {
+          "type": "RelationEditor",
+          "props": {
+            "binding": "selectedSprint",
+            "linked": "sprintTasks",
+            "candidates": "tasks",
+            "addAction": "assignTask",
+            "removeAction": "unassignTask",
+            "title": "스프린트 태스크 편성",
+            "emptyLabel": "편성된 태스크가 없습니다",
+            "direction": "in"
+          }
         }
       }
     },
@@ -1800,6 +2111,18 @@
       },
       "tasks": {
         "kind": "query",
+        "catalogKey": "task"
+      },
+      "selectedSprint": {
+        "kind": "url_selection",
+        "param": "sprint",
+        "catalogKey": "sprint"
+      },
+      "sprintTasks": {
+        "kind": "traverse",
+        "from": "selectedSprint",
+        "edgeCatalogKey": "part_of",
+        "direction": "in",
         "catalogKey": "task"
       }
     },
@@ -1827,6 +2150,22 @@
         "value": {
           "$input": "value"
         }
+      },
+      "assignTask": {
+        "kind": "create_edge",
+        "catalogKey": "part_of",
+        "sourceNodeId": {
+          "$input": "targetNodeId"
+        },
+        "targetNodeId": {
+          "$input": "sourceNodeId"
+        }
+      },
+      "unassignTask": {
+        "kind": "delete_edge",
+        "edgeId": {
+          "$input": "edgeId"
+        }
       }
     }
   },
@@ -1837,24 +2176,76 @@
     "title": "Pull requests",
     "icon": "build_pull_requests",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "inbox",
+            "items": [
+              {
+                "value": "inbox",
+                "label": "리뷰 인박스",
+                "panel": "inboxPanel"
+              },
+              {
+                "value": "all",
+                "label": "전체",
+                "panel": "allPanel"
+              }
+            ]
+          }
+        },
+        "inboxPanel": {
           "type": "Section",
           "props": {
-            "title": "PR inbox",
-            "subtitle": "Open and recently updated pull requests across initiatives"
+            "title": "리뷰 인박스",
+            "subtitle": "in_review 상태 PR — 승인 또는 변경 요청",
+            "padding": "none"
           },
           "children": [
-            "table"
+            "reviewInbox"
           ]
         },
-        "table": {
+        "reviewInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingReviews",
+            "titleField": "title",
+            "metaFields": [
+              "assignee",
+              "branch"
+            ],
+            "statusField": "status",
+            "approveAction": "setPrStatus",
+            "rejectAction": "setPrStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "변경 요청",
+            "approveValue": "approved",
+            "rejectValue": "changes_requested",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "리뷰 대기 중인 PR이 없습니다."
+          }
+        },
+        "allPanel": {
+          "type": "NodeDetailSheet",
+          "props": {
+            "binding": "selectedPr",
+            "selectionParam": "pr",
+            "subtitleField": "branch"
+          },
+          "children": [
+            "prTable",
+            "prSheetBody"
+          ]
+        },
+        "prTable": {
           "type": "DataTable",
           "props": {
             "binding": "rows",
             "title": "Pull requests",
             "setAction": "setCell",
+            "selectionParam": "pr",
             "columns": [
               {
                 "key": "title",
@@ -1869,6 +2260,9 @@
                 "type": "select",
                 "options": [
                   "open",
+                  "in_review",
+                  "changes_requested",
+                  "approved",
                   "merged",
                   "closed"
                 ]
@@ -1893,12 +2287,36 @@
               }
             ]
           }
+        },
+        "prSheetBody": {
+          "type": "DocumentEditor",
+          "props": {
+            "binding": "selectedPr",
+            "field": "content",
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
       "rows": {
         "kind": "query",
+        "catalogKey": "pull_request"
+      },
+      "pendingReviews": {
+        "kind": "query",
+        "catalogKey": "pull_request",
+        "filter": [
+          {
+            "key": "status",
+            "op": "eq",
+            "value": "in_review"
+          }
+        ]
+      },
+      "selectedPr": {
+        "kind": "url_selection",
+        "param": "pr",
         "catalogKey": "pull_request"
       }
     },
@@ -1914,6 +2332,28 @@
         "value": {
           "$input": "value"
         }
+      },
+      "setPrStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      },
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
+        "merge": true
       }
     }
   },
@@ -1924,7 +2364,7 @@
     "title": "API snapshots",
     "icon": "dev_api_reference",
     "spec": {
-      "root": "section",
+      "root": "layout",
       "elements": {
         "section": {
           "type": "Section",
@@ -1956,7 +2396,39 @@
                 "type": "text",
                 "editable": true
               }
-            ]
+            ],
+            "selectionParam": "snapshot"
+          }
+        },
+        "layout": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "section",
+            "diffSection"
+          ]
+        },
+        "diffSection": {
+          "type": "Section",
+          "props": {
+            "title": "스냅샷 diff",
+            "subtitle": "선택한 스냅샷 vs evergreen API 레퍼런스",
+            "padding": "none"
+          },
+          "children": [
+            "diff"
+          ]
+        },
+        "diff": {
+          "type": "SchemaDisplay",
+          "props": {
+            "binding": "selectedSnapshot",
+            "compare": "reference",
+            "property": "endpoints",
+            "title": "API 스냅샷 vs 레퍼런스"
           }
         }
       }
@@ -1965,6 +2437,15 @@
       "rows": {
         "kind": "query",
         "catalogKey": "api_snapshot"
+      },
+      "selectedSnapshot": {
+        "kind": "url_selection",
+        "param": "snapshot",
+        "catalogKey": "api_snapshot"
+      },
+      "reference": {
+        "kind": "evergreen",
+        "catalogKey": "api_reference"
       }
     },
     "actions": {
@@ -2338,19 +2819,35 @@
     "title": "Design theme",
     "icon": "design_theme",
     "spec": {
-      "root": "section",
+      "root": "layout",
       "elements": {
-        "section": {
-          "type": "Section",
+        "layout": {
+          "type": "Stack",
           "props": {
-            "title": "Design theme",
-            "subtitle": "Semantic design tokens"
+            "gap": "md",
+            "padding": "none"
           },
           "children": [
-            "tokens"
+            "baseSection",
+            "surfacesSection",
+            "statesSection",
+            "bordersSection",
+            "chartsSection",
+            "radiusSection"
           ]
         },
-        "tokens": {
+        "baseSection": {
+          "type": "Section",
+          "props": {
+            "title": "Base colors",
+            "subtitle": "App background and default text",
+            "padding": "none"
+          },
+          "children": [
+            "base"
+          ]
+        },
+        "base": {
           "type": "TokenList",
           "props": {
             "binding": "theme",
@@ -2366,7 +2863,69 @@
                 "name": "--foreground",
                 "label": "Foreground",
                 "kind": "color"
+              }
+            ]
+          }
+        },
+        "surfacesSection": {
+          "type": "Section",
+          "props": {
+            "title": "Surfaces",
+            "subtitle": "Card and popover layers",
+            "padding": "none"
+          },
+          "children": [
+            "surfaces"
+          ]
+        },
+        "surfaces": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
+              {
+                "name": "--card",
+                "label": "Card",
+                "kind": "color"
               },
+              {
+                "name": "--card-foreground",
+                "label": "Card foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--popover",
+                "label": "Popover",
+                "kind": "color"
+              },
+              {
+                "name": "--popover-foreground",
+                "label": "Popover foreground",
+                "kind": "color"
+              }
+            ]
+          }
+        },
+        "statesSection": {
+          "type": "Section",
+          "props": {
+            "title": "Brand & states",
+            "subtitle": "Primary, secondary, muted, accent, destructive",
+            "padding": "none"
+          },
+          "children": [
+            "states"
+          ]
+        },
+        "states": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
               {
                 "name": "--primary",
                 "label": "Primary",
@@ -2378,9 +2937,151 @@
                 "kind": "color"
               },
               {
+                "name": "--secondary",
+                "label": "Secondary",
+                "kind": "color"
+              },
+              {
+                "name": "--secondary-foreground",
+                "label": "Secondary foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--muted",
+                "label": "Muted",
+                "kind": "color"
+              },
+              {
+                "name": "--muted-foreground",
+                "label": "Muted foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--accent",
+                "label": "Accent",
+                "kind": "color"
+              },
+              {
+                "name": "--accent-foreground",
+                "label": "Accent foreground",
+                "kind": "color"
+              },
+              {
+                "name": "--destructive",
+                "label": "Destructive",
+                "kind": "color"
+              }
+            ]
+          }
+        },
+        "bordersSection": {
+          "type": "Section",
+          "props": {
+            "title": "Borders & focus",
+            "subtitle": "Border, input, and focus ring",
+            "padding": "none"
+          },
+          "children": [
+            "borders"
+          ]
+        },
+        "borders": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
+              {
+                "name": "--border",
+                "label": "Border",
+                "kind": "color"
+              },
+              {
+                "name": "--input",
+                "label": "Input",
+                "kind": "color"
+              },
+              {
+                "name": "--ring",
+                "label": "Ring",
+                "kind": "color"
+              }
+            ]
+          }
+        },
+        "chartsSection": {
+          "type": "Section",
+          "props": {
+            "title": "Charts",
+            "subtitle": "Categorical chart palette",
+            "padding": "none"
+          },
+          "children": [
+            "charts"
+          ]
+        },
+        "charts": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
+              {
+                "name": "--chart-1",
+                "label": "Chart 1",
+                "kind": "color"
+              },
+              {
+                "name": "--chart-2",
+                "label": "Chart 2",
+                "kind": "color"
+              },
+              {
+                "name": "--chart-3",
+                "label": "Chart 3",
+                "kind": "color"
+              },
+              {
+                "name": "--chart-4",
+                "label": "Chart 4",
+                "kind": "color"
+              },
+              {
+                "name": "--chart-5",
+                "label": "Chart 5",
+                "kind": "color"
+              }
+            ]
+          }
+        },
+        "radiusSection": {
+          "type": "Section",
+          "props": {
+            "title": "Radius",
+            "subtitle": "Corner radius base length",
+            "padding": "none"
+          },
+          "children": [
+            "radius"
+          ]
+        },
+        "radius": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
+              {
                 "name": "--radius",
-                "label": "Radius",
-                "kind": "length"
+                "label": "Radius base",
+                "kind": "length",
+                "min": 0,
+                "max": 24,
+                "step": 0.125,
+                "unit": "rem"
               }
             ]
           }
@@ -2856,7 +3557,9 @@
                   "done"
                 ]
               }
-            ]
+            ],
+            "addAction": "addFeature",
+            "addLabel": "New feature"
           }
         },
         "approvalPanel": {
@@ -2936,6 +3639,14 @@
         "value": {
           "$input": "value"
         }
+      },
+      "addFeature": {
+        "kind": "create_node",
+        "catalogKey": "feature",
+        "title": "New feature",
+        "properties": {
+          "status": "draft"
+        }
       }
     }
   },
@@ -2990,6 +3701,12 @@
                   "in_progress",
                   "done"
                 ]
+              },
+              {
+                "key": "estimate",
+                "header": "Estimate",
+                "type": "number",
+                "editable": true
               }
             ]
           }
@@ -3197,9 +3914,32 @@
     "title": "Wireframes",
     "icon": "design_wireframes",
     "spec": {
-      "root": "layout",
+      "root": "tabs",
       "elements": {
-        "layout": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "canvas",
+            "items": [
+              {
+                "value": "canvas",
+                "label": "캔버스",
+                "panel": "canvasPanel"
+              },
+              {
+                "value": "list",
+                "label": "목록",
+                "panel": "listPanel"
+              },
+              {
+                "value": "crit",
+                "label": "디자인 crit",
+                "panel": "critPanel"
+              }
+            ]
+          }
+        },
+        "canvasPanel": {
           "type": "Resizable",
           "props": {
             "defaultSizes": [
@@ -3213,7 +3953,7 @@
           },
           "children": [
             "canvas",
-            "linkedTable"
+            "linkedEditor"
           ]
         },
         "canvas": {
@@ -3224,34 +3964,78 @@
             "height": 680
           }
         },
-        "linkedTable": {
+        "linkedEditor": {
+          "type": "RelationEditor",
+          "props": {
+            "binding": "selected",
+            "linked": "linked",
+            "candidates": "componentCandidates",
+            "addAction": "linkComponent",
+            "removeAction": "unlinkComponent",
+            "title": "연결된 UI 컴포넌트",
+            "emptyLabel": "연결된 컴포넌트가 없습니다",
+            "direction": "out"
+          }
+        },
+        "listPanel": {
           "type": "DataTable",
           "props": {
-            "binding": "linked",
-            "title": "Linked UI components",
+            "binding": "rows",
+            "title": "Wireframes",
+            "setAction": "setCell",
+            "addAction": "addWireframe",
+            "addLabel": "New wireframe",
+            "selectionParam": "wireframe",
             "columns": [
               {
                 "key": "title",
-                "header": "Component",
+                "header": "Wireframe",
                 "type": "text",
-                "width": 280
+                "editable": true,
+                "width": 320
               },
               {
-                "key": "slug",
-                "header": "Slug",
-                "type": "text"
-              },
-              {
-                "key": "tier",
-                "header": "Tier",
+                "key": "status",
+                "header": "Status",
                 "type": "select",
                 "options": [
-                  "primitive",
-                  "composite",
-                  "page"
+                  "draft",
+                  "in_crit",
+                  "approved",
+                  "rework"
                 ]
               }
             ]
+          }
+        },
+        "critPanel": {
+          "type": "Section",
+          "props": {
+            "title": "디자인 crit",
+            "subtitle": "in_crit 상태 와이어프레임 — 승인 또는 재작업",
+            "padding": "none"
+          },
+          "children": [
+            "critInbox"
+          ]
+        },
+        "critInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingCrit",
+            "titleField": "title",
+            "metaFields": [
+              "status"
+            ],
+            "statusField": "status",
+            "approveAction": "setWireframeStatus",
+            "rejectAction": "setWireframeStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "재작업",
+            "approveValue": "approved",
+            "rejectValue": "rework",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "crit 대기 와이어프레임이 없습니다."
           }
         }
       }
@@ -3273,9 +4057,72 @@
         "direction": "out",
         "catalogKey": "ui_component"
       },
+      "componentCandidates": {
+        "kind": "query",
+        "catalogKey": "ui_component"
+      },
+      "pendingCrit": {
+        "kind": "initiative_scope",
+        "catalogKey": "page_wireframe",
+        "filter": [
+          {
+            "key": "status",
+            "op": "eq",
+            "value": "in_crit"
+          }
+        ]
+      },
       "theme": {
         "kind": "evergreen",
         "catalogKey": "design_theme"
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "addWireframe": {
+        "kind": "create_node",
+        "catalogKey": "page_wireframe",
+        "title": "New wireframe",
+        "properties": {
+          "status": "draft"
+        }
+      },
+      "setWireframeStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      },
+      "linkComponent": {
+        "kind": "create_edge",
+        "catalogKey": "references",
+        "sourceNodeId": {
+          "$input": "sourceNodeId"
+        },
+        "targetNodeId": {
+          "$input": "targetNodeId"
+        }
+      },
+      "unlinkComponent": {
+        "kind": "delete_edge",
+        "edgeId": {
+          "$input": "edgeId"
+        }
       }
     }
   },
@@ -3286,12 +4133,38 @@
     "title": "Flows",
     "icon": "design_flows",
     "spec": {
-      "root": "section",
+      "root": "layout",
       "elements": {
-        "section": {
+        "layout": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "toolbar",
+            "canvasSection",
+            "listSection"
+          ]
+        },
+        "toolbar": {
+          "type": "Toolbar",
+          "props": {
+            "title": "User flows",
+            "actions": [
+              {
+                "label": "New flow",
+                "action": "addFlow"
+              }
+            ]
+          }
+        },
+        "canvasSection": {
           "type": "Section",
           "props": {
-            "title": "Flows"
+            "title": "Flow canvas",
+            "subtitle": "선택한 플로우 (?flow=<nodeId>)",
+            "padding": "none"
           },
           "children": [
             "canvas"
@@ -3300,7 +4173,7 @@
         "canvas": {
           "type": "FlowCanvas",
           "props": {
-            "binding": "doc",
+            "binding": "selectedFlow",
             "property": "flow",
             "height": 520,
             "nodePresentation": [
@@ -3330,14 +4203,40 @@
             "editable": true,
             "setAction": "saveFlowNode"
           }
+        },
+        "listSection": {
+          "type": "Section",
+          "props": {
+            "title": "Flows",
+            "subtitle": "모든 사용자 플로우 문서",
+            "padding": "none"
+          },
+          "children": [
+            "list"
+          ]
+        },
+        "list": {
+          "type": "DocumentCardListSheet",
+          "props": {
+            "binding": "flows",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "editable": true,
+            "action": "saveDoc"
+          }
         }
       }
     },
     "bindings": {
-      "doc": {
+      "flows": {
         "kind": "initiative_scope",
-        "catalogKey": "user_flow",
-        "limit": 1
+        "catalogKey": "user_flow"
+      },
+      "selectedFlow": {
+        "kind": "url_selection",
+        "param": "flow",
+        "catalogKey": "user_flow"
       }
     },
     "actions": {
@@ -3352,6 +4251,23 @@
         "value": {
           "$input": "value"
         }
+      },
+      "addFlow": {
+        "kind": "create_node",
+        "catalogKey": "user_flow",
+        "title": "새 플로우"
+      },
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
+        "merge": true
       }
     }
   },
@@ -3937,21 +4853,83 @@
     "title": "Pull requests",
     "icon": "build_pull_requests",
     "spec": {
-      "root": "table",
+      "root": "tabs",
       "elements": {
-        "table": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "inbox",
+            "items": [
+              {
+                "value": "inbox",
+                "label": "리뷰 인박스",
+                "panel": "inboxPanel"
+              },
+              {
+                "value": "all",
+                "label": "전체",
+                "panel": "allPanel"
+              }
+            ]
+          }
+        },
+        "inboxPanel": {
+          "type": "Section",
+          "props": {
+            "title": "리뷰 인박스",
+            "subtitle": "in_review 상태 PR — 승인 또는 변경 요청",
+            "padding": "none"
+          },
+          "children": [
+            "reviewInbox"
+          ]
+        },
+        "reviewInbox": {
+          "type": "ApprovalInbox",
+          "props": {
+            "binding": "pendingReviews",
+            "titleField": "title",
+            "metaFields": [
+              "assignee",
+              "branch"
+            ],
+            "statusField": "status",
+            "approveAction": "setPrStatus",
+            "rejectAction": "setPrStatus",
+            "approveLabel": "승인",
+            "rejectLabel": "변경 요청",
+            "approveValue": "approved",
+            "rejectValue": "changes_requested",
+            "emptyLabel": "모두 처리됨",
+            "emptyDescription": "리뷰 대기 중인 PR이 없습니다."
+          }
+        },
+        "allPanel": {
+          "type": "NodeDetailSheet",
+          "props": {
+            "binding": "selectedPr",
+            "selectionParam": "pr",
+            "subtitleField": "branch"
+          },
+          "children": [
+            "prTable",
+            "prSheetBody"
+          ]
+        },
+        "prTable": {
           "type": "DataTable",
           "props": {
             "binding": "rows",
             "title": "Pull requests",
             "setAction": "setCell",
+            "selectionParam": "pr",
             "columns": [
               {
                 "key": "title",
                 "header": "Pull request",
                 "type": "text",
                 "editable": true,
-                "width": 320
+                "width": 280
               },
               {
                 "key": "status",
@@ -3959,15 +4937,12 @@
                 "type": "select",
                 "options": [
                   "open",
+                  "in_review",
+                  "changes_requested",
+                  "approved",
                   "merged",
                   "closed"
                 ]
-              },
-              {
-                "key": "url",
-                "header": "URL",
-                "type": "text",
-                "editable": true
               },
               {
                 "key": "assignee",
@@ -3980,8 +4955,22 @@
                 "header": "Branch",
                 "type": "text",
                 "editable": true
+              },
+              {
+                "key": "url",
+                "header": "URL",
+                "type": "text",
+                "editable": true
               }
             ]
+          }
+        },
+        "prSheetBody": {
+          "type": "DocumentEditor",
+          "props": {
+            "binding": "selectedPr",
+            "field": "content",
+            "action": "saveDoc"
           }
         }
       }
@@ -3989,6 +4978,22 @@
     "bindings": {
       "rows": {
         "kind": "initiative_scope",
+        "catalogKey": "pull_request"
+      },
+      "pendingReviews": {
+        "kind": "initiative_scope",
+        "catalogKey": "pull_request",
+        "filter": [
+          {
+            "key": "status",
+            "op": "eq",
+            "value": "in_review"
+          }
+        ]
+      },
+      "selectedPr": {
+        "kind": "url_selection",
+        "param": "pr",
         "catalogKey": "pull_request"
       }
     },
@@ -4004,6 +5009,28 @@
         "value": {
           "$input": "value"
         }
+      },
+      "setPrStatus": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": "status",
+        "value": {
+          "$input": "value"
+        }
+      },
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "properties": {
+          "content": {
+            "$input": "doc"
+          }
+        },
+        "merge": true
       }
     }
   },
@@ -4063,9 +5090,32 @@
     "title": "Test plan",
     "icon": "qa_test_plan",
     "spec": {
-      "root": "section",
+      "root": "tabs",
       "elements": {
-        "section": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "plan",
+            "items": [
+              {
+                "value": "plan",
+                "label": "계획",
+                "panel": "planPanel"
+              },
+              {
+                "value": "results",
+                "label": "결과",
+                "panel": "resultsPanel"
+              },
+              {
+                "value": "verify",
+                "label": "검증 대상",
+                "panel": "verifyPanel"
+              }
+            ]
+          }
+        },
+        "planPanel": {
           "type": "Section",
           "props": {
             "title": "Test plan"
@@ -4081,6 +5131,84 @@
             "field": "content",
             "action": "saveDoc"
           }
+        },
+        "resultsPanel": {
+          "type": "Stack",
+          "props": {
+            "gap": "md",
+            "padding": "none"
+          },
+          "children": [
+            "results",
+            "statusTable"
+          ]
+        },
+        "results": {
+          "type": "TestResults",
+          "props": {
+            "binding": "doc",
+            "property": "testRun",
+            "title": "테스트 결과"
+          }
+        },
+        "statusTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "plans",
+            "title": "Test plans",
+            "setAction": "setCell",
+            "columns": [
+              {
+                "key": "title",
+                "header": "Test plan",
+                "type": "text",
+                "editable": true,
+                "width": 320
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": [
+                  "draft",
+                  "in_progress",
+                  "pass",
+                  "fail",
+                  "blocked"
+                ]
+              },
+              {
+                "key": "scope",
+                "header": "Scope",
+                "type": "text",
+                "editable": true
+              }
+            ]
+          }
+        },
+        "verifyPanel": {
+          "type": "Section",
+          "props": {
+            "title": "검증 대상",
+            "subtitle": "이 테스트 계획이 검증하는 PR",
+            "padding": "none"
+          },
+          "children": [
+            "verifyEditor"
+          ]
+        },
+        "verifyEditor": {
+          "type": "RelationEditor",
+          "props": {
+            "binding": "doc",
+            "linked": "verifiedTargets",
+            "candidates": "prs",
+            "addAction": "linkVerifies",
+            "removeAction": "unlinkVerifies",
+            "title": "검증 대상",
+            "emptyLabel": "연결된 검증 대상이 없습니다",
+            "direction": "out"
+          }
         }
       }
     },
@@ -4089,6 +5217,20 @@
         "kind": "initiative_scope",
         "catalogKey": "test_plan",
         "limit": 1
+      },
+      "plans": {
+        "kind": "initiative_scope",
+        "catalogKey": "test_plan"
+      },
+      "verifiedTargets": {
+        "kind": "traverse",
+        "from": "doc",
+        "edgeCatalogKey": "verifies",
+        "direction": "out"
+      },
+      "prs": {
+        "kind": "initiative_scope",
+        "catalogKey": "pull_request"
       }
     },
     "actions": {
@@ -4103,6 +5245,34 @@
           }
         },
         "merge": true
+      },
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": {
+          "$input": "nodeId"
+        },
+        "field": {
+          "$input": "field"
+        },
+        "value": {
+          "$input": "value"
+        }
+      },
+      "linkVerifies": {
+        "kind": "create_edge",
+        "catalogKey": "verifies",
+        "sourceNodeId": {
+          "$input": "sourceNodeId"
+        },
+        "targetNodeId": {
+          "$input": "targetNodeId"
+        }
+      },
+      "unlinkVerifies": {
+        "kind": "delete_edge",
+        "edgeId": {
+          "$input": "edgeId"
+        }
       }
     }
   },
@@ -4318,6 +5488,7 @@
             "title": "Release notes"
           },
           "children": [
+            "releaseToolbar",
             "releaseList"
           ]
         },
@@ -4338,6 +5509,7 @@
             "title": "Runbooks"
           },
           "children": [
+            "runbookToolbar",
             "runbookList"
           ]
         },
@@ -4350,6 +5522,28 @@
             "statusField": "lifecycleStatus",
             "editable": true,
             "action": "saveDoc"
+          }
+        },
+        "releaseToolbar": {
+          "type": "Toolbar",
+          "props": {
+            "actions": [
+              {
+                "label": "New release note",
+                "action": "addReleaseNote"
+              }
+            ]
+          }
+        },
+        "runbookToolbar": {
+          "type": "Toolbar",
+          "props": {
+            "actions": [
+              {
+                "label": "New runbook",
+                "action": "addRunbook"
+              }
+            ]
           }
         }
       }
@@ -4376,6 +5570,16 @@
           }
         },
         "merge": true
+      },
+      "addReleaseNote": {
+        "kind": "create_node",
+        "catalogKey": "release_note",
+        "title": "새 릴리즈 노트"
+      },
+      "addRunbook": {
+        "kind": "create_node",
+        "catalogKey": "runbook",
+        "title": "새 런북"
       }
     }
   },
@@ -4463,6 +5667,11 @@
                 "value": "snapshots",
                 "label": "Snapshots",
                 "panel": "snapshotPanel"
+              },
+              {
+                "value": "trend",
+                "label": "추이",
+                "panel": "trendPanel"
               }
             ]
           }
@@ -4504,7 +5713,6 @@
                 "type": "select",
                 "options": [
                   "active",
-                  "paused",
                   "archived"
                 ]
               }
@@ -4551,7 +5759,21 @@
                   "final"
                 ]
               }
-            ]
+            ],
+            "addAction": "addSnapshot",
+            "addLabel": "New snapshot"
+          }
+        },
+        "trendPanel": {
+          "type": "ChartLine",
+          "props": {
+            "binding": "snapshots",
+            "groupBy": "recorded_at",
+            "valueField": "value",
+            "aggregate": "sum",
+            "title": "지표 추이",
+            "height": 220,
+            "respectPeriodFilter": false
           }
         }
       }
@@ -4578,6 +5800,11 @@
         "value": {
           "$input": "value"
         }
+      },
+      "addSnapshot": {
+        "kind": "create_node",
+        "catalogKey": "metric_snapshot",
+        "title": "New snapshot"
       }
     }
   },
@@ -4596,6 +5823,7 @@
             "title": "Review"
           },
           "children": [
+            "createForm",
             "editor"
           ]
         },
@@ -4605,6 +5833,20 @@
             "binding": "doc",
             "field": "content",
             "action": "saveDoc"
+          }
+        },
+        "createForm": {
+          "type": "Form",
+          "children": [
+            "createBtn"
+          ]
+        },
+        "createBtn": {
+          "type": "Button",
+          "props": {
+            "label": "회고 시작",
+            "action": "createRetro",
+            "variant": "outline"
           }
         }
       }
@@ -4628,6 +5870,11 @@
           }
         },
         "merge": true
+      },
+      "createRetro": {
+        "kind": "create_node",
+        "catalogKey": "retrospective",
+        "title": "회고"
       }
     }
   }
