@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   integer,
   jsonb,
@@ -1175,6 +1176,45 @@ export const agentRuns = pgTable(
     workflowRunUnique: uniqueIndex("agent_runs_workflow_run_id_unique").on(
       table.workflowRunId,
     ),
+    teamspaceAgentStartedIdx: index("agent_runs_teamspace_agent_started_idx").on(
+      table.teamspaceId,
+      table.agentDefinitionId,
+      table.startedAt.desc(),
+    ),
+  }),
+);
+
+/**
+ * Per-run execution transcript for the run-log UI. Rows are written two ways:
+ * incrementally per tool call from the durable dispatch step (crash-visible),
+ * then replaced by the canonical full transcript at finalize. `parts` uses the
+ * AI SDK UIMessage part shape (same convention as `chat_messages.parts`).
+ */
+export const agentRunMessages = pgTable(
+  "agent_run_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: "cascade" }),
+    /** Global insert-order identity; ordering key within a run. */
+    seq: bigint("seq", { mode: "number" }).generatedAlwaysAsIdentity(),
+    role: text("role").notNull(),
+    parts: jsonb("parts").notNull().default([]).$type<unknown[]>(),
+    /** Idempotency key for incremental tool events (WDK steps retry at-least-once). */
+    toolCallId: text("tool_call_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    runSeqIdx: index("agent_run_messages_run_id_seq_idx").on(
+      table.runId,
+      table.seq,
+    ),
+    runToolCallUnique: uniqueIndex("agent_run_messages_run_tool_call_unique")
+      .on(table.runId, table.toolCallId)
+      .where(sql`tool_call_id is not null`),
   }),
 );
 

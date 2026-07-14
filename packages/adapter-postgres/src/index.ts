@@ -30,6 +30,10 @@ export {
   createAgentRunPort,
   type StartAgentRunInput,
   type FinishAgentRunInput,
+  type AgentRunRecord,
+  type AgentRunMessageRecord,
+  type ListAgentRunsInput,
+  type TranscriptMessageInput,
 } from "./ports/agent-runs-port.js";
 export {
   createSchedulePort,
