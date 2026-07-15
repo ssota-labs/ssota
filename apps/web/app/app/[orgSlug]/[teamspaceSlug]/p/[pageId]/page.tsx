@@ -53,12 +53,14 @@ export default async function AppDynamicPage({
   );
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
       <ConsolePageFrame
         fullWidth={usesWorkbench}
-        fillHeight={!usesWorkbench}
-        contentClassName={siblingNav ? "pt-2" : undefined}
+        fillHeight={usesWorkbench}
+        contentClassName={
+          usesWorkbench ? undefined : "gap-6 pt-0 pb-0"
+        }
       >
         <DynamicPageRenderer
           spec={page.spec}
@@ -66,6 +68,6 @@ export default async function AppDynamicPage({
           basePath={basePath}
         />
       </ConsolePageFrame>
-    </>
+    </div>
   );
 }

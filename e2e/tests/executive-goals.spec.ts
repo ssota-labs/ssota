@@ -143,8 +143,14 @@ test.describe("Executive goals", () => {
   });
 
   test("sibling nav links Roadmap and Goals under Executive", async ({ page }) => {
+    // Wait for real content — Suspense fallback also mounts page-sibling-nav
+    await expect(page.getByRole("heading", { name: "Objectives" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("content-loading-page")).toHaveCount(0);
+
     const siblingNav = page.getByTestId("page-sibling-nav");
-    await expect(siblingNav).toBeVisible({ timeout: 15_000 });
+    await expect(siblingNav).toBeVisible();
 
     const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
     await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toBeVisible();
@@ -152,5 +158,21 @@ test.describe("Executive goals", () => {
       "aria-current",
       "page",
     );
+  });
+
+  test("page frame scrolls to KPI charts below the fold", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "Objectives" })).toBeVisible({
+      timeout: 15_000,
+    });
+    const charts = page.getByTestId("chart-line");
+    await expect(charts.first()).toBeAttached();
+
+    // KPI charts sit below Objectives — must be reachable via page scroll
+    // (fillHeight+Tabs flex lock previously clipped this without overflow-y-auto).
+    await charts.first().scrollIntoViewIfNeeded();
+    await expect(charts.first()).toBeInViewport();
+    await expect(
+      charts.filter({ hasText: "Workspace creation rate" }),
+    ).toBeInViewport();
   });
 });
