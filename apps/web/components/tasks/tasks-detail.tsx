@@ -64,7 +64,11 @@ export function TasksDetail({
         </div>
       )}
 
-      <TasksDetailSheet task={selected} onClose={() => setSelected(null)} />
+      <TasksDetailSheet
+        teamspaceId={teamspaceId}
+        task={selected}
+        onClose={() => setSelected(null)}
+      />
     </div>
   );
 }
