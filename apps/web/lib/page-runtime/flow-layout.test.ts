@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { coerceFlow } from "./flow-model";
-import { hasExplicitCoords, layoutFlow } from "./flow-layout";
+import {
+  hasExplicitCoords,
+  layoutFlow,
+  layoutFlowWithEdges,
+  snapRoutesToNodeHandles,
+  synthesizeFeedbackRoutes,
+} from "./flow-layout";
 
 describe("flow-layout", () => {
   it("returns persisted coordinates as-is when all nodes have them", async () => {
@@ -58,5 +64,77 @@ describe("flow-layout", () => {
     expect(pos.a!.y).toBeGreaterThan(pos.root!.y);
     expect(pos.b!.y).toBeGreaterThan(pos.root!.y);
     expect(pos.a!.x).not.toEqual(pos.b!.x);
+  });
+
+  it("returns orthogonal edge bend points alongside positions", async () => {
+    const model = coerceFlow({
+      nodes: [
+        { id: "a", title: "A", width: 120, height: 60 },
+        { id: "b", title: "B", width: 120, height: 60 },
+        { id: "c", title: "C", width: 120, height: 60 },
+      ],
+      edges: [
+        { id: "a-b", source: "a", target: "b" },
+        { id: "b-c", source: "b", target: "c" },
+      ],
+    });
+    const { positions, edges } = await layoutFlowWithEdges(model, "LR");
+    expect(positions.b!.x).toBeGreaterThan(positions.a!.x);
+    expect(edges.length).toBe(2);
+    for (const e of edges) {
+      expect(e.points.length).toBeGreaterThanOrEqual(2);
+      // Routes share the same coordinate space as node positions.
+      expect(e.points[0]!.x).toBeGreaterThanOrEqual(positions.a!.x);
+    }
+    expect(edges.map((e) => e.id).toSorted()).toEqual(["a-b", "b-c"]);
+  });
+
+  it("snaps side-port attachments to handle centers", () => {
+    const nodes = [
+      { id: "a", x: 0, y: 100, width: 100, height: 40 },
+      { id: "b", x: 200, y: 100, width: 100, height: 40 },
+    ];
+    const edges = [
+      { id: "e1", source: "a", target: "b" },
+      { id: "e2", source: "a", target: "b" },
+    ];
+    // ELK-like stubs that miss the RF handle (side center).
+    const routes = [
+      {
+        id: "e1",
+        points: [
+          { x: 100, y: 80 },
+          { x: 150, y: 80 },
+          { x: 200, y: 80 },
+        ],
+      },
+      {
+        id: "e2",
+        points: [
+          { x: 100, y: 160 },
+          { x: 150, y: 160 },
+          { x: 200, y: 160 },
+        ],
+      },
+    ];
+    const snapped = snapRoutesToNodeHandles(nodes, edges, routes);
+    for (const r of snapped) {
+      expect(r.points[0]).toEqual({ x: 100, y: 120 });
+      expect(r.points[r.points.length - 1]).toEqual({ x: 200, y: 120 });
+    }
+  });
+
+  it("synthesizes non-overlapping feedback lanes below nodes", () => {
+    const nodes = new Map([
+      ["a", { id: "a", x: 0, y: 0, width: 100, height: 40 }],
+      ["b", { id: "b", x: 200, y: 0, width: 100, height: 40 }],
+    ]);
+    const routes = synthesizeFeedbackRoutes(nodes, [
+      { id: "b-a", source: "b", target: "a" },
+      { id: "b-a-2", source: "b", target: "a" },
+    ]);
+    expect(routes).toHaveLength(2);
+    expect(routes[0]!.points).toHaveLength(4);
+    expect(routes[1]!.points[1]!.y).toBeGreaterThan(routes[0]!.points[1]!.y);
   });
 });

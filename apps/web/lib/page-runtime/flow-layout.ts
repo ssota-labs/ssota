@@ -20,6 +20,17 @@ export type FlowLayoutAlgorithm = "layered" | "tree";
 
 export type Positioned = Record<string, { x: number; y: number }>;
 
+/** ELK orthogonal edge route — bend points in the same coordinate space as node positions. */
+export type RoutedEdge = {
+  id: string;
+  points: Array<{ x: number; y: number }>;
+};
+
+export type LayoutWithEdges = {
+  positions: Positioned;
+  edges: RoutedEdge[];
+};
+
 const DEFAULT_SPACING = 56;
 
 function nodeSize(n: FlowNodeData): { width: number; height: number } {
@@ -174,4 +185,301 @@ export async function layoutFlow(
     }
   }
   return positions;
+}
+
+function collectElkEdgePoints(
+  edge: {
+    id?: string;
+    sections?: Array<{
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      bendPoints?: Array<{ x: number; y: number }>;
+    }>;
+  },
+): RoutedEdge | null {
+  if (!edge.id || !edge.sections || edge.sections.length === 0) return null;
+  const points: Array<{ x: number; y: number }> = [];
+  for (const section of edge.sections) {
+    points.push(section.startPoint);
+    for (const bend of section.bendPoints ?? []) points.push(bend);
+    points.push(section.endPoint);
+  }
+  if (points.length < 2) return null;
+  return { id: edge.id, points };
+}
+
+/**
+ * Node positions + orthogonal edge routes from one ELK layered pass.
+ * Feedback/cycle edges are included — ELK reverses them for ranking and still
+ * returns non-overlapping orthogonal sections. On ELK failure, positions fall
+ * back to ranked layout and `edges` is empty (caller should path locally).
+ */
+export async function layoutFlowWithEdges(
+  model: FlowModel,
+  direction: FlowLayoutDirection = "LR",
+  spacing: number = DEFAULT_SPACING,
+): Promise<LayoutWithEdges> {
+  if (model.nodes.length === 0) return { positions: {}, edges: [] };
+  // Persisted coords: keep them; routing needs a fresh ELK pass the caller can
+  // request separately. Work-cycle always omits explicit coords.
+  if (hasExplicitCoords(model)) {
+    return { positions: explicitPositions(model), edges: [] };
+  }
+
+  let elk: InstanceType<Awaited<typeof import("elkjs/lib/elk.bundled.js")>["default"]>;
+  try {
+    const Elk = (await import("elkjs/lib/elk.bundled.js")).default;
+    elk = new Elk();
+  } catch (error) {
+    console.error("[flow-layout] ELK load failed — ranked fallback 사용", error);
+    return {
+      positions: rankedFallbackPositions(model, direction, spacing),
+      edges: [],
+    };
+  }
+
+  const children = model.nodes.map((n) => {
+    const { width, height } = nodeSize(n);
+    return { id: n.id, width, height };
+  });
+  const edges = model.edges.map((e) => ({
+    id: e.id,
+    sources: [e.source],
+    targets: [e.target],
+  }));
+
+  let laidOut: Awaited<ReturnType<typeof elk.layout>>;
+  try {
+    laidOut = await elk.layout({
+      id: "root",
+      layoutOptions: {
+        "elk.algorithm": "layered",
+        "elk.direction": toElkDirection(direction),
+        "elk.edgeRouting": "ORTHOGONAL",
+        "elk.spacing.nodeNode": String(spacing),
+        "elk.spacing.edgeEdge": String(Math.max(12, Math.round(spacing / 3))),
+        "elk.spacing.edgeNode": String(Math.max(16, Math.round(spacing / 2))),
+        "elk.layered.spacing.nodeNodeBetweenLayers": String(spacing + 32),
+        "elk.layered.spacing.edgeNodeBetweenLayers": String(
+          Math.max(20, Math.round(spacing / 2)),
+        ),
+        "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+        "elk.layered.unnecessaryBendpoints": "true",
+      },
+      children,
+      edges,
+    });
+  } catch (error) {
+    console.error("[flow-layout] ELK layout failed — ranked fallback 사용", error);
+    return {
+      positions: rankedFallbackPositions(model, direction, spacing),
+      edges: [],
+    };
+  }
+
+  const positions: Positioned = {};
+  for (const child of laidOut.children ?? []) {
+    if (child.id && child.x != null && child.y != null) {
+      positions[child.id] = { x: child.x, y: child.y };
+    }
+  }
+  let fallbackY = 0;
+  for (const n of model.nodes) {
+    if (!positions[n.id]) {
+      positions[n.id] = { x: 0, y: fallbackY };
+      fallbackY += nodeSize(n).height + spacing;
+    }
+  }
+
+  const routed: RoutedEdge[] = [];
+  for (const edge of laidOut.edges ?? []) {
+    const route = collectElkEdgePoints(edge);
+    if (route) routed.push(route);
+  }
+
+  const sized = model.nodes.map((n) => {
+    const { width, height } = nodeSize(n);
+    const p = positions[n.id] ?? { x: 0, y: 0 };
+    return { id: n.id, x: p.x, y: p.y, width, height };
+  });
+  const edgeEnds = model.edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+  }));
+  return {
+    positions,
+    // ELK ports sit anywhere on the side — snap to RF Left/Right(/Bottom) handle centers.
+    edges: snapRoutesToNodeHandles(sized, edgeEnds, routed),
+  };
+}
+
+export type FeedbackRouteNode = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+const PORT_SIDE_TOLERANCE = 2;
+
+type Side = "west" | "east" | "north" | "south";
+
+function sideOfPoint(
+  node: FeedbackRouteNode,
+  point: { x: number; y: number },
+): Side | null {
+  const left = node.x;
+  const right = node.x + node.width;
+  const top = node.y;
+  const bottom = node.y + node.height;
+  const onWest = Math.abs(point.x - left) <= PORT_SIDE_TOLERANCE;
+  const onEast = Math.abs(point.x - right) <= PORT_SIDE_TOLERANCE;
+  const onNorth = Math.abs(point.y - top) <= PORT_SIDE_TOLERANCE;
+  const onSouth = Math.abs(point.y - bottom) <= PORT_SIDE_TOLERANCE;
+  if (onWest) return "west";
+  if (onEast) return "east";
+  if (onNorth) return "north";
+  if (onSouth) return "south";
+  return null;
+}
+
+function handlePoint(node: FeedbackRouteNode, side: Side): { x: number; y: number } {
+  switch (side) {
+    case "east":
+      return { x: node.x + node.width, y: node.y + node.height / 2 };
+    case "west":
+      return { x: node.x, y: node.y + node.height / 2 };
+    case "south":
+      return { x: node.x + node.width / 2, y: node.y + node.height };
+    case "north":
+      return { x: node.x + node.width / 2, y: node.y };
+  }
+}
+
+function defaultSourceSide(source: FeedbackRouteNode, target: FeedbackRouteNode): Side {
+  if (target.x + target.width / 2 < source.x) return "west";
+  return "east";
+}
+
+function defaultTargetSide(source: FeedbackRouteNode, target: FeedbackRouteNode): Side {
+  if (source.x + source.width / 2 > target.x + target.width) return "east";
+  return "west";
+}
+
+/**
+ * Pin every route endpoint to the node-side handle center (RF Position.Left/Right
+ * /Bottom). Orthogonal middle: same-row → straight; otherwise mid-X elbow so the
+ * stub leaves the handle horizontally instead of floating to an ELK port offset.
+ */
+export function snapRoutesToNodeHandles(
+  nodes: FeedbackRouteNode[],
+  edges: Array<{ id: string; source: string; target: string }>,
+  routes: RoutedEdge[],
+): RoutedEdge[] {
+  if (routes.length === 0) return routes;
+  const nodesById = new Map(nodes.map((n) => [n.id, n]));
+  const out: RoutedEdge[] = [];
+
+  for (const e of edges) {
+    const route = routes.find((r) => r.id === e.id);
+    if (!route || route.points.length < 2) continue;
+    const source = nodesById.get(e.source);
+    const target = nodesById.get(e.target);
+    if (!source || !target) {
+      out.push(route);
+      continue;
+    }
+
+    const start = route.points[0]!;
+    const end = route.points[route.points.length - 1]!;
+    const sourceSide =
+      sideOfPoint(source, start) ?? defaultSourceSide(source, target);
+    const targetSide =
+      sideOfPoint(target, end) ?? defaultTargetSide(source, target);
+    const sh = handlePoint(source, sourceSide);
+    const th = handlePoint(target, targetSide);
+
+    // South↔south feedback: keep the U-shaped corridor (already handle-aligned).
+    if (sourceSide === "south" && targetSide === "south") {
+      const laneY =
+        route.points.find(
+          (p, i) => i > 0 && i < route.points.length - 1 && p.y > sh.y,
+        )?.y ?? Math.max(sh.y, th.y) + 28;
+      out.push({
+        id: e.id,
+        points: [sh, { x: sh.x, y: laneY }, { x: th.x, y: laneY }, th],
+      });
+      continue;
+    }
+
+    if (Math.abs(sh.y - th.y) < 1) {
+      out.push({ id: e.id, points: [sh, th] });
+      continue;
+    }
+
+    const midX = (sh.x + th.x) / 2;
+    out.push({
+      id: e.id,
+      points: [sh, { x: midX, y: sh.y }, { x: midX, y: th.y }, th],
+    });
+  }
+
+  // Preserve any routes whose edge id wasn't in `edges` (shouldn't happen).
+  for (const r of routes) {
+    if (!out.some((o) => o.id === r.id)) out.push(r);
+  }
+  return out;
+}
+
+/** @deprecated Prefer `snapRoutesToNodeHandles` — kept for callers that want spread ports. */
+export function redistributeSidePortsWithinNodes(
+  nodes: FeedbackRouteNode[],
+  edges: Array<{ id: string; source: string; target: string }>,
+  routes: RoutedEdge[],
+  _inset: number = 10,
+): RoutedEdge[] {
+  return snapRoutesToNodeHandles(nodes, edges, routes);
+}
+
+/**
+ * Orthogonal feedback corridors under already-placed nodes.
+ * ELK INTERACTIVE re-ranks when cycles are present, so back-edges are routed
+ * here instead: each edge gets its own lane below `baseY` (or the nodes' max
+ * bottom if omitted).
+ */
+export function synthesizeFeedbackRoutes(
+  nodesById: Map<string, FeedbackRouteNode>,
+  edges: Array<{ id: string; source: string; target: string }>,
+  options?: { baseY?: number; laneGap?: number; pad?: number },
+): RoutedEdge[] {
+  const laneGap = options?.laneGap ?? 20;
+  const pad = options?.pad ?? 28;
+  let maxBottom = 0;
+  for (const n of nodesById.values()) {
+    maxBottom = Math.max(maxBottom, n.y + n.height);
+  }
+  const baseY = options?.baseY ?? maxBottom + pad;
+  const routed: RoutedEdge[] = [];
+  edges.forEach((e, i) => {
+    const s = nodesById.get(e.source);
+    const t = nodesById.get(e.target);
+    if (!s || !t) return;
+    const sx = s.x + s.width / 2;
+    const sy = s.y + s.height;
+    const tx = t.x + t.width / 2;
+    const ty = t.y + t.height;
+    const laneY = baseY + i * laneGap;
+    routed.push({
+      id: e.id,
+      points: [
+        { x: sx, y: sy },
+        { x: sx, y: laneY },
+        { x: tx, y: laneY },
+        { x: tx, y: ty },
+      ],
+    });
+  });
+  return routed;
 }
