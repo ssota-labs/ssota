@@ -215,6 +215,93 @@
     }
   },
   {
+    "title": "PR approved before test plan progress",
+    "properties": {
+      "policyKey": "swdl.pr-approved-before-test-plan",
+      "sortOrder": 55,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "test_plan",
+        "property": { "path": "status", "in": ["in_progress", "pass"] }
+      },
+      "require": [
+        {
+          "path": "out:verifies[pull_request].status",
+          "in": ["approved"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Linked PR must be approved before test plan in_progress/pass",
+        "suggest": {
+          "approvalCatalogKey": "pull_request",
+          "pageKey": "development/pull-requests",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
+    "title": "Test plan pass before PR merged",
+    "properties": {
+      "policyKey": "swdl.test-pass-before-pr-merged",
+      "sortOrder": 58,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "pull_request",
+        "property": { "path": "status", "in": ["merged"] }
+      },
+      "require": [
+        {
+          "path": "in:verifies[test_plan].status",
+          "in": ["pass"],
+          "ifMissing": "fail"
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Linked test_plan must be pass before PR merge",
+        "suggest": {
+          "approvalCatalogKey": "test_plan",
+          "pageKey": "tpl/initiative/qa/test-plan",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
+    "title": "Wireframe crit approve requires Initiative link",
+    "properties": {
+      "policyKey": "swdl.page-wireframe-crit-approved",
+      "sortOrder": 48,
+      "includedTeamspaceIds": [],
+      "when": "before_update_node",
+      "match": {
+        "catalogKey": "page_wireframe",
+        "property": { "path": "status", "in": ["approved"] }
+      },
+      "require": [
+        {
+          "path": "out:for_initiative[initiative]",
+          "ifMissing": "fail",
+          "count": { "min": 1 }
+        }
+      ],
+      "onFail": {
+        "code": "GATE_PENDING",
+        "messageTemplate": "Page wireframe must link to an Initiative (for_initiative) before crit approve",
+        "suggest": {
+          "approvalCatalogKey": "page_wireframe",
+          "pageKey": "tpl/initiative/design/wireframes",
+          "spawnHumanTask": false
+        }
+      }
+    }
+  },
+  {
     "title": "PR approved → launch plan Planning spawn",
     "properties": {
       "policyKey": "swdl.pr-approved-onpass-launch",

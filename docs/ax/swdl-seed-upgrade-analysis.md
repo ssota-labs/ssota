@@ -57,7 +57,7 @@ AX 스킬은 **빈 org에 MCP로 환경을 짓는 절차**다. SWDL 코드 시�
 
 | 항목 | 상태 (가정 갱신 2026-07-09) |
 |---|---|
-| 템플릿 에이전트 | **SWDL 도메인만** — Research / Planning / Delivery / QA + Orchestrator (`SWDL_AGENT_DEFINITION_SEEDS`). generic built-in specialists/workers는 템플릿에 **넣지 않음** |
+| 템플릿 에이전트 | **SWDL 도메인만** — Research / Planning / Delivery / QA / Direction / Design + Orchestrator (`SWDL_AGENT_DEFINITION_SEEDS`). generic built-in specialists/workers는 템플릿에 **넣지 않음** |
 | 플랫폼 Main | Domain Pack/`applyTemplate` **미시드**. Console chat만 seed.ts 플랫폼 경로 |
 | `linkedWorkerAgentIds` | Orchestrator → 4 specialists |
 | 스케줄 | Orchestrator만 `0 9 * * 1-5` + weekly Monday `0 10 * * 1` (Main heartbeat 없음) |

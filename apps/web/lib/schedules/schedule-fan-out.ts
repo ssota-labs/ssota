@@ -1,5 +1,5 @@
 import { start } from "workflow/api";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { ScheduleTargetType } from "@ssota/contracts";
 import type { Db } from "@ssota/adapter-postgres";
 import { schema } from "@ssota/adapter-postgres";
@@ -7,6 +7,7 @@ import { spawnTask } from "@ssota/core";
 import { runMainWorkflowAgent } from "@/app/workflows/main-workflow-agent";
 import { runTaskAgentWorkflow } from "@/app/workflows/task-agent";
 import { getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
+import { buildScheduledAgentTaskPayload } from "./schedule-trigger";
 
 export interface ScheduleRow {
   id: string;
@@ -14,6 +15,8 @@ export interface ScheduleRow {
   accountId: string | null;
   agentDefinitionId: string;
   targetType: ScheduleTargetType;
+  /** Seeded cadence prefix — mapped to task context.triggerKey for playbooks. */
+  idempotencyPrefix?: string | null;
 }
 
 /**
@@ -48,6 +51,12 @@ export async function fanOutSchedule(
       const definition = await agentPort.getById(schedule.agentDefinitionId);
       if (!definition) return null;
 
+      const payload = buildScheduledAgentTaskPayload({
+        agentName: definition.name,
+        scheduleId: schedule.id,
+        idempotencyPrefix: schedule.idempotencyPrefix,
+      });
+
       const task = await spawnTask(
         {
           tasks: getTaskPort(schedule.teamspaceId, accountId),
@@ -55,20 +64,12 @@ export async function fanOutSchedule(
         },
         schedule.teamspaceId,
         {
-          title: `Scheduled run: ${definition.name}`,
+          title: payload.title,
           agentDefinitionId: definition.id,
           status: "ready",
           executorType: "Agent",
-          idempotencyKey: `schedule:${schedule.id}:${new Date().toISOString().slice(0, 10)}`,
-          context: {
-            executionDirective: {
-              goal: `Execute scheduled agent ${definition.name}`,
-              background: "Triggered by schedule fan-out",
-              steps: ["Load agent playbook", "Execute task", "Report completion"],
-              constraints: [],
-              contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
-            },
-          },
+          idempotencyKey: payload.idempotencyKey,
+          context: payload.context,
           acceptanceCriteria: [
             { description: "Scheduled agent run completed" },
           ],
@@ -118,6 +119,7 @@ export async function loadScheduleWithDefinition(
       accountId: schema.schedules.accountId,
       agentDefinitionId: schema.schedules.agentDefinitionId,
       targetType: schema.schedules.targetType,
+      idempotencyPrefix: schema.schedules.idempotencyPrefix,
     })
     .from(schema.schedules)
     .where(eq(schema.schedules.id, scheduleId))

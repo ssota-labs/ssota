@@ -19,6 +19,7 @@ Dispatch only to these `agentDefinitionId`s (also in `runPolicy.linkedWorkerAgen
 | Planning | `a1000000-0000-4000-8000-000000000002` |
 | Delivery | `a1000000-0000-4000-8000-000000000003` |
 | QA | `a1000000-0000-4000-8000-000000000004` |
+| Design | `a1000000-0000-4000-8000-000000000006` |
 
 ## Daily cadence steps
 

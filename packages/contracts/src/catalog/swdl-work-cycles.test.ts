@@ -59,7 +59,7 @@ const edgeSeedByKey = new Map(edgeSeeds.map((edge) => [edge.key, edge]));
  * 붙지 않는다. 여기 나열되지 않은 정책은 반드시 gate 노드 1개 이상이 참조해야 한다.
  */
 const EFFECT_ONLY_POLICY_KEYS = new Set([
-  "swdl.feature-approved-onpass-dor",
+  // Feature → approved DoR spawn is wired to Cycle C `g-feature`.
   "swdl.pr-approved-onpass-launch",
 ]);
 

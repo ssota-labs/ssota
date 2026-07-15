@@ -60,9 +60,9 @@
           {
             "id": "g-okr",
             "kind": "gate",
-            "label": "경영 승인 (OKR/로드맵)",
+            "label": "Objective 승인 후 KR active",
             "owner": "human",
-            "catalogKeys": ["objective", "product_roadmap"],
+            "catalogKeys": ["objective", "key_result"],
             "gatePolicyKey": "swdl.objective-approved-before-kr-active"
           },
           {
@@ -206,8 +206,8 @@
             "kind": "gate",
             "label": "Feature 승인",
             "owner": "human",
-            "catalogKeys": ["feature", "user_story"],
-            "gatePolicyKey": "swdl.feature-approved-before-story-ready"
+            "catalogKeys": ["feature"],
+            "gatePolicyKey": "swdl.feature-approved-onpass-dor"
           },
           {
             "id": "s-stories",
@@ -215,6 +215,14 @@
             "label": "스토리 정제·견적 (DoR)",
             "owner": "delivery",
             "catalogKeys": ["user_story"]
+          },
+          {
+            "id": "g-story-ready",
+            "kind": "gate",
+            "label": "Story ready (Feature 승인 필수)",
+            "owner": "human",
+            "catalogKeys": ["user_story", "feature"],
+            "gatePolicyKey": "swdl.feature-approved-before-story-ready"
           },
           {
             "id": "e-ready",
@@ -231,7 +239,9 @@
           { "id": "e5", "source": "s-features", "target": "g-feature", "kind": "sequence" },
           { "id": "e6", "source": "g-feature", "target": "s-stories", "kind": "sequence", "label": "approved" },
           { "id": "e7", "source": "g-feature", "target": "s-features", "kind": "reject_loop", "label": "rejected" },
-          { "id": "e8", "source": "s-stories", "target": "e-ready", "kind": "sequence", "label": "ready" }
+          { "id": "e8", "source": "s-stories", "target": "g-story-ready", "kind": "sequence" },
+          { "id": "e9", "source": "g-story-ready", "target": "e-ready", "kind": "sequence", "label": "ready" },
+          { "id": "e10", "source": "g-story-ready", "target": "s-stories", "kind": "reject_loop", "label": "feature 미승인" }
         ]
       }
     }
@@ -307,11 +317,27 @@
             "catalogKeys": ["pull_request"]
           },
           {
+            "id": "g-qa-ready",
+            "kind": "gate",
+            "label": "PR approved → QA 진입",
+            "owner": "orchestrator",
+            "catalogKeys": ["pull_request", "test_plan"],
+            "gatePolicyKey": "swdl.pr-approved-before-test-plan"
+          },
+          {
             "id": "s-qa",
             "kind": "stage",
             "label": "QA 검증",
             "owner": "qa",
             "catalogKeys": ["test_plan"]
+          },
+          {
+            "id": "g-merge",
+            "kind": "gate",
+            "label": "test_plan pass → merge",
+            "owner": "orchestrator",
+            "catalogKeys": ["pull_request", "test_plan"],
+            "gatePolicyKey": "swdl.test-pass-before-pr-merged"
           },
           {
             "id": "e-merge",
@@ -328,9 +354,11 @@
           { "id": "e5", "source": "g-task", "target": "s-plan", "kind": "reject_loop", "label": "PRD 미승인" },
           { "id": "e6", "source": "s-build", "target": "s-review", "kind": "sequence" },
           { "id": "e7", "source": "s-review", "target": "s-build", "kind": "reject_loop", "label": "changes requested" },
-          { "id": "e8", "source": "s-review", "target": "s-qa", "kind": "sequence", "label": "approved" },
-          { "id": "e9", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
-          { "id": "e10", "source": "s-qa", "target": "e-merge", "kind": "sequence", "label": "pass" }
+          { "id": "e8", "source": "s-review", "target": "g-qa-ready", "kind": "sequence", "label": "approved" },
+          { "id": "e9", "source": "g-qa-ready", "target": "s-qa", "kind": "sequence" },
+          { "id": "e10", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
+          { "id": "e11", "source": "s-qa", "target": "g-merge", "kind": "sequence", "label": "pass" },
+          { "id": "e12", "source": "g-merge", "target": "e-merge", "kind": "sequence", "label": "merged" }
         ]
       }
     }
@@ -476,7 +504,8 @@
             "kind": "gate",
             "label": "디자인 리뷰 (crit)",
             "owner": "human",
-            "catalogKeys": ["page_wireframe", "ui_component"]
+            "catalogKeys": ["page_wireframe", "ui_component"],
+            "gatePolicyKey": "swdl.page-wireframe-crit-approved"
           },
           {
             "id": "s-ds",
@@ -525,7 +554,9 @@
       "suggestedPageKeys": [
         "development/api-snapshots",
         "development/data-model",
-        "development/system-model"
+        "development/system-model",
+        "development/api-reference",
+        "development/integration"
       ],
       "topology": {
         "nodes": [

@@ -88,7 +88,7 @@ describe("gate_policy / work_cycle schemas", () => {
     // onPass 효과 전용 정책은 토폴로지 gate 노드에 붙지 않는다
     // (SSOT 목록·사유: swdl-work-cycles.test.ts의 EFFECT_ONLY_POLICY_KEYS).
     const effectOnlyPolicyKeys = new Set([
-      "swdl.feature-approved-onpass-dor",
+      // Feature → approved DoR spawn is wired to Cycle C `g-feature`.
       "swdl.pr-approved-onpass-launch",
     ]);
     const policyKeys = new Set(

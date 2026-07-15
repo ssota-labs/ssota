@@ -28,6 +28,9 @@
 | `swdl.feature-approved-onpass-dor` | feature → approved auto-spawns Delivery story-DoR task |
 | `swdl.pr-approved-onpass-launch` | PR → approved auto-spawns Planning launch-plan task |
 | `swdl.feature-approved-before-story-ready` | story ready requires approved parent feature (reads `in:spawns_story[feature]`) |
+| `swdl.pr-approved-before-test-plan` | test_plan → `in_progress`/`pass` requires linked PR `approved` (`out:verifies`) |
+| `swdl.test-pass-before-pr-merged` | PR → `merged` requires linked test_plan `pass` (`in:verifies`) |
+| `swdl.page-wireframe-crit-approved` | page_wireframe → `approved` requires `for_initiative` link (Cycle F `g-crit`) |
 | `swdl.objective-approved-before-kr-active` | key result active requires approved objective (Cycle A `g-okr`, traverses `contributes_to`) |
 | `swdl.launch-approved-before-release` | release status → `shipped` requires approved launch_plan (Cycle E `g-launch`; the release node exists as `planned` from the initiative bundle) |
 
