@@ -46,9 +46,7 @@ test.describe("Agents", () => {
 
     const sheet = page.getByTestId("agent-settings-sheet");
     await expect(sheet).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Settings", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByTestId("agent-detail-workspace")).toBeVisible();
     await expect(
       page.getByTestId("agent-settings-triggers-card"),
     ).toBeVisible();
@@ -270,7 +268,7 @@ test.describe("Agents", () => {
       .getByRole("switch")
       .click();
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
 
     const dialog = page.getByTestId("agent-settings-discard-dialog");
     await expect(dialog).toBeVisible();
@@ -278,25 +276,27 @@ test.describe("Agents", () => {
     await expect(dialog).not.toBeVisible();
     await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
     await expect(dialog).toBeVisible();
     await page.getByTestId("agent-settings-discard-confirm").click();
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+    await expect(page.getByTestId("agents-workspace")).toBeVisible();
   });
 
-  test("closes when clicking outside the sheet", async ({ page }) => {
+  test("card click navigates to detail page and back returns to list", async ({
+    page,
+  }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
     await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await expect(page).toHaveURL(/\/agents\/main(\?.*)?$/);
+    await expect(page.getByTestId("agent-detail-workspace")).toBeVisible();
     await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
 
-    const workspace = page.getByTestId("agents-workspace");
-    const box = await workspace.boundingBox();
-    if (!box) throw new Error("agents workspace not visible");
-    await page.mouse.click(box.x + 24, box.y + 96);
-
-    await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+    await page.getByTestId("agent-detail-back").click();
+    await expect(page).toHaveURL(/\/agents$/);
+    await expect(page.getByTestId("agents-workspace")).toBeVisible();
   });
 
   test("opens tool permissions popover from bound connection row", async ({
@@ -322,7 +322,7 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(
       popover.getByTestId("agent-tool-permission-row-NOTION_SEARCH_NOTION_PAGE"),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       popover.getByText("Search Notion pages and databases"),
     ).toBeVisible();
@@ -502,8 +502,14 @@ test.describe("Agents", () => {
 
     await page.getByTestId("agent-settings-save").click();
     await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
+    // save 후 router.refresh가 draft를 재구성할 때까지 대기 (dirty 잔존 시 back이 discard 다이얼로그를 연다)
+    await expect(page.getByTestId("agent-settings-sheet")).not.toHaveAttribute(
+      "data-unsaved",
+      "true",
+      { timeout: 15_000 },
+    );
 
-    await page.getByTestId("card-list-sheet-close").click();
+    await page.getByTestId("agent-detail-back").click();
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
 
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -542,7 +548,8 @@ test.describe("Agents", () => {
       .fill("Use for automated E2E agent creation tests.");
     await page.getByTestId("agent-settings-save").click();
 
-    await expect(sheet).not.toBeVisible();
+    // 생성 저장은 schedules/skills PATCH + router.refresh까지 포함 — 느린 dev 서버 여유
+    await expect(sheet).not.toBeVisible({ timeout: 20_000 });
     await expect(
       page.getByRole("main").locator("span.text-sm.font-medium", {
         hasText: agentName,

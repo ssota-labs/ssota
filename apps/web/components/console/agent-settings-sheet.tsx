@@ -178,6 +178,8 @@ function BoundConnectionToolPermissionsControl({
 type AgentSettingsSheetProps = {
   definition: AgentDefinition;
   mode?: "create" | "edit";
+  /** panel = docked CardListSheet(기본), page = 에이전트 디테일 페이지 설정 탭. */
+  presentation?: "panel" | "page";
   settingsTarget?: "main" | "agent";
   teamspaceId: string;
   accountId: string;
@@ -248,6 +250,7 @@ function buildDraft(
 export function AgentSettingsSheet({
   definition,
   mode = "edit",
+  presentation = "panel",
   settingsTarget = "agent",
   teamspaceId,
   accountId,
@@ -603,38 +606,38 @@ export function AgentSettingsSheet({
           updatedAt: new Date().toISOString(),
         });
       }
-      onClose();
+      // 페이지 프레젠테이션(디테일 페이지 설정 탭)은 저장 후 제자리 유지.
+      // onClose가 unsaved 가드를 경유하므로, refresh 전 dirty 상태에서 호출하면
+      // 저장 직후 discard 다이얼로그가 뜬다.
+      if (presentation !== "page") {
+        onClose();
+      }
     });
   };
 
-  return (
-    <>
-      <CardListSheetPanel
-        title={mode === "create" ? "Create agent" : "Settings"}
-        subtitle={draft.name.trim() || (mode === "create" ? "New agent" : definition.name)}
-        onClose={handleClose}
-        headerAction={
-          <Button
-            type="button"
-            size="sm"
-            variant={canSave ? "default" : "secondary"}
-            disabled={isPending || !canSave}
-            onClick={handleSave}
-            data-testid="agent-settings-save"
-            aria-disabled={isPending || !canSave}
-          >
-            {isPending
-              ? mode === "create"
-                ? "Creating…"
-                : "Saving…"
-              : mode === "create"
-                ? "Create agent"
-                : isDirty
-                  ? "Save changes"
-                  : "Saved"}
-          </Button>
-        }
-      >
+  const saveButton = (
+    <Button
+      type="button"
+      size="sm"
+      variant={canSave ? "default" : "secondary"}
+      disabled={isPending || !canSave}
+      onClick={handleSave}
+      data-testid="agent-settings-save"
+      aria-disabled={isPending || !canSave}
+    >
+      {isPending
+        ? mode === "create"
+          ? "Creating…"
+          : "Saving…"
+        : mode === "create"
+          ? "Create agent"
+          : isDirty
+            ? "Save changes"
+            : "Saved"}
+    </Button>
+  );
+
+  const settingsBody = (
         <div
           className="space-y-3"
           data-testid="agent-settings-sheet"
@@ -992,7 +995,27 @@ export function AgentSettingsSheet({
             </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
         </div>
-      </CardListSheetPanel>
+  );
+
+  return (
+    <>
+      {presentation === "page" ? (
+        <div className="space-y-3" data-testid="agent-settings-page">
+          <div className="flex items-center justify-end">{saveButton}</div>
+          {settingsBody}
+        </div>
+      ) : (
+        <CardListSheetPanel
+          title={mode === "create" ? "Create agent" : "Settings"}
+          subtitle={
+            draft.name.trim() || (mode === "create" ? "New agent" : definition.name)
+          }
+          onClose={handleClose}
+          headerAction={saveButton}
+        >
+          {settingsBody}
+        </CardListSheetPanel>
+      )}
 
       <Popover
         open={editingScheduleId !== null}

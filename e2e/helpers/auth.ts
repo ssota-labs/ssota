@@ -27,8 +27,9 @@ export async function loginAsSmoke(
     return;
   }
 
+  // dev 서버 콜드 컴파일·부하 스파이크에서 overview 첫 렌더가 15s를 넘길 수 있다
   await expect(page.getByText("Open tasks")).toBeVisible({
-    timeout: 15_000,
+    timeout: 30_000,
   });
 }
 

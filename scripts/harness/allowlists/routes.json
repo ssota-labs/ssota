@@ -5,6 +5,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/agents/[agentId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "에이전트 디테일(설정/로그 탭) 운영 콘솔 화면 — agents/page.tsx와 동일 패턴의 인프라 라우트, 도메인 그래프 페이지 아님"
+  },
+  {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
