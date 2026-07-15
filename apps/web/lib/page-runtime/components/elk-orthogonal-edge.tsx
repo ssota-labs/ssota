@@ -5,11 +5,16 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getSmoothStepPath,
+  Position,
   type EdgeProps,
 } from "@xyflow/react";
 
 export type ElkOrthogonalEdgeData = {
-  /** Absolute flow coords from ELK sections (same space as node positions). */
+  /**
+   * Optional ELK/synthetic waypoints. Endpoints are always overridden with
+   * React Flow handle coords (`sourceX/Y`, `targetX/Y`) so the stroke meets
+   * the visible Left/Right/Bottom handle dots.
+   */
   points?: Array<{ x: number; y: number }>;
   kind?: string;
   label?: string;
@@ -30,11 +35,57 @@ function pointsToPath(points: Array<{ x: number; y: number }>): string {
 function midpoint(points: Array<{ x: number; y: number }>): { x: number; y: number } {
   if (points.length === 0) return { x: 0, y: 0 };
   if (points.length === 1) return points[0]!;
-  // Prefer the middle segment midpoint so labels sit on the long run, not a corner.
   const mid = Math.floor((points.length - 1) / 2);
   const a = points[mid]!;
   const b = points[mid + 1] ?? a;
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+/** Both ends leave downward (feedback / reject_loop under the row). */
+function isDownwardFeedback(
+  sourcePosition: Position,
+  targetPosition: Position,
+  points: Array<{ x: number; y: number }> | undefined,
+  sourceY: number,
+  targetY: number,
+): boolean {
+  if (sourcePosition === Position.Bottom && targetPosition === Position.Bottom) {
+    return true;
+  }
+  if (!points || points.length < 3) return false;
+  const maxY = Math.max(...points.map((p) => p.y));
+  return maxY > sourceY + 8 && maxY > targetY + 8;
+}
+
+/**
+ * Build an orthogonal path that starts/ends exactly on RF handle coordinates.
+ */
+function pathAttachedToHandles(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  sourcePosition: Position,
+  targetPosition: Position,
+  points: Array<{ x: number; y: number }> | undefined,
+): Array<{ x: number; y: number }> {
+  const sh = { x: sourceX, y: sourceY };
+  const th = { x: targetX, y: targetY };
+
+  if (isDownwardFeedback(sourcePosition, targetPosition, points, sourceY, targetY)) {
+    const laneFromPoints = points
+      ? Math.max(...points.map((p) => p.y))
+      : Math.max(sourceY, targetY) + 28;
+    const laneY = Math.max(laneFromPoints, sourceY + 24, targetY + 24);
+    return [sh, { x: sourceX, y: laneY }, { x: targetX, y: laneY }, th];
+  }
+
+  if (Math.abs(sourceY - targetY) < 1) {
+    return [sh, th];
+  }
+
+  const midX = (sourceX + targetX) / 2;
+  return [sh, { x: midX, y: sourceY }, { x: midX, y: targetY }, th];
 }
 
 function ElkOrthogonalEdgeComponent({
@@ -52,7 +103,6 @@ function ElkOrthogonalEdgeComponent({
   label: edgeLabel,
 }: EdgeProps) {
   const d = (data ?? {}) as ElkOrthogonalEdgeData;
-  const points = d.points;
   const label = d.label ?? (typeof edgeLabel === "string" ? edgeLabel : undefined);
   const kind = d.kind ?? "";
 
@@ -66,10 +116,19 @@ function ElkOrthogonalEdgeComponent({
     borderRadius: 12,
   });
 
-  const useElk = Boolean(points && points.length >= 2);
-  const edgePath = useElk ? pointsToPath(points!) : fallbackPath;
-  const labelPos = useElk
-    ? midpoint(points!)
+  const attached = pathAttachedToHandles(
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+    d.points,
+  );
+  const useAttached = Number.isFinite(sourceX) && Number.isFinite(targetX);
+  const edgePath = useAttached ? pointsToPath(attached) : fallbackPath;
+  const labelPos = useAttached
+    ? midpoint(attached)
     : { x: fallbackLabelX, y: fallbackLabelY };
 
   const stroke =
@@ -91,7 +150,6 @@ function ElkOrthogonalEdgeComponent({
           strokeDasharray: dash,
         }}
       />
-      {/* Invisible hit area */}
       <path d={edgePath} fill="none" stroke="transparent" strokeWidth={16} />
       {label ? (
         <EdgeLabelRenderer>

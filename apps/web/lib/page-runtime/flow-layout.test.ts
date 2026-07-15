@@ -4,7 +4,7 @@ import {
   hasExplicitCoords,
   layoutFlow,
   layoutFlowWithEdges,
-  redistributeSidePortsWithinNodes,
+  snapRoutesToNodeHandles,
   synthesizeFeedbackRoutes,
 } from "./flow-layout";
 
@@ -89,7 +89,7 @@ describe("flow-layout", () => {
     expect(edges.map((e) => e.id).toSorted()).toEqual(["a-b", "b-c"]);
   });
 
-  it("keeps side-port attachments inside node height", () => {
+  it("snaps side-port attachments to handle centers", () => {
     const nodes = [
       { id: "a", x: 0, y: 100, width: 100, height: 40 },
       { id: "b", x: 200, y: 100, width: 100, height: 40 },
@@ -97,15 +97,13 @@ describe("flow-layout", () => {
     const edges = [
       { id: "e1", source: "a", target: "b" },
       { id: "e2", source: "a", target: "b" },
-      { id: "e3", source: "a", target: "b" },
     ];
-    // ELK-like stubs that spill past the card top/bottom.
+    // ELK-like stubs that miss the RF handle (side center).
     const routes = [
       {
         id: "e1",
         points: [
           { x: 100, y: 80 },
-          { x: 150, y: 80 },
           { x: 150, y: 80 },
           { x: 200, y: 80 },
         ],
@@ -113,33 +111,17 @@ describe("flow-layout", () => {
       {
         id: "e2",
         points: [
-          { x: 100, y: 120 },
-          { x: 150, y: 120 },
-          { x: 150, y: 120 },
-          { x: 200, y: 120 },
-        ],
-      },
-      {
-        id: "e3",
-        points: [
           { x: 100, y: 160 },
-          { x: 150, y: 160 },
           { x: 150, y: 160 },
           { x: 200, y: 160 },
         ],
       },
     ];
-    const clamped = redistributeSidePortsWithinNodes(nodes, edges, routes, 8);
-    for (const r of clamped) {
-      const startY = r.points[0]!.y;
-      const endY = r.points[r.points.length - 1]!.y;
-      expect(startY).toBeGreaterThanOrEqual(108);
-      expect(startY).toBeLessThanOrEqual(132);
-      expect(endY).toBeGreaterThanOrEqual(108);
-      expect(endY).toBeLessThanOrEqual(132);
+    const snapped = snapRoutesToNodeHandles(nodes, edges, routes);
+    for (const r of snapped) {
+      expect(r.points[0]).toEqual({ x: 100, y: 120 });
+      expect(r.points[r.points.length - 1]).toEqual({ x: 200, y: 120 });
     }
-    const startYs = clamped.map((r) => r.points[0]!.y).toSorted((a, b) => a - b);
-    expect(startYs[0]).toBeLessThan(startYs[2]!);
   });
 
   it("synthesizes non-overlapping feedback lanes below nodes", () => {
