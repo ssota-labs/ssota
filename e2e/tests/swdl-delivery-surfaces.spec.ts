@@ -42,7 +42,7 @@ test.describe("SWDL delivery surfaces", () => {
     const pageId = await getSmokePageIdBySlug("development/pull-requests");
     await gotoProject(page, `p/${pageId}`);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/${pageId}`));
-    await expect(page.getByText("PR inbox", { exact: true })).toBeVisible({
+    await expect(page.getByText("리뷰 인박스").first()).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText("Pull requests").first()).toBeVisible();
