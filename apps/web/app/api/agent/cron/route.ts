@@ -73,6 +73,7 @@ export async function GET(request: Request) {
       accountId: schedule.accountId,
       agentDefinitionId: schedule.agentDefinitionId,
       targetType: schedule.targetType,
+      idempotencyPrefix: schedule.idempotencyPrefix,
     });
     if (runHandle) started.push(runHandle);
   }
