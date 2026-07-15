@@ -298,3 +298,52 @@ export async function layoutFlowWithEdges(
   }
   return { positions, edges: routed };
 }
+
+export type FeedbackRouteNode = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/**
+ * Orthogonal feedback corridors under already-placed nodes.
+ * ELK INTERACTIVE re-ranks when cycles are present, so back-edges are routed
+ * here instead: each edge gets its own lane below `baseY` (or the nodes' max
+ * bottom if omitted).
+ */
+export function synthesizeFeedbackRoutes(
+  nodesById: Map<string, FeedbackRouteNode>,
+  edges: Array<{ id: string; source: string; target: string }>,
+  options?: { baseY?: number; laneGap?: number; pad?: number },
+): RoutedEdge[] {
+  const laneGap = options?.laneGap ?? 20;
+  const pad = options?.pad ?? 28;
+  let maxBottom = 0;
+  for (const n of nodesById.values()) {
+    maxBottom = Math.max(maxBottom, n.y + n.height);
+  }
+  const baseY = options?.baseY ?? maxBottom + pad;
+  const routed: RoutedEdge[] = [];
+  edges.forEach((e, i) => {
+    const s = nodesById.get(e.source);
+    const t = nodesById.get(e.target);
+    if (!s || !t) return;
+    const sx = s.x + s.width / 2;
+    const sy = s.y + s.height;
+    const tx = t.x + t.width / 2;
+    const ty = t.y + t.height;
+    const laneY = baseY + i * laneGap;
+    routed.push({
+      id: e.id,
+      points: [
+        { x: sx, y: sy },
+        { x: sx, y: laneY },
+        { x: tx, y: laneY },
+        { x: tx, y: ty },
+      ],
+    });
+  });
+  return routed;
+}

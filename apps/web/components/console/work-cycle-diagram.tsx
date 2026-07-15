@@ -23,6 +23,7 @@ import {
 import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/components/flow-toolbar";
 import {
   layoutFlowWithEdges,
+  synthesizeFeedbackRoutes,
   type RoutedEdge,
 } from "@/lib/page-runtime/flow-layout";
 import {
@@ -292,8 +293,9 @@ function edgeStrokeStyle(kind: string): React.CSSProperties | undefined {
 /**
  * Work-cycle map as React Flow Sub Flows: topology steps nest inside an
  * expanded cycle group via `parentId` + relative positions.
- * Edge paths come from ELK orthogonal routing (`layoutFlowWithEdges`) so
- * corridors avoid each other instead of RF smoothstep defaults.
+ * Edge paths: forward handoffs/sequence use ELK orthogonal sections
+ * (`layoutFlowWithEdges`); feedback/reject_loop use stacked lanes under the
+ * nodes (`synthesizeFeedbackRoutes`) so cycles don't scramble LR ranks.
  * @see https://reactflow.dev/learn/layouting/sub-flows
  */
 export function WorkCycleDiagram({
@@ -352,34 +354,47 @@ export function WorkCycleDiagram({
       >();
 
       for (const nest of model.nestedLayouts) {
-        // Include reject_loop edges so ELK routes them orthogonally (not only
-        // forward sequence edges used for layering in buildSubflowModel).
-        const nestEdges = model.edges
-          .filter((e) => e.id.startsWith(`${nest.cycleKey}::`))
-          .map((e) => ({
-            id: e.id,
-            source: e.source,
-            target: e.target,
-          }));
+        // Forward-only ELK orthogonal: placement + routes stay in one coordinate space.
+        const nestNodes = nest.nodes.map((n) => ({
+          id: n.id,
+          title: n.id,
+          width: n.width,
+          height: n.height,
+        }));
         const laid = await layoutFlowWithEdges(
-          {
-            nodes: nest.nodes.map((n) => ({
-              id: n.id,
-              title: n.id,
-              width: n.width,
-              height: n.height,
-            })),
-            edges: nestEdges,
-          },
+          { nodes: nestNodes, edges: nest.edges },
           "LR",
           NESTED_LAYOUT_SPACING,
         );
+        const nestNodeMap = new Map(
+          nest.nodes.map((n) => [
+            n.id,
+            {
+              id: n.id,
+              width: n.width,
+              height: n.height,
+              x: laid.positions[n.id]?.x ?? 0,
+              y: laid.positions[n.id]?.y ?? 0,
+            },
+          ]),
+        );
+        const backNestEdges = model.edges
+          .filter((e) => e.id.startsWith(`${nest.cycleKey}::`) && e.backward)
+          .map((e) => ({ id: e.id, source: e.source, target: e.target }));
+        const feedback = synthesizeFeedbackRoutes(nestNodeMap, backNestEdges);
+        const nestRoutes = [...laid.edges, ...feedback];
+
         let maxX = 0;
         let maxY = 0;
         for (const n of nest.nodes) {
           const p = laid.positions[n.id] ?? { x: 0, y: 0 };
           maxX = Math.max(maxX, p.x + n.width);
           maxY = Math.max(maxY, p.y + n.height);
+        }
+        if (feedback.length > 0) {
+          for (const r of feedback) {
+            for (const p of r.points) maxY = Math.max(maxY, p.y);
+          }
         }
         const offsetPositions: Record<string, { x: number; y: number }> = {};
         for (const [id, p] of Object.entries(laid.positions)) {
@@ -398,8 +413,7 @@ export function WorkCycleDiagram({
               SUBFLOW_PAD * 2 +
               (nest.hasBackEdges ? SUBFLOW_LOOP_PAD : 0),
           ),
-          // Keep routes in ELK-local space; apply pad + parent abs later.
-          routes: laid.edges,
+          routes: nestRoutes,
         });
       }
 
@@ -416,21 +430,37 @@ export function WorkCycleDiagram({
         };
       });
 
-      // Outer pass includes forward + back handoffs — ELK orthogonal routing
-      // separates feedback corridors instead of RF smoothstep stacking them.
-      const outerEdges = model.edges
-        .filter((e) => !e.id.includes("::"))
+      // Outer forward handoffs → ELK orthogonal; back handoffs → stacked lanes below.
+      const outerForward = model.edges
+        .filter((e) => !e.id.includes("::") && !e.backward)
         .map((e) => ({ id: e.id, source: e.source, target: e.target }));
       const outer = await layoutFlowWithEdges(
-        { nodes: topWithSize, edges: outerEdges },
+        { nodes: topWithSize, edges: outerForward },
         "LR",
         OUTER_LAYOUT_SPACING,
       );
+      const outerNodeMap = new Map(
+        topWithSize.map((n) => [
+          n.id,
+          {
+            id: n.id,
+            width: n.width,
+            height: n.height,
+            x: outer.positions[n.id]?.x ?? 0,
+            y: outer.positions[n.id]?.y ?? 0,
+          },
+        ]),
+      );
+      const outerBack = model.edges
+        .filter((e) => !e.id.includes("::") && e.backward)
+        .map((e) => ({ id: e.id, source: e.source, target: e.target }));
+      const outerFeedback = synthesizeFeedbackRoutes(outerNodeMap, outerBack);
+      const outerRoutes = [...outer.edges, ...outerFeedback];
 
       if (cancelled) return;
 
       const routeById = new Map<string, RoutedEdge>();
-      for (const r of outer.edges) routeById.set(r.id, r);
+      for (const r of outerRoutes) routeById.set(r.id, r);
 
       for (const [cycleKey, nest] of nestedLayouts) {
         const parentPos = outer.positions[cycleKey] ?? { x: 0, y: 0 };
@@ -487,10 +517,13 @@ export function WorkCycleDiagram({
             kind: e.kind,
             label: e.label,
           };
+          const loop = e.backward === true;
           return {
             id: e.id,
             source: e.source,
             target: e.target,
+            sourceHandle: loop ? "loop" : undefined,
+            targetHandle: loop ? "loop" : undefined,
             type: "elkOrthogonal",
             data,
             label: e.label,

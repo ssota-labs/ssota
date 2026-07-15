@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { coerceFlow } from "./flow-model";
-import { hasExplicitCoords, layoutFlow, layoutFlowWithEdges } from "./flow-layout";
+import { hasExplicitCoords, layoutFlow, layoutFlowWithEdges, synthesizeFeedbackRoutes } from "./flow-layout";
 
 describe("flow-layout", () => {
   it("returns persisted coordinates as-is when all nodes have them", async () => {
@@ -70,18 +70,30 @@ describe("flow-layout", () => {
       edges: [
         { id: "a-b", source: "a", target: "b" },
         { id: "b-c", source: "b", target: "c" },
-        // feedback — ELK should still emit a route section
-        { id: "c-a", source: "c", target: "a" },
       ],
     });
     const { positions, edges } = await layoutFlowWithEdges(model, "LR");
     expect(positions.b!.x).toBeGreaterThan(positions.a!.x);
-    expect(edges.length).toBeGreaterThanOrEqual(2);
+    expect(edges.length).toBe(2);
     for (const e of edges) {
       expect(e.points.length).toBeGreaterThanOrEqual(2);
+      // Routes share the same coordinate space as node positions.
+      expect(e.points[0]!.x).toBeGreaterThanOrEqual(positions.a!.x);
     }
-    const ids = edges.map((e) => e.id).toSorted();
-    expect(ids).toContain("a-b");
-    expect(ids).toContain("b-c");
+    expect(edges.map((e) => e.id).toSorted()).toEqual(["a-b", "b-c"]);
+  });
+
+  it("synthesizes non-overlapping feedback lanes below nodes", () => {
+    const nodes = new Map([
+      ["a", { id: "a", x: 0, y: 0, width: 100, height: 40 }],
+      ["b", { id: "b", x: 200, y: 0, width: 100, height: 40 }],
+    ]);
+    const routes = synthesizeFeedbackRoutes(nodes, [
+      { id: "b-a", source: "b", target: "a" },
+      { id: "b-a-2", source: "b", target: "a" },
+    ]);
+    expect(routes).toHaveLength(2);
+    expect(routes[0]!.points).toHaveLength(4);
+    expect(routes[1]!.points[1]!.y).toBeGreaterThan(routes[0]!.points[1]!.y);
   });
 });
