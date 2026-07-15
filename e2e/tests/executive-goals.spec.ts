@@ -153,4 +153,20 @@ test.describe("Executive goals", () => {
       "page",
     );
   });
+
+  test("page frame scrolls to KPI charts below the fold", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "Objectives" })).toBeVisible({
+      timeout: 15_000,
+    });
+    const charts = page.getByTestId("chart-line");
+    await expect(charts.first()).toBeAttached();
+
+    // KPI charts sit below Objectives — must be reachable via page scroll
+    // (fillHeight+Tabs flex lock previously clipped this without overflow-y-auto).
+    await charts.first().scrollIntoViewIfNeeded();
+    await expect(charts.first()).toBeInViewport();
+    await expect(
+      charts.filter({ hasText: "Workspace creation rate" }),
+    ).toBeInViewport();
+  });
 });
