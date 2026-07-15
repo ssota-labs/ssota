@@ -296,7 +296,21 @@ export async function layoutFlowWithEdges(
     const route = collectElkEdgePoints(edge);
     if (route) routed.push(route);
   }
-  return { positions, edges: routed };
+
+  const sized = model.nodes.map((n) => {
+    const { width, height } = nodeSize(n);
+    const p = positions[n.id] ?? { x: 0, y: 0 };
+    return { id: n.id, x: p.x, y: p.y, width, height };
+  });
+  const edgeEnds = model.edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+  }));
+  return {
+    positions,
+    edges: redistributeSidePortsWithinNodes(sized, edgeEnds, routed),
+  };
 }
 
 export type FeedbackRouteNode = {
@@ -306,6 +320,144 @@ export type FeedbackRouteNode = {
   width: number;
   height: number;
 };
+
+const PORT_SIDE_TOLERANCE = 2;
+
+type Side = "west" | "east" | "north" | "south";
+
+function sideOfPoint(
+  node: FeedbackRouteNode,
+  point: { x: number; y: number },
+): Side | null {
+  const left = node.x;
+  const right = node.x + node.width;
+  const top = node.y;
+  const bottom = node.y + node.height;
+  const onWest = Math.abs(point.x - left) <= PORT_SIDE_TOLERANCE;
+  const onEast = Math.abs(point.x - right) <= PORT_SIDE_TOLERANCE;
+  const onNorth = Math.abs(point.y - top) <= PORT_SIDE_TOLERANCE;
+  const onSouth = Math.abs(point.y - bottom) <= PORT_SIDE_TOLERANCE;
+  // Prefer LR sides for LR layouts — corners count as west/east.
+  if (onWest) return "west";
+  if (onEast) return "east";
+  if (onNorth) return "north";
+  if (onSouth) return "south";
+  return null;
+}
+
+/** Shift an endpoint Y and drag the collinear horizontal stub with it. */
+function setEndpointY(
+  points: Array<{ x: number; y: number }>,
+  endIndex: 0 | "last",
+  newY: number,
+): void {
+  const idx = endIndex === 0 ? 0 : points.length - 1;
+  const pt = points[idx];
+  if (!pt) return;
+  const oldY = pt.y;
+  if (Math.abs(oldY - newY) < 0.01) return;
+  points[idx] = { x: pt.x, y: newY };
+  if (endIndex === 0) {
+    for (let i = 1; i < points.length; i++) {
+      const cur = points[i]!;
+      const prev = points[i - 1]!;
+      if (Math.abs(cur.y - oldY) > 0.5) break;
+      // Stay on the horizontal run leaving the node.
+      if (Math.abs(cur.x - prev.x) < 0.5) break;
+      points[i] = { x: cur.x, y: newY };
+    }
+  } else {
+    for (let i = points.length - 2; i >= 0; i--) {
+      const cur = points[i]!;
+      const next = points[i + 1]!;
+      if (Math.abs(cur.y - oldY) > 0.5) break;
+      if (Math.abs(cur.x - next.x) < 0.5) break;
+      points[i] = { x: cur.x, y: newY };
+    }
+  }
+}
+
+/**
+ * ELK spreads ports along a side (나열) — keep that ordering, but force every
+ * attachment Y into `[node.y+inset, node.y+height-inset]` so stubs never poke
+ * past the card. Multiple ports on one side are re-spaced evenly inside that band.
+ */
+export function redistributeSidePortsWithinNodes(
+  nodes: FeedbackRouteNode[],
+  edges: Array<{ id: string; source: string; target: string }>,
+  routes: RoutedEdge[],
+  inset: number = 10,
+): RoutedEdge[] {
+  if (routes.length === 0) return routes;
+  const nodesById = new Map(nodes.map((n) => [n.id, n]));
+  const routeById = new Map(
+    routes.map((r) => [r.id, { id: r.id, points: r.points.map((p) => ({ ...p })) }]),
+  );
+
+  type PortRef = {
+    edgeId: string;
+    end: 0 | "last";
+    y: number;
+  };
+
+  const buckets = new Map<string, PortRef[]>();
+  const bucketKey = (nodeId: string, side: Side) => `${nodeId}::${side}`;
+
+  for (const e of edges) {
+    const route = routeById.get(e.id);
+    if (!route || route.points.length < 2) continue;
+    const start = route.points[0]!;
+    const end = route.points[route.points.length - 1]!;
+    const source = nodesById.get(e.source);
+    const target = nodesById.get(e.target);
+    if (source) {
+      const side = sideOfPoint(source, start);
+      if (side === "west" || side === "east") {
+        const key = bucketKey(e.source, side);
+        const list = buckets.get(key) ?? [];
+        list.push({ edgeId: e.id, end: 0, y: start.y });
+        buckets.set(key, list);
+      }
+    }
+    if (target) {
+      const side = sideOfPoint(target, end);
+      if (side === "west" || side === "east") {
+        const key = bucketKey(e.target, side);
+        const list = buckets.get(key) ?? [];
+        list.push({ edgeId: e.id, end: "last", y: end.y });
+        buckets.set(key, list);
+      }
+    }
+  }
+
+  for (const [key, ports] of buckets) {
+    const nodeId = key.slice(0, key.indexOf("::"));
+    const node = nodesById.get(nodeId);
+    if (!node) continue;
+    const top = node.y + inset;
+    const bottom = node.y + node.height - inset;
+    if (bottom <= top) {
+      // Tiny node — pin everything to center.
+      const mid = node.y + node.height / 2;
+      for (const port of ports) {
+        const route = routeById.get(port.edgeId);
+        if (route) setEndpointY(route.points, port.end, mid);
+      }
+      continue;
+    }
+    const ordered = [...ports].toSorted((a, b) => a.y - b.y);
+    const n = ordered.length;
+    for (let i = 0; i < n; i++) {
+      const y =
+        n === 1 ? (top + bottom) / 2 : top + ((bottom - top) * i) / (n - 1);
+      const port = ordered[i]!;
+      const route = routeById.get(port.edgeId);
+      if (route) setEndpointY(route.points, port.end, y);
+    }
+  }
+
+  return [...routeById.values()];
+}
 
 /**
  * Orthogonal feedback corridors under already-placed nodes.

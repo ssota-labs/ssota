@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { coerceFlow } from "./flow-model";
-import { hasExplicitCoords, layoutFlow, layoutFlowWithEdges, synthesizeFeedbackRoutes } from "./flow-layout";
+import {
+  hasExplicitCoords,
+  layoutFlow,
+  layoutFlowWithEdges,
+  redistributeSidePortsWithinNodes,
+  synthesizeFeedbackRoutes,
+} from "./flow-layout";
 
 describe("flow-layout", () => {
   it("returns persisted coordinates as-is when all nodes have them", async () => {
@@ -81,6 +87,59 @@ describe("flow-layout", () => {
       expect(e.points[0]!.x).toBeGreaterThanOrEqual(positions.a!.x);
     }
     expect(edges.map((e) => e.id).toSorted()).toEqual(["a-b", "b-c"]);
+  });
+
+  it("keeps side-port attachments inside node height", () => {
+    const nodes = [
+      { id: "a", x: 0, y: 100, width: 100, height: 40 },
+      { id: "b", x: 200, y: 100, width: 100, height: 40 },
+    ];
+    const edges = [
+      { id: "e1", source: "a", target: "b" },
+      { id: "e2", source: "a", target: "b" },
+      { id: "e3", source: "a", target: "b" },
+    ];
+    // ELK-like stubs that spill past the card top/bottom.
+    const routes = [
+      {
+        id: "e1",
+        points: [
+          { x: 100, y: 80 },
+          { x: 150, y: 80 },
+          { x: 150, y: 80 },
+          { x: 200, y: 80 },
+        ],
+      },
+      {
+        id: "e2",
+        points: [
+          { x: 100, y: 120 },
+          { x: 150, y: 120 },
+          { x: 150, y: 120 },
+          { x: 200, y: 120 },
+        ],
+      },
+      {
+        id: "e3",
+        points: [
+          { x: 100, y: 160 },
+          { x: 150, y: 160 },
+          { x: 150, y: 160 },
+          { x: 200, y: 160 },
+        ],
+      },
+    ];
+    const clamped = redistributeSidePortsWithinNodes(nodes, edges, routes, 8);
+    for (const r of clamped) {
+      const startY = r.points[0]!.y;
+      const endY = r.points[r.points.length - 1]!.y;
+      expect(startY).toBeGreaterThanOrEqual(108);
+      expect(startY).toBeLessThanOrEqual(132);
+      expect(endY).toBeGreaterThanOrEqual(108);
+      expect(endY).toBeLessThanOrEqual(132);
+    }
+    const startYs = clamped.map((r) => r.points[0]!.y).toSorted((a, b) => a - b);
+    expect(startYs[0]).toBeLessThan(startYs[2]!);
   });
 
   it("synthesizes non-overlapping feedback lanes below nodes", () => {
