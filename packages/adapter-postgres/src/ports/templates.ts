@@ -17,7 +17,7 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
     id: "software-development",
     name: "Software Development",
     description:
-      "Full SDLC workspace — roadmap, research, initiatives, design, engineering, build, QA, launch and retrospective. Domain agents: SWDL orchestrator + research/planning/delivery/QA specialists (no generic built-in workers; no Main).",
+      "Full SDLC workspace — roadmap, research, initiatives, design, engineering, build, QA, launch and retrospective. Domain agents: SWDL orchestrator + research/planning/delivery/QA/design specialists (no generic built-in workers; no Main).",
     category: "Engineering",
   },
   catalog: {

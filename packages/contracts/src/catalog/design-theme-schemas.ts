@@ -13,6 +13,8 @@ export type DesignThemeTokenDefinition = {
   min?: number;
   max?: number;
   step?: number;
+  /** length 토큰의 단위 (예: "rem"). 값이 비어 있을 때 슬라이더가 쓸 단위. */
+  unit?: string;
 };
 
 /** Semantic tokens used by inspector presets and studio preview. */
@@ -160,9 +162,11 @@ export const DESIGN_THEME_TOKEN_MANIFEST: DesignThemeTokenDefinition[] = [
     label: "Radius base",
     kind: "length",
     defaultValue: "0.625rem",
+    // step은 시드 기본값 0.625rem을 표현할 수 있는 granularity여야 한다 (1이면 불가).
     min: 0,
     max: 24,
-    step: 1,
+    step: 0.125,
+    unit: "rem",
   },
 ];
 

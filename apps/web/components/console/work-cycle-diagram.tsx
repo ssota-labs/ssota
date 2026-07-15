@@ -9,6 +9,7 @@ import {
   ReactFlowProvider,
   useNodesInitialized,
   useReactFlow,
+  type BuiltInEdge,
   type Edge,
   type Node,
   type NodeProps,
@@ -20,6 +21,7 @@ import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/componen
 import { layoutFlow } from "@/lib/page-runtime/flow-layout";
 import {
   SUBFLOW_HEADER_H,
+  SUBFLOW_LOOP_PAD,
   SUBFLOW_PAD,
   buildSubflowModel,
   type GatePolicyInstance,
@@ -29,6 +31,31 @@ import {
 } from "./work-cycle-model";
 
 const DIAGRAM_HEIGHT = 720;
+
+/**
+ * 역방향(reject_loop·back handoff) 엣지 전용 하단 핸들 — forward 흐름(좌→우)과
+ * 분리해 행 아래로 우회시키면 엣지가 노드를 가로지르며 엉키지 않는다.
+ */
+function LoopHandles() {
+  return (
+    <>
+      <Handle
+        id="loop-in"
+        type="target"
+        position={Position.Bottom}
+        style={{ left: "30%" }}
+        className="!bg-muted-foreground"
+      />
+      <Handle
+        id="loop-out"
+        type="source"
+        position={Position.Bottom}
+        style={{ left: "70%" }}
+        className="!bg-muted-foreground"
+      />
+    </>
+  );
+}
 
 type CycleCardData = OverviewNodeData & {
   onToggleExpand?: (cycleKey: string) => void;
@@ -102,6 +129,7 @@ function CycleCardNode({ data, selected }: NodeProps) {
         />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <LoopHandles />
     </div>
   );
 }
@@ -137,6 +165,7 @@ function CycleGroupNode({ data, selected }: NodeProps) {
         />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <LoopHandles />
     </div>
   );
 }
@@ -182,6 +211,7 @@ function TopologyStepNode({ data, selected }: NodeProps) {
         </div>
       ) : null}
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <LoopHandles />
     </div>
   );
 }
@@ -236,6 +266,20 @@ function edgeStyle(kind: string) {
         ? { stroke: "var(--destructive)" }
         : undefined,
     markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 } as const,
+  };
+}
+
+/** 엣지 라벨(approved/rejected/pass …)은 작고 은은하게 — 노드보다 눈에 덜 띄어야 한다. */
+function edgeLabelProps(kind: string) {
+  return {
+    labelStyle: {
+      fontSize: 10,
+      fontWeight: 500,
+      fill: kind === "reject_loop" ? "var(--destructive)" : "var(--muted-foreground)",
+    },
+    labelBgStyle: { fill: "var(--card)", fillOpacity: 0.9 },
+    labelBgPadding: [4, 2] as [number, number],
+    labelBgBorderRadius: 4,
   };
 }
 
@@ -323,7 +367,14 @@ export function WorkCycleDiagram({
         nestedPositions.set(nest.cycleKey, {
           positions: offsetPositions,
           width: Math.max(280, maxX + SUBFLOW_PAD * 2),
-          height: Math.max(160, maxY + SUBFLOW_HEADER_H + SUBFLOW_PAD * 2),
+          // reject_loop 하단 우회 엣지가 그룹 경계에 잘리지 않게 아래 여백을 더한다.
+          height: Math.max(
+            160,
+            maxY +
+              SUBFLOW_HEADER_H +
+              SUBFLOW_PAD * 2 +
+              (nest.hasBackEdges ? SUBFLOW_LOOP_PAD : 0),
+          ),
         });
       }
 
@@ -340,11 +391,14 @@ export function WorkCycleDiagram({
         };
       });
 
+      // 바깥 패스도 forward handoff만 레이아웃에 넣는다 — launch→direction 같은
+      // 사이클을 닫는 back-edge를 포함하면 layered 랭크가 무너진다. 노드는
+      // topWithSize에 전부 있으므로 엣지가 없는 사이클도 항상 배치된다.
       const outerPositions = await layoutFlow(
         {
           nodes: topWithSize,
           edges: model.edges
-            .filter((e) => !e.id.includes("::"))
+            .filter((e) => !e.id.includes("::") && !e.backward)
             .map((e) => ({ id: e.id, source: e.source, target: e.target })),
         },
         "LR",
@@ -391,18 +445,31 @@ export function WorkCycleDiagram({
 
       setNodes(rfNodes);
       setEdges(
-        model.edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          label: e.label,
-          zIndex: e.id.includes("::") ? 10 : 0,
-          ...edgeStyle(e.kind),
-        })),
+        // BuiltInEdge: `type: "smoothstep"` 변형만 pathOptions(borderRadius)를 허용한다.
+        model.edges.map((e): BuiltInEdge => {
+          // 역방향 엣지는 하단 핸들로 우회 — forward 흐름과 교차하지 않는다.
+          const loop = e.backward === true;
+          return {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: loop ? "loop-out" : undefined,
+            targetHandle: loop ? "loop-in" : undefined,
+            type: "smoothstep",
+            pathOptions: { borderRadius: 12 },
+            label: e.label,
+            zIndex: e.id.includes("::") ? 10 : 0,
+            ...edgeLabelProps(e.kind),
+            ...edgeStyle(e.kind),
+          };
+        }),
       );
     }
 
-    void run();
+    run().catch((error) => {
+      // 레이아웃 실패가 캔버스를 영구 빈 화면으로 만들지 않도록 표면화한다.
+      console.error("[work-cycle] layout failed", error);
+    });
     return () => {
       cancelled = true;
     };

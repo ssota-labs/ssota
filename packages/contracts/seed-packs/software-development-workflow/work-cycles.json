@@ -8,15 +8,16 @@
       "orchestratorMode": "none",
       "includedTeamspaceIds": [],
       "startTriggers": ["quarterly_planning", "weekly_kpi_review", "roadmap_rebalance"],
-      "loopSummary": "측정 → 판단 → 목표/로드맵 수정",
-      "endCondition": "목표 체계 갱신 (코드 배포 필수 아님)",
-      "handoffToCycleKeys": ["initiative_planning"],
+      "loopSummary": "측정 → 판단 → OKR/로드맵 수정 → 경영 승인",
+      "endCondition": "승인된 목표 체계 (코드 배포 필수 아님)",
+      "handoffToCycleKeys": ["discovery", "initiative_planning"],
       "includedNodeCatalogKeys": [
         "product_roadmap",
         "roadmap",
         "objective",
         "key_result",
-        "kpi"
+        "kpi",
+        "metric_snapshot"
       ],
       "suggestedPageKeys": ["executive/roadmap", "executive/goals"],
       "topology": {
@@ -24,44 +25,62 @@
           {
             "id": "t-quarterly",
             "kind": "trigger",
-            "label": "분기 기획 (schedule)",
+            "label": "분기 OKR 기획 (schedule)",
             "owner": "direction",
-            "catalogKeys": ["objective", "roadmap"]
+            "catalogKeys": ["objective", "key_result"]
           },
           {
             "id": "t-weekly",
             "kind": "trigger",
             "label": "주간 KPI 리뷰 (schedule)",
             "owner": "direction",
-            "catalogKeys": ["kpi", "key_result"]
+            "catalogKeys": ["kpi", "metric_snapshot"]
           },
           {
             "id": "t-rebalance",
             "kind": "trigger",
-            "label": "로드맵 재배치 (신호/수동)",
-            "owner": "direction",
-            "catalogKeys": ["product_roadmap", "roadmap"]
+            "label": "로드맵 재배치 신호 (수동)",
+            "owner": "human",
+            "catalogKeys": ["product_roadmap"]
           },
           {
-            "id": "s-roadmap",
+            "id": "s-signals",
             "kind": "stage",
-            "label": "roadmap / objective / KPI",
+            "label": "KPI/신호 해석",
             "owner": "direction",
-            "catalogKeys": ["product_roadmap", "roadmap", "objective", "key_result", "kpi"]
+            "catalogKeys": ["kpi", "key_result", "metric_snapshot"]
+          },
+          {
+            "id": "s-strategy",
+            "kind": "stage",
+            "label": "OKR / 로드맵 초안",
+            "owner": "direction",
+            "catalogKeys": ["objective", "key_result", "product_roadmap", "roadmap"]
+          },
+          {
+            "id": "g-okr",
+            "kind": "gate",
+            "label": "경영 승인 (OKR/로드맵)",
+            "owner": "human",
+            "catalogKeys": ["objective", "product_roadmap"],
+            "gatePolicyKey": "swdl.objective-approved-before-kr-active"
           },
           {
             "id": "e-goals",
             "kind": "end",
-            "label": "목표 체계",
+            "label": "승인된 목표 체계",
             "catalogKeys": ["objective", "key_result"]
           }
         ],
         "edges": [
-          { "id": "e1", "source": "t-quarterly", "target": "s-roadmap", "kind": "sequence" },
-          { "id": "e2", "source": "t-weekly", "target": "s-roadmap", "kind": "sequence" },
-          { "id": "e3", "source": "t-rebalance", "target": "s-roadmap", "kind": "sequence" },
-          { "id": "e4", "source": "s-roadmap", "target": "t-weekly", "kind": "reject_loop", "label": "재검토" },
-          { "id": "e5", "source": "s-roadmap", "target": "e-goals", "kind": "sequence" }
+          { "id": "e1", "source": "t-quarterly", "target": "s-strategy", "kind": "sequence" },
+          { "id": "e2", "source": "t-weekly", "target": "s-signals", "kind": "sequence" },
+          { "id": "e3", "source": "t-rebalance", "target": "s-strategy", "kind": "sequence" },
+          { "id": "e4", "source": "s-signals", "target": "s-strategy", "kind": "sequence", "label": "재배치 필요" },
+          { "id": "e5", "source": "s-signals", "target": "e-goals", "kind": "sequence", "label": "on-track" },
+          { "id": "e6", "source": "s-strategy", "target": "g-okr", "kind": "sequence" },
+          { "id": "e7", "source": "g-okr", "target": "e-goals", "kind": "sequence", "label": "approved" },
+          { "id": "e8", "source": "g-okr", "target": "s-strategy", "kind": "reject_loop", "label": "rejected" }
         ]
       }
     }
@@ -75,7 +94,7 @@
       "orchestratorMode": "scan",
       "includedTeamspaceIds": [],
       "startTriggers": ["hypothesis_gap", "market_change", "orchestrator_research_spawn"],
-      "loopSummary": "draft → testing → validated / rejected / parked",
+      "loopSummary": "증거 수집 → 인사이트 종합 → 가설 검증 → validated / rejected / parked",
       "endCondition": "validated(이니셔티브 후보) 또는 parked",
       "handoffToCycleKeys": ["initiative_planning"],
       "includedNodeCatalogKeys": [
@@ -85,29 +104,36 @@
         "competitor",
         "raw_source"
       ],
-      "suggestedPageKeys": ["research/hypotheses"],
+      "suggestedPageKeys": ["research/hypotheses", "research/market", "research/user"],
       "topology": {
         "nodes": [
           {
             "id": "t-research",
             "kind": "trigger",
-            "label": "리서치 공백",
+            "label": "리서치 공백 / 시장 변화",
             "owner": "orchestrator",
             "catalogKeys": ["market_research", "user_research"]
           },
           {
             "id": "s-sources",
             "kind": "stage",
-            "label": "market / user / sources",
+            "label": "증거 수집 — market / user / sources",
             "owner": "research",
             "catalogKeys": ["market_research", "user_research", "raw_source", "competitor"]
           },
           {
-            "id": "s-hyp",
+            "id": "s-synthesis",
             "kind": "stage",
-            "label": "hypothesis board",
+            "label": "인사이트 종합 → 가설 초안",
             "owner": "research",
             "catalogKeys": ["hypothesis"]
+          },
+          {
+            "id": "s-validate",
+            "kind": "stage",
+            "label": "가설 검증 (인터뷰/실험)",
+            "owner": "research",
+            "catalogKeys": ["hypothesis", "user_research"]
           },
           {
             "id": "e-validated",
@@ -118,9 +144,10 @@
         ],
         "edges": [
           { "id": "e1", "source": "t-research", "target": "s-sources", "kind": "sequence" },
-          { "id": "e2", "source": "s-sources", "target": "s-hyp", "kind": "sequence" },
-          { "id": "e3", "source": "s-hyp", "target": "e-validated", "kind": "sequence", "label": "validated" },
-          { "id": "e4", "source": "s-hyp", "target": "s-sources", "kind": "reject_loop", "label": "rejected/parked" }
+          { "id": "e2", "source": "s-sources", "target": "s-synthesis", "kind": "sequence" },
+          { "id": "e3", "source": "s-synthesis", "target": "s-validate", "kind": "sequence" },
+          { "id": "e4", "source": "s-validate", "target": "e-validated", "kind": "sequence", "label": "validated" },
+          { "id": "e5", "source": "s-validate", "target": "s-sources", "kind": "reject_loop", "label": "rejected — 증거 보강" }
         ]
       }
     }
@@ -134,13 +161,14 @@
       "orchestratorMode": "scan",
       "includedTeamspaceIds": [],
       "startTriggers": ["human_create_initiative", "discovery_validated"],
-      "loopSummary": "PRD/feature/story 초안 → 승인 게이트 → 재작성",
-      "endCondition": "stories/features approved",
-      "handoffToCycleKeys": ["delivery"],
+      "loopSummary": "PRD 초안 → 승인 → feature 분해 → 승인 → 스토리 정제(DoR)",
+      "endCondition": "sprint-ready stories",
+      "handoffToCycleKeys": ["design", "delivery"],
       "includedNodeCatalogKeys": ["initiative", "prd", "feature", "user_story"],
       "suggestedPageKeys": [
         "tpl/initiative/planning/prd",
-        "tpl/initiative/planning/features"
+        "tpl/initiative/planning/features",
+        "tpl/initiative/planning/stories"
       ],
       "topology": {
         "nodes": [
@@ -154,14 +182,14 @@
           {
             "id": "s-prd",
             "kind": "stage",
-            "label": "PRD draft",
+            "label": "PRD 초안",
             "owner": "planning",
             "catalogKeys": ["prd"]
           },
           {
             "id": "g-prd",
             "kind": "gate",
-            "label": "PRD ApprovalInbox",
+            "label": "PRD 승인",
             "owner": "human",
             "catalogKeys": ["prd"],
             "gatePolicyKey": "swdl.prd-approved-onpass-spawn"
@@ -169,22 +197,29 @@
           {
             "id": "s-features",
             "kind": "stage",
-            "label": "features / stories",
+            "label": "Feature 분해",
             "owner": "planning",
-            "catalogKeys": ["feature", "user_story"]
+            "catalogKeys": ["feature"]
           },
           {
-            "id": "g-story",
+            "id": "g-feature",
             "kind": "gate",
-            "label": "Feature/Story gate",
+            "label": "Feature 승인",
             "owner": "human",
             "catalogKeys": ["feature", "user_story"],
             "gatePolicyKey": "swdl.feature-approved-before-story-ready"
           },
           {
-            "id": "e-approved",
+            "id": "s-stories",
+            "kind": "stage",
+            "label": "스토리 정제·견적 (DoR)",
+            "owner": "delivery",
+            "catalogKeys": ["user_story"]
+          },
+          {
+            "id": "e-ready",
             "kind": "end",
-            "label": "approved stories",
+            "label": "sprint-ready stories",
             "catalogKeys": ["user_story"]
           }
         ],
@@ -193,8 +228,10 @@
           { "id": "e2", "source": "s-prd", "target": "g-prd", "kind": "sequence" },
           { "id": "e3", "source": "g-prd", "target": "s-features", "kind": "sequence", "label": "approved" },
           { "id": "e4", "source": "g-prd", "target": "s-prd", "kind": "reject_loop", "label": "rejected" },
-          { "id": "e5", "source": "s-features", "target": "g-story", "kind": "sequence" },
-          { "id": "e6", "source": "g-story", "target": "e-approved", "kind": "sequence", "label": "approved" }
+          { "id": "e5", "source": "s-features", "target": "g-feature", "kind": "sequence" },
+          { "id": "e6", "source": "g-feature", "target": "s-stories", "kind": "sequence", "label": "approved" },
+          { "id": "e7", "source": "g-feature", "target": "s-features", "kind": "reject_loop", "label": "rejected" },
+          { "id": "e8", "source": "s-stories", "target": "e-ready", "kind": "sequence", "label": "ready" }
         ]
       }
     }
@@ -208,7 +245,7 @@
       "orchestratorMode": "scan",
       "includedTeamspaceIds": [],
       "startTriggers": ["stories_approved", "thin_backlog", "stale_in_progress"],
-      "loopSummary": "task ↔ PR ↔ QA fail/pass",
+      "loopSummary": "스프린트 계획 → 구현(task/PR) → 코드 리뷰 → QA → merge",
       "endCondition": "merge-ready / graph tasks done",
       "handoffToCycleKeys": ["launch"],
       "includedNodeCatalogKeys": [
@@ -218,7 +255,11 @@
         "pull_request",
         "test_plan"
       ],
-      "suggestedPageKeys": ["development/backlog", "development/sprint-board"],
+      "suggestedPageKeys": [
+        "development/backlog",
+        "development/sprints",
+        "development/pull-requests"
+      ],
       "topology": {
         "nodes": [
           {
@@ -229,30 +270,46 @@
             "catalogKeys": ["user_story"]
           },
           {
-            "id": "g-delivery-spawn",
+            "id": "g-spawn",
             "kind": "gate",
-            "label": "PRD before Delivery spawn",
+            "label": "PRD 승인 후 Delivery 스폰",
+            "owner": "orchestrator",
             "catalogKeys": ["prd"],
             "gatePolicyKey": "swdl.prd-approved-before-delivery-spawn"
           },
           {
-            "id": "g-prd-task",
+            "id": "s-plan",
+            "kind": "stage",
+            "label": "구현 계획 / 스프린트 편성",
+            "owner": "delivery",
+            "catalogKeys": ["implementation_plan", "sprint"]
+          },
+          {
+            "id": "g-task",
             "kind": "gate",
-            "label": "PRD before task",
+            "label": "Task 생성 게이트 (PRD 승인)",
+            "owner": "orchestrator",
             "catalogKeys": ["task"],
             "gatePolicyKey": "swdl.prd-approved-before-task"
           },
           {
             "id": "s-build",
             "kind": "stage",
-            "label": "plan / sprint / tasks / PR",
+            "label": "구현 — task / PR",
             "owner": "delivery",
-            "catalogKeys": ["implementation_plan", "sprint", "task", "pull_request"]
+            "catalogKeys": ["task", "pull_request"]
+          },
+          {
+            "id": "s-review",
+            "kind": "stage",
+            "label": "코드 리뷰",
+            "owner": "human",
+            "catalogKeys": ["pull_request"]
           },
           {
             "id": "s-qa",
             "kind": "stage",
-            "label": "QA verify",
+            "label": "QA 검증",
             "owner": "qa",
             "catalogKeys": ["test_plan"]
           },
@@ -264,12 +321,16 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "t-stories", "target": "g-delivery-spawn", "kind": "sequence" },
-          { "id": "e2", "source": "g-delivery-spawn", "target": "g-prd-task", "kind": "sequence" },
-          { "id": "e3", "source": "g-prd-task", "target": "s-build", "kind": "sequence" },
-          { "id": "e4", "source": "s-build", "target": "s-qa", "kind": "sequence" },
-          { "id": "e5", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
-          { "id": "e6", "source": "s-qa", "target": "e-merge", "kind": "sequence", "label": "pass" }
+          { "id": "e1", "source": "t-stories", "target": "g-spawn", "kind": "sequence" },
+          { "id": "e2", "source": "g-spawn", "target": "s-plan", "kind": "sequence", "label": "approved" },
+          { "id": "e3", "source": "s-plan", "target": "g-task", "kind": "sequence" },
+          { "id": "e4", "source": "g-task", "target": "s-build", "kind": "sequence" },
+          { "id": "e5", "source": "g-task", "target": "s-plan", "kind": "reject_loop", "label": "PRD 미승인" },
+          { "id": "e6", "source": "s-build", "target": "s-review", "kind": "sequence" },
+          { "id": "e7", "source": "s-review", "target": "s-build", "kind": "reject_loop", "label": "changes requested" },
+          { "id": "e8", "source": "s-review", "target": "s-qa", "kind": "sequence", "label": "approved" },
+          { "id": "e9", "source": "s-qa", "target": "s-build", "kind": "reject_loop", "label": "fail" },
+          { "id": "e10", "source": "s-qa", "target": "e-merge", "kind": "sequence", "label": "pass" }
         ]
       }
     }
@@ -283,51 +344,82 @@
       "orchestratorMode": "none",
       "includedTeamspaceIds": [],
       "startTriggers": ["delivery_pass", "release_cut"],
-      "loopSummary": "launch 승인 → 문서/런북 → retro",
-      "endCondition": "retro·메트릭 닫힘",
-      "handoffToCycleKeys": [],
+      "loopSummary": "launch_plan → 승인 게이트 → release cut → 문서/런북 → 메트릭 → retro",
+      "endCondition": "retro·메트릭 닫힘 → direction으로 피드백",
+      "handoffToCycleKeys": ["direction"],
       "includedNodeCatalogKeys": [
         "launch_plan",
+        "release",
         "release_note",
         "runbook",
         "retrospective",
         "metric_snapshot"
       ],
-      "suggestedPageKeys": ["tpl/initiative/launch"],
+      "suggestedPageKeys": [
+        "tpl/initiative/launch/plan",
+        "tpl/initiative/launch/docs",
+        "tpl/initiative/retrospective"
+      ],
       "topology": {
         "nodes": [
           {
             "id": "t-ready",
             "kind": "trigger",
-            "label": "merge-ready",
-            "owner": "human",
+            "label": "merge-ready (delivery pass)",
+            "owner": "orchestrator",
             "catalogKeys": ["pull_request"]
           },
           {
-            "id": "s-launch",
+            "id": "s-plan",
             "kind": "stage",
-            "label": "launch_plan approve",
-            "owner": "human",
+            "label": "launch_plan 작성",
+            "owner": "planning",
             "catalogKeys": ["launch_plan"]
+          },
+          {
+            "id": "g-launch",
+            "kind": "gate",
+            "label": "Launch 승인",
+            "owner": "human",
+            "catalogKeys": ["launch_plan", "release"],
+            "gatePolicyKey": "swdl.launch-approved-before-release"
+          },
+          {
+            "id": "s-release",
+            "kind": "stage",
+            "label": "release cut / 배포",
+            "owner": "delivery",
+            "catalogKeys": ["release", "release_note"]
           },
           {
             "id": "s-docs",
             "kind": "stage",
             "label": "release notes / runbook",
-            "owner": "human",
+            "owner": "planning",
             "catalogKeys": ["release_note", "runbook"]
+          },
+          {
+            "id": "s-monitor",
+            "kind": "stage",
+            "label": "메트릭 모니터링",
+            "owner": "research",
+            "catalogKeys": ["metric_snapshot", "kpi"]
           },
           {
             "id": "e-retro",
             "kind": "end",
-            "label": "retro / metrics",
-            "catalogKeys": ["retrospective", "metric_snapshot"]
+            "label": "retro 닫힘",
+            "catalogKeys": ["retrospective"]
           }
         ],
         "edges": [
-          { "id": "e1", "source": "t-ready", "target": "s-launch", "kind": "sequence" },
-          { "id": "e2", "source": "s-launch", "target": "s-docs", "kind": "sequence" },
-          { "id": "e3", "source": "s-docs", "target": "e-retro", "kind": "sequence" }
+          { "id": "e1", "source": "t-ready", "target": "s-plan", "kind": "sequence" },
+          { "id": "e2", "source": "s-plan", "target": "g-launch", "kind": "sequence" },
+          { "id": "e3", "source": "g-launch", "target": "s-release", "kind": "sequence", "label": "approved" },
+          { "id": "e4", "source": "g-launch", "target": "s-plan", "kind": "reject_loop", "label": "rejected" },
+          { "id": "e5", "source": "s-release", "target": "s-docs", "kind": "sequence" },
+          { "id": "e6", "source": "s-docs", "target": "s-monitor", "kind": "sequence" },
+          { "id": "e7", "source": "s-monitor", "target": "e-retro", "kind": "sequence", "label": "회고" }
         ]
       }
     }
@@ -341,7 +433,7 @@
       "orchestratorMode": "none",
       "includedTeamspaceIds": [],
       "startTriggers": ["ux_needed_in_planning_or_build"],
-      "loopSummary": "IA/플로우/와이어 ↔ 리뷰 ↔ DS 동기화",
+      "loopSummary": "IA/플로우 → 와이어프레임 → 디자인 crit → DS 반영 → 스펙 피드",
       "endCondition": "스펙·스토리에 흡수",
       "handoffToCycleKeys": ["initiative_planning", "delivery"],
       "includedNodeCatalogKeys": [
@@ -351,41 +443,62 @@
         "ui_component",
         "design_theme"
       ],
-      "suggestedPageKeys": ["design/ui-components"],
+      "suggestedPageKeys": [
+        "design/ui-components",
+        "design/theme",
+        "tpl/initiative/design/wireframes"
+      ],
       "topology": {
         "nodes": [
           {
             "id": "t-ux",
             "kind": "trigger",
-            "label": "UX 필요",
-            "owner": "human",
-            "catalogKeys": ["user_flow"]
+            "label": "UX 필요 (planning/build)",
+            "owner": "planning",
+            "catalogKeys": ["feature", "user_flow"]
           },
           {
             "id": "s-ia",
             "kind": "stage",
-            "label": "IA / flows / wireframes",
+            "label": "IA / user flows",
             "owner": "design",
-            "catalogKeys": ["information_architecture", "user_flow", "page_wireframe"]
+            "catalogKeys": ["information_architecture", "user_flow"]
+          },
+          {
+            "id": "s-wireframes",
+            "kind": "stage",
+            "label": "wireframes / 프로토타입",
+            "owner": "design",
+            "catalogKeys": ["page_wireframe"]
+          },
+          {
+            "id": "g-crit",
+            "kind": "gate",
+            "label": "디자인 리뷰 (crit)",
+            "owner": "human",
+            "catalogKeys": ["page_wireframe", "ui_component"]
           },
           {
             "id": "s-ds",
             "kind": "stage",
-            "label": "ui_component / theme",
+            "label": "디자인 시스템 — ui_component / theme",
             "owner": "design",
             "catalogKeys": ["ui_component", "design_theme"]
           },
           {
             "id": "e-feed",
             "kind": "end",
-            "label": "feeds planning/build",
+            "label": "스펙·스토리에 흡수",
             "catalogKeys": ["feature", "implementation_plan"]
           }
         ],
         "edges": [
           { "id": "e1", "source": "t-ux", "target": "s-ia", "kind": "sequence" },
-          { "id": "e2", "source": "s-ia", "target": "s-ds", "kind": "sequence" },
-          { "id": "e3", "source": "s-ds", "target": "e-feed", "kind": "feed", "label": "feeds" }
+          { "id": "e2", "source": "s-ia", "target": "s-wireframes", "kind": "sequence" },
+          { "id": "e3", "source": "s-wireframes", "target": "g-crit", "kind": "sequence" },
+          { "id": "e4", "source": "g-crit", "target": "s-ds", "kind": "sequence", "label": "approved" },
+          { "id": "e5", "source": "g-crit", "target": "s-wireframes", "kind": "reject_loop", "label": "rework" },
+          { "id": "e6", "source": "s-ds", "target": "e-feed", "kind": "feed", "label": "feeds" }
         ]
       }
     }
@@ -399,9 +512,9 @@
       "orchestratorMode": "scan",
       "includedTeamspaceIds": [],
       "startTriggers": ["weekly_cron", "api_schema_change"],
-      "loopSummary": "evergreen diff → 문서/스냅샷 갱신",
+      "loopSummary": "evergreen diff 스캔 → 갱신 task → 문서 최신화",
       "endCondition": "evergreen 최신 (initiative와 독립)",
-      "handoffToCycleKeys": [],
+      "handoffToCycleKeys": ["delivery"],
       "includedNodeCatalogKeys": [
         "data_spec",
         "api_snapshot",
@@ -409,24 +522,34 @@
         "api_reference",
         "integration_spec"
       ],
-      "suggestedPageKeys": ["development/api-snapshot"],
+      "suggestedPageKeys": [
+        "development/api-snapshots",
+        "development/data-model",
+        "development/system-model"
+      ],
       "topology": {
         "nodes": [
           {
             "id": "t-cron",
             "kind": "trigger",
-            "label": "주간 cron / 변경 감지",
+            "label": "주간 cron / 스키마 변경 감지",
             "owner": "orchestrator",
             "catalogKeys": ["api_snapshot"]
           },
           {
-            "id": "s-evergreen",
+            "id": "s-scan",
             "kind": "stage",
-            "label": "data_spec / api_snapshot / architecture",
+            "label": "evergreen diff 스캔",
             "owner": "orchestrator",
+            "catalogKeys": ["api_snapshot", "data_spec"]
+          },
+          {
+            "id": "s-update",
+            "kind": "stage",
+            "label": "문서/스냅샷 갱신",
+            "owner": "delivery",
             "catalogKeys": [
               "data_spec",
-              "api_snapshot",
               "architecture_spec",
               "api_reference",
               "integration_spec"
@@ -440,9 +563,10 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "t-cron", "target": "s-evergreen", "kind": "sequence" },
-          { "id": "e2", "source": "s-evergreen", "target": "s-evergreen", "kind": "reject_loop", "label": "diff" },
-          { "id": "e3", "source": "s-evergreen", "target": "e-fresh", "kind": "sequence" }
+          { "id": "e1", "source": "t-cron", "target": "s-scan", "kind": "sequence" },
+          { "id": "e2", "source": "s-scan", "target": "s-update", "kind": "sequence", "label": "diff 발견" },
+          { "id": "e3", "source": "s-scan", "target": "e-fresh", "kind": "sequence", "label": "변경 없음" },
+          { "id": "e4", "source": "s-update", "target": "e-fresh", "kind": "sequence" }
         ]
       }
     }

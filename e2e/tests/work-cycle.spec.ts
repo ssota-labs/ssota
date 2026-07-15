@@ -20,7 +20,7 @@ test.describe("Work cycle map", () => {
     await expect(
       page.getByTestId("work-cycle-expand-initiative_planning"),
     ).toBeVisible();
-    await expect(page.getByText("PRD ApprovalInbox")).toHaveCount(0);
+    await expect(page.getByText("PRD 승인", { exact: true })).toHaveCount(0);
 
     await test.info().attach("work-cycle-subflow-collapsed", {
       body: await page.screenshot(),
@@ -39,10 +39,10 @@ test.describe("Work cycle map", () => {
     await expect(expand).toBeVisible({ timeout: 15_000 });
     await expand.click();
 
-    await expect(page.getByText("PRD ApprovalInbox")).toBeVisible({
+    await expect(page.getByText("PRD 승인", { exact: true })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Feature/Story gate")).toBeVisible();
+    await expect(page.getByText("Feature 승인", { exact: true })).toBeVisible();
     await expect(
       page.getByTestId("work-cycle-group-initiative_planning"),
     ).toBeVisible();
@@ -61,7 +61,7 @@ test.describe("Work cycle map", () => {
     await expect(expand).toBeVisible({ timeout: 15_000 });
     await expand.click();
 
-    await expect(page.getByText("PRD before Delivery spawn")).toBeVisible({
+    await expect(page.getByText("PRD 승인 후 Delivery 스폰")).toBeVisible({
       timeout: 15_000,
     });
   });

@@ -2,7 +2,7 @@
   {
     "key": "informs",
     "label": "근거",
-    "domainKeys": ["market_research", "market_segment", "roadmap", "product_roadmap", "raw_source", "user_research"],
+    "domainKeys": ["market_research", "market_segment", "roadmap", "product_roadmap", "raw_source", "user_research", "page_wireframe", "user_flow", "information_architecture"],
     "rangeKeys": ["hypothesis", "objective", "initiative", "prd", "feature"]
   },
   {
@@ -38,7 +38,10 @@
       "user_flow",
       "information_architecture",
       "launch_plan",
-      "retrospective"
+      "retrospective",
+      "release_note",
+      "runbook",
+      "metric_snapshot"
     ],
     "rangeKeys": ["initiative"]
   },
@@ -81,7 +84,7 @@
   {
     "key": "references",
     "label": "참조",
-    "domainKeys": ["market_research", "raw_source", "prd", "architecture_spec", "implementation_plan"],
+    "domainKeys": ["market_research", "raw_source", "prd", "architecture_spec", "implementation_plan", "page_wireframe"],
     "rangeKeys": ["competitor", "api_reference", "api_snapshot", "ui_component", "raw_source"]
   },
   {
@@ -131,5 +134,11 @@
     "label": "구현",
     "domainKeys": ["task", "pull_request"],
     "rangeKeys": ["user_story", "feature"]
+  },
+  {
+    "key": "verifies",
+    "label": "검증",
+    "domainKeys": ["test_plan"],
+    "rangeKeys": ["pull_request", "user_story"]
   }
 ]

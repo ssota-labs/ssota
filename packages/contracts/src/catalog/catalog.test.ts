@@ -21,9 +21,10 @@ import {
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 41 node types and 20 edge types", () => {
+  it("defines 41 node types and 21 edge types", () => {
     expect(NODE_TYPES).toHaveLength(41);
-    expect(EDGE_TYPES).toHaveLength(20);
+    expect(EDGE_TYPES).toHaveLength(21);
+    expect(EDGE_TYPES).toContain("verifies");
   });
 
   it("parses task execution fields used by Delivery boards", () => {
@@ -80,6 +81,42 @@ describe("v2.7 catalog SSOT", () => {
   it("rejects invalid hypothesis status", () => {
     expect(() =>
       parseNodeProperties("hypothesis", { status: "invalid" }),
+    ).toThrow();
+  });
+
+  it("parses SWDL status vocabularies (PR / test_plan / release / wireframe / goals)", () => {
+    expect(
+      parseNodeProperties("pull_request", { status: "changes_requested" }).status,
+    ).toBe("changes_requested");
+    expect(parseNodeProperties("pull_request", { status: "approved" }).status).toBe(
+      "approved",
+    );
+    expect(parseNodeProperties("test_plan", { status: "pass" }).status).toBe("pass");
+    expect(parseNodeProperties("release", { status: "shipped" }).status).toBe(
+      "shipped",
+    );
+    expect(parseNodeProperties("page_wireframe", { status: "in_crit" }).status).toBe(
+      "in_crit",
+    );
+    expect(parseNodeProperties("objective", { status: "approved" }).status).toBe(
+      "approved",
+    );
+    expect(parseNodeProperties("key_result", { status: "active" }).status).toBe(
+      "active",
+    );
+    expect(
+      parseNodeProperties("user_research", { summary: "Interview digest" }).summary,
+    ).toBe("Interview digest");
+  });
+
+  it("rejects out-of-vocabulary SWDL statuses", () => {
+    expect(() =>
+      parseNodeProperties("pull_request", { status: "reopened" }),
+    ).toThrow();
+    expect(() => parseNodeProperties("test_plan", { status: "done" })).toThrow();
+    expect(() => parseNodeProperties("release", { status: "released" })).toThrow();
+    expect(() =>
+      parseNodeProperties("page_wireframe", { status: "review" }),
     ).toThrow();
   });
 

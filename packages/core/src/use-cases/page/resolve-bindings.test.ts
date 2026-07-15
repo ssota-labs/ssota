@@ -262,6 +262,87 @@ describe("resolvePageBindings", () => {
     );
   });
 
+  it("attaches the connecting __edgeId onto traverse-resolved nodes", async () => {
+    const store = createInMemoryGraphStore();
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const graphRead = createInMemoryGraphReadPort(store);
+
+    const feature = await graphWrite.createNode({
+      teamspaceId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000011",
+      catalogKey: "feature",
+      title: "Feature A",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
+    });
+    const issue = await graphWrite.createNode({
+      teamspaceId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000014",
+      catalogKey: "issue",
+      title: "Blocking issue",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
+    });
+    const edge = await graphWrite.createEdge({
+      teamspaceId: PROJECT_ID,
+      edgeCatalogId: "00000000-0000-4000-9000-000000000006",
+      catalogKey: "blocked_by",
+      sourceNodeId: feature.id,
+      targetNodeId: issue.id,
+      properties: {},
+    });
+
+    const data = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        blockers: {
+          kind: "traverse",
+          from: "subject",
+          edgeCatalogKey: "blocked_by",
+          direction: "out",
+        },
+      },
+      {
+        subject: {
+          id: feature.id,
+          catalogKey: "feature",
+          title: feature.title,
+          properties: feature.properties,
+        },
+      },
+    );
+
+    expect(data.blockers).toEqual([
+      expect.objectContaining({ id: issue.id, __edgeId: edge.id }),
+    ]);
+
+    // incoming direction: edge id still comes from the connecting edge.
+    const incoming = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        blockedFeatures: {
+          kind: "traverse",
+          from: "subject",
+          edgeCatalogKey: "blocked_by",
+          direction: "in",
+        },
+      },
+      {
+        subject: {
+          id: issue.id,
+          catalogKey: "issue",
+          title: issue.title,
+          properties: issue.properties,
+        },
+      },
+    );
+    expect(incoming.blockedFeatures).toEqual([
+      expect.objectContaining({ id: feature.id, __edgeId: edge.id }),
+    ]);
+  });
+
   it("resolves url_selection from searchParams and validates catalogKey", async () => {
     const store = createInMemoryGraphStore();
     const graphWrite = createInMemoryGraphWritePort(store);

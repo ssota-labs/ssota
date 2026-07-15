@@ -469,6 +469,8 @@ export const en = {
     },
     health: {
       draft: "Draft",
+      approved: "Approved",
+      active: "Active",
       on_track: "On track",
       at_risk: "At risk",
       achieved: "Achieved",
@@ -1394,6 +1396,8 @@ export const ko = {
     },
     health: {
       draft: "초안",
+      approved: "승인됨",
+      active: "활성",
       on_track: "순항",
       at_risk: "위험",
       achieved: "달성",

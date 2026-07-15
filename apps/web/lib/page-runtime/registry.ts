@@ -25,6 +25,7 @@ import { statComponents } from "./components/stat-tile";
 import { calendarComponents } from "./components/calendar-view";
 import { recordComponents } from "./components/record-view";
 import { timelineComponents } from "./components/timeline";
+import { relationEditorComponents } from "./components/relation-editor";
 
 /**
  * The JSON-render catalog: a registry of component type → renderer. Adding a
@@ -58,6 +59,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...calendarComponents,
   ...recordComponents,
   ...timelineComponents,
+  ...relationEditorComponents,
 };
 
 export const UI_CATALOG_COMPONENTS = Object.keys(CATALOG);

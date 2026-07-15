@@ -2,12 +2,13 @@
 
 ## Purpose
 
-Drive build execution: implementation plans, tasks, sprints, and pull requests — globally and per initiative.
+Drive build execution: implementation plans, tasks, sprints, and pull requests — globally and per initiative. Also owns the release cut (set the planned `release` to `shipped`, author `release_note`/`runbook`) and evergreen spec upkeep for hygiene tasks (data/architecture/api/integration specs — initiative-less tasks allowed).
 
 ## Use when
 
 - Planning artifacts exist and work must move into build
 - Open `task` / `pull_request` items need creation, triage, or status advance
+- A launch-approved initiative needs its release cut, or a hygiene scan reports evergreen spec drift
 
 ## Skills
 

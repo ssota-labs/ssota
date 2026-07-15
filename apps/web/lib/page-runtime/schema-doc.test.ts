@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   coerceSchemaDoc,
+  diffSchemaDocs,
   methodBadgeClass,
   pathSegments,
 } from "./schema-doc";
@@ -90,5 +91,75 @@ describe("methodBadgeClass", () => {
   it("returns a class per method and falls back to GET", () => {
     expect(methodBadgeClass("GET")).toContain("emerald");
     expect(methodBadgeClass("DELETE")).toContain("red");
+  });
+});
+
+describe("diffSchemaDocs (SchemaDisplay compare mode)", () => {
+  const doc = (endpoints: unknown[]) => coerceSchemaDoc({ endpoints });
+
+  it("tags current-only entries ADDED and baseline-only entries REMOVED (appended)", () => {
+    const current = doc([
+      { method: "GET", path: "/runs" },
+      { method: "POST", path: "/runs" },
+    ]);
+    const baseline = doc([
+      { method: "GET", path: "/runs" },
+      { method: "DELETE", path: "/runs/:id" },
+    ]);
+    const out = diffSchemaDocs(current, baseline);
+    expect(out).toHaveLength(3);
+    expect(out[0]).toMatchObject({ method: "GET", path: "/runs" });
+    expect(out[0]!.diff).toBeUndefined(); // unchanged
+    expect(out[1]).toMatchObject({ method: "POST", path: "/runs", diff: "ADDED" });
+    // REMOVED entries keep their content, come last, and get a distinct id
+    expect(out[2]).toMatchObject({
+      method: "DELETE",
+      path: "/runs/:id",
+      diff: "REMOVED",
+    });
+    expect(out[2]!.id).not.toBe(baseline.endpoints[1]!.id);
+  });
+
+  it("tags same method+path with a different signature CHANGED", () => {
+    const current = doc([
+      {
+        method: "GET",
+        path: "/runs/:id",
+        parameters: [{ name: "id", in: "path", type: "string", required: true }],
+        responses: [{ status: 200, shape: "{ run: AgentRun }" }],
+      },
+    ]);
+    const baseline = doc([
+      {
+        method: "GET",
+        path: "/runs/:id",
+        parameters: [{ name: "id", in: "path", type: "string", required: true }],
+        responses: [{ status: 200, shape: "{ run: Run }" }],
+      },
+    ]);
+    expect(diffSchemaDocs(current, baseline)[0]!.diff).toBe("CHANGED");
+  });
+
+  it("does not flag doc-only changes (summary/tag) as CHANGED", () => {
+    const current = doc([
+      { method: "GET", path: "/runs", summary: "New summary", tag: "BETA" },
+    ]);
+    const baseline = doc([{ method: "GET", path: "/runs", summary: "Old summary" }]);
+    expect(diffSchemaDocs(current, baseline)[0]!.diff).toBeUndefined();
+  });
+
+  it("flags an auth change as CHANGED", () => {
+    const current = doc([{ method: "GET", path: "/runs", auth: "Bearer" }]);
+    const baseline = doc([{ method: "GET", path: "/runs" }]);
+    expect(diffSchemaDocs(current, baseline)[0]!.diff).toBe("CHANGED");
+  });
+
+  it("identical docs produce no diff tags; empty baseline marks everything ADDED", () => {
+    const same = doc([
+      { method: "GET", path: "/a" },
+      { method: "POST", path: "/b" },
+    ]);
+    expect(diffSchemaDocs(same, same).every((e) => !e.diff)).toBe(true);
+    expect(diffSchemaDocs(same, doc([])).every((e) => e.diff === "ADDED")).toBe(true);
   });
 });

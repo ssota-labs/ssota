@@ -84,11 +84,17 @@ describe("gate_policy / work_cycle schemas", () => {
     }
   });
 
-  it("maps every seeded gate policy to one work-cycle gate node", () => {
+  it("maps every seeded blocking gate policy to one work-cycle gate node", () => {
+    // onPass 효과 전용 정책은 토폴로지 gate 노드에 붙지 않는다
+    // (SSOT 목록·사유: swdl-work-cycles.test.ts의 EFFECT_ONLY_POLICY_KEYS).
+    const effectOnlyPolicyKeys = new Set([
+      "swdl.feature-approved-onpass-dor",
+      "swdl.pr-approved-onpass-launch",
+    ]);
     const policyKeys = new Set(
-      gatePoliciesSeed.map((row) =>
-        gatePolicyPropertiesSchema.parse(row.properties).policyKey,
-      ),
+      gatePoliciesSeed
+        .map((row) => gatePolicyPropertiesSchema.parse(row.properties).policyKey)
+        .filter((key) => !effectOnlyPolicyKeys.has(key)),
     );
     const referencedPolicyKeys = workCyclesSeed.flatMap((row) => {
       const { topology } = workCyclePropertiesSchema.parse(row.properties);

@@ -833,14 +833,17 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "SchemaDisplay",
     category: "data",
     description:
-      "Rich REST-API reference: a list of collapsible endpoint rows. Each shows a color-coded method badge (GET/POST/PUT/PATCH/DELETE), the path (`:param`/`{param}` highlighted), an optional auth lock + status tag, a parameter table (name/in/type/required/description), a recursive request-body schema, and a response list (status + shape, with nested body). Data is supplied inline via `endpoints` or read from a bound node property.",
+      "Rich REST-API reference: a list of collapsible endpoint rows. Each shows a color-coded method badge (GET/POST/PUT/PATCH/DELETE), the path (`:param`/`{param}` highlighted), an optional auth lock + status tag, a parameter table (name/in/type/required/description), a recursive request-body schema, and a response list (status + shape, with nested body). Data is supplied inline via `endpoints` or read from a bound node property. Compare mode: set `compare` to a baseline node binding and per-endpoint ADDED / REMOVED / CHANGED diff tags are computed (see `compare`).",
     children: false,
     props: {
       binding: binding("Optional single-node binding holding the schema jsonb."),
+      compare: binding(
+        "Optional BASELINE single-node binding (e.g. api_reference). When set, `binding` is the CURRENT schema (e.g. api_snapshot) and per-endpoint diff tags are computed by method+path: ADDED (current only), REMOVED (baseline only — rendered dimmed + struck through at the end), CHANGED (same method+path, different parameters/requestBody/responses/auth signature). Both nodes are read via the same `property`. Omit for the plain zero-compare rendering.",
+      ),
       property: {
         type: "string",
         description:
-          'When `binding` is set, the node property holding the endpoints array (default "endpoints").',
+          'When `binding` is set, the node property holding the endpoints array (default "endpoints"). Compare mode reads the same property from the `compare` node.',
       },
       endpoints: {
         type: "{ method, path, summary?, description?, auth?, tag?, defaultOpen?, parameters?:[{ name, in, type?, required?, description? }], requestBody?:SchemaProperty[], responses?:[{ status, description?, shape?, body?:SchemaProperty[] }] }[]",
@@ -852,19 +855,70 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "SchemaDisplay",
       props: {
-        endpoints: [
-          {
-            method: "GET",
-            path: "/runs/:runId",
-            summary: "Fetch a single run.",
-            auth: "Bearer",
-            tag: "ADDED",
-            parameters: [
-              { name: "runId", in: "path", type: "string", required: true },
-            ],
-            responses: [{ status: 200, shape: "{ run: AgentRun }" }],
-          },
-        ],
+        // Compare mode: `snapshot` (current) diffed against `reference` (baseline).
+        // Drop `compare` for a plain reference; inline `endpoints` also works.
+        binding: "snapshot",
+        compare: "reference",
+        property: "endpoints",
+        title: "API 스냅샷 vs 레퍼런스",
+      },
+    },
+  },
+  RelationEditor: {
+    key: "RelationEditor",
+    category: "data",
+    description:
+      "Edit one edge type's links for a subject node, fully in-product: a compact card listing the currently linked nodes (each with a remove button) plus a '연결 추가' searchable combobox over candidate nodes (already-linked ids filtered out) that dispatches immediately on pick. `linked` MUST be a `traverse` binding from the subject — traverse rows carry the connecting `__edgeId`, which the remove dispatch needs. Wiring: `addAction` → a `create_edge` action with `sourceNodeId:{$input:\"sourceNodeId\"}, targetNodeId:{$input:\"targetNodeId\"}` (dispatched as { sourceNodeId: subject.id, targetNodeId: picked id } — swap the refs for an incoming edge); `removeAction` → a `delete_edge` action with `edgeId:{$input:\"edgeId\"}` (dispatched as { edgeId, sourceNodeId, targetNodeId }). Null subject renders a placeholder.",
+    children: false,
+    props: {
+      binding: {
+        ...binding("The subject node (single-node binding: subject/node/singleton)."),
+        required: true,
+      },
+      linked: {
+        ...binding(
+          "Traverse binding resolving the currently linked nodes (from the subject via the edited edge type). Must be `traverse` so each row carries `__edgeId` for removal.",
+        ),
+        required: true,
+      },
+      candidates: {
+        ...binding(
+          "Query binding of candidate nodes to link. Already-linked ids and the subject itself are filtered out automatically.",
+        ),
+        required: true,
+      },
+      addAction: action(
+        'Dispatched with { sourceNodeId, targetNodeId } when a candidate is picked — wire to a create_edge action descriptor. Omit to hide the add combobox.',
+      ),
+      removeAction: action(
+        'Dispatched with { edgeId, sourceNodeId, targetNodeId } when a linked row\'s remove button is clicked — wire to a delete_edge action descriptor (`edgeId:{$input:"edgeId"}`). Omit to hide remove buttons.',
+      ),
+      title: { type: "string", description: 'Card heading. Default "연결".' },
+      emptyLabel: {
+        type: "string",
+        description: "Empty-state text when nothing is linked (also used for the null-subject placeholder).",
+      },
+      direction: {
+        type: "string",
+        description:
+          '"out" | "in" — display hint only (renders a direction arrow next to the title). Does NOT change the dispatched payload; for incoming edges swap the $input refs in the wired actions.',
+      },
+      labelField: {
+        type: "string",
+        description:
+          'Display field for linked/candidate rows ("title" or a property name). Default "title".',
+      },
+    },
+    example: {
+      type: "RelationEditor",
+      props: {
+        binding: "subject",
+        linked: "blockingIssues",
+        candidates: "openIssues",
+        addAction: "linkBlockingIssue",
+        removeAction: "unlinkBlockingIssue",
+        title: "차단 이슈",
+        emptyLabel: "차단 이슈가 없습니다",
       },
     },
   },

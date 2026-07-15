@@ -3,12 +3,15 @@
 import * as React from "react";
 import { CaretRightIcon, LockSimpleIcon } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
-import { boundNode } from "../bindings";
+import { boundNode, boundSingleton } from "../bindings";
 import {
   coerceSchemaDoc,
+  diffSchemaDocs,
   methodBadgeClass,
   pathSegments,
   type ApiEndpoint,
+  type DiffedEndpoint,
+  type SchemaDiffTag,
   type SchemaProperty,
   type SchemaResponse,
 } from "../schema-doc";
@@ -20,7 +23,18 @@ import type { CatalogComponent } from "../types";
  * lock + status tag, a parameter table, a recursive request-body schema, and a
  * response list. Domain-agnostic — the schema is supplied via props (`endpoints`)
  * or read from a bound node property.
+ *
+ * compare 모드: `compare` 바인딩이 주어지면 `binding` 을 현재(CURRENT) 스키마,
+ * `compare` 를 베이스라인(BASELINE)으로 보고 엔트리별 ADDED / REMOVED / CHANGED
+ * diff 태그를 계산한다. REMOVED 엔트리는 dimmed + 취소선으로 렌더링한다.
  */
+
+/** diff 태그별 chip 색 (기존 tag chip 렌더링 재사용, 색만 태그별). */
+const DIFF_TAG_CLASSES: Record<SchemaDiffTag, string> = {
+  ADDED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  REMOVED: "bg-red-500/15 text-red-600 dark:text-red-400",
+  CHANGED: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+};
 
 function MethodBadge({ method }: { method: ApiEndpoint["method"] }) {
   return (
@@ -183,15 +197,21 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function EndpointRow({ endpoint }: { endpoint: ApiEndpoint }) {
+function EndpointRow({ endpoint }: { endpoint: DiffedEndpoint }) {
   const [open, setOpen] = React.useState(endpoint.defaultOpen ?? false);
+  const removed = endpoint.diff === "REMOVED";
   const hasDetail =
     (endpoint.parameters?.length ?? 0) > 0 ||
     (endpoint.requestBody?.length ?? 0) > 0 ||
     (endpoint.responses?.length ?? 0) > 0;
 
   return (
-    <div className="bg-card overflow-hidden rounded-lg border">
+    <div
+      className={cn(
+        "bg-card overflow-hidden rounded-lg border",
+        removed && "opacity-60",
+      )}
+    >
       <button
         type="button"
         onClick={() => hasDetail && setOpen((o) => !o)}
@@ -208,8 +228,20 @@ function EndpointRow({ endpoint }: { endpoint: ApiEndpoint }) {
           )}
         />
         <MethodBadge method={endpoint.method} />
-        <PathLabel path={endpoint.path} />
-        {endpoint.tag ? (
+        <span className={cn(removed && "line-through")}>
+          <PathLabel path={endpoint.path} />
+        </span>
+        {endpoint.diff ? (
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+              DIFF_TAG_CLASSES[endpoint.diff],
+            )}
+          >
+            {endpoint.diff}
+          </span>
+        ) : null}
+        {endpoint.tag && endpoint.tag !== endpoint.diff ? (
           <span className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide">
             {endpoint.tag}
           </span>
@@ -279,7 +311,17 @@ export const schemaDisplayComponents: Record<string, CatalogComponent> = {
     const raw = node ? node.properties?.[property] : (props.endpoints ?? props);
     const doc = coerceSchemaDoc(raw);
 
-    if (doc.endpoints.length === 0) {
+    // compare 모드: baseline 노드가 실제로 resolve 됐을 때만 diff 를 계산한다
+    // (compare 미지정 = 기존 동작 그대로).
+    const compareNode = boundSingleton(
+      bindingData,
+      typeof props.compare === "string" ? props.compare : undefined,
+    );
+    const endpoints: DiffedEndpoint[] = compareNode
+      ? diffSchemaDocs(doc, coerceSchemaDoc(compareNode.properties?.[property]))
+      : doc.endpoints;
+
+    if (endpoints.length === 0) {
       return (
         <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
           SchemaDisplay: no endpoints to display.
@@ -291,7 +333,7 @@ export const schemaDisplayComponents: Record<string, CatalogComponent> = {
         {typeof props.title === "string" ? (
           <h3 className="text-sm font-semibold">{props.title}</h3>
         ) : null}
-        {doc.endpoints.map((ep) => (
+        {endpoints.map((ep) => (
           <EndpointRow key={ep.id} endpoint={ep} />
         ))}
       </div>

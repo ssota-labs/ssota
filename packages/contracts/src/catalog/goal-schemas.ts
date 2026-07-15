@@ -2,8 +2,15 @@ import { z } from "zod";
 
 export const goalPrioritySchema = z.enum(["high", "medium", "low"]);
 
+/**
+ * 목표(objective)·핵심 결과(key_result) 공용 상태 어휘.
+ * - "approved": objective 승인 상태 (경영 승인 게이트 통과 — swdl.objective-approved-before-kr-active).
+ * - "active": key_result 활성 상태 (승인된 objective 아래에서 측정 시작).
+ */
 export const goalHealthStatusSchema = z.enum([
   "draft",
+  "approved",
+  "active",
   "on_track",
   "at_risk",
   "achieved",

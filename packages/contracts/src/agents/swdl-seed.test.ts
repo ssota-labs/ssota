@@ -12,9 +12,10 @@ import {
 } from "./swdl-ids.js";
 
 describe("SWDL domain agent seeds", () => {
-  it("seeds four specialists, direction steward, and orchestrator", () => {
-    expect(listSwdlAgentIds()).toHaveLength(6);
-    expect(SWDL_AGENT_DEFINITION_SEEDS).toHaveLength(6);
+  it("seeds five specialists, direction steward, and orchestrator", () => {
+    expect(listSwdlAgentIds()).toHaveLength(7);
+    expect(SWDL_AGENT_DEFINITION_SEEDS).toHaveLength(7);
+    expect(listSwdlAgentIds()).toContain(SWDL_AGENT_IDS.design);
   });
 
   it("uses stable a100… ids distinct from built-in a000… namespace", () => {
@@ -43,6 +44,7 @@ describe("SWDL domain agent seeds", () => {
     expect(orch.allowedTriggers).toContain("schedule");
     expect(orch.allowedTriggers).toContain("heartbeat");
     expect(orch.linkedWorkerAgentIds).toEqual([...SWDL_SPECIALIST_IDS]);
+    expect(orch.linkedWorkerAgentIds).toContain(SWDL_AGENT_IDS.design);
   });
 
   it("orchestrator seed embeds linkedWorkerAgentIds in runPolicy", () => {
@@ -67,6 +69,7 @@ describe("SWDL domain agent seeds", () => {
     expect(byId[SWDL_AGENT_IDS.research]).toEqual([]);
     expect(byId[SWDL_AGENT_IDS.planning]).toEqual([]);
     expect(byId[SWDL_AGENT_IDS.qa]).toEqual([]);
+    expect(byId[SWDL_AGENT_IDS.design]).toEqual([]);
     expect(byId[SWDL_AGENT_IDS.direction]).toEqual([]);
     expect(byId[SWDL_AGENT_IDS.delivery]).toEqual(["sandbox.code"]);
     expect(byId[SWDL_AGENT_IDS.orchestrator]).toEqual(["delegate"]);

@@ -1,8 +1,6 @@
 ---
 name: swdl-handoff
-description: >-
-  Package outputs so the next SWDL specialist can continue without re-discovery.
-  Use before marking done when another role will consume the result.
+description: Package outputs so the next SWDL specialist can continue without re-discovery. Use before marking done when another role will consume the result.
 ---
 
 # Handoff
