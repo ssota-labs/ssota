@@ -6,7 +6,7 @@ Review sits between build and QA: 구현(task/PR) → 코드 리뷰 → QA → m
 
 `open` | `in_review` | `changes_requested` | `approved` | `merged` | `closed`
 
-`in_review` → `approved` or `changes_requested`. **`approved` = merge-ready = QA entry** — QA verifies approved PRs; the actual `merged` transition follows a passing test_plan by convention.
+`in_review` → `approved` or `changes_requested`. **`approved` = QA entry** — QA verifies approved PRs (`swdl.pr-approved-before-test-plan`); the actual `merged` transition requires a passing test_plan (`swdl.test-pass-before-pr-merged`).
 
 ## Expectations for a review-ready PR
 - `pull_request` node linked to its work: `implements` → user_story/feature, `tracked_by` from the task
