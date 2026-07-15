@@ -33,8 +33,10 @@ export function TabsEl({
 
   const active = defaultValue ?? items[0]?.value ?? "";
 
+  // flex-1/min-h-0으로 뷰포트 높이에 잠그지 않는다 — 부모 ConsolePageFrame의
+  // overflow-y-auto가 페이지 스크롤을 담당한다 (roadmap과 동일).
   return (
-    <Tabs defaultValue={active} className="flex min-h-0 w-full flex-1 flex-col">
+    <Tabs defaultValue={active} className="flex w-full flex-col">
       <TabsList variant={variant}>
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value}>
@@ -46,7 +48,7 @@ export function TabsEl({
         <TabsContent
           key={item.value}
           value={item.value}
-          className="flex min-h-0 flex-1 flex-col pt-4"
+          className="mt-0 flex flex-col pt-0"
         >
           {runtime?.renderElement(item.panel) ?? null}
         </TabsContent>
