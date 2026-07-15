@@ -3,29 +3,38 @@ import { cn } from "@ssota/ui/lib/utils";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 
+/**
+ * Card/list 표면 위 스켈레톤 채움 — 기본 `bg-muted`는 `bg-card` 위에서
+ * 대비가 커서 헤더·페이지 톤보다 도드라진다. 헤더 스켈레톤과 맞추려면
+ * muted를 낮춘다.
+ */
+const skeletonOnSurface = "bg-muted/40";
+
 function BrowseHeaderSkeleton({ showAction = false }: { showAction?: boolean }) {
   return (
     <div className="space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <Skeleton className="h-8 w-36 max-w-[45%] rounded-md" />
-        {showAction ? <Skeleton className="h-8 w-28 shrink-0 rounded-md" /> : null}
+        <Skeleton className={cn("h-8 w-36 max-w-[45%] rounded-md", skeletonOnSurface)} />
+        {showAction ? (
+          <Skeleton className={cn("h-8 w-28 shrink-0 rounded-md", skeletonOnSurface)} />
+        ) : null}
       </div>
-      <Skeleton className="h-4 w-full max-w-2xl rounded-md" />
+      <Skeleton className={cn("h-4 w-full max-w-2xl rounded-md", skeletonOnSurface)} />
     </div>
   );
 }
 
 function SectionLabelSkeleton({ width = "w-28" }: { width?: string }) {
-  return <Skeleton className={cn("h-3 rounded-sm", width)} />;
+  return <Skeleton className={cn("h-3 rounded-sm", skeletonOnSurface, width)} />;
 }
 
 export function GridCardSkeleton() {
   return (
     <div className="space-y-2 rounded-lg border bg-card p-4">
-      <Skeleton className="size-5 rounded-sm" />
-      <Skeleton className="h-4 w-[65%] rounded-sm" />
-      <Skeleton className="h-3 w-full rounded-sm" />
-      <Skeleton className="h-3 w-[80%] rounded-sm" />
+      <Skeleton className={cn("size-5 rounded-sm", skeletonOnSurface)} />
+      <Skeleton className={cn("h-4 w-[65%] rounded-sm", skeletonOnSurface)} />
+      <Skeleton className={cn("h-3 w-full rounded-sm", skeletonOnSurface)} />
+      <Skeleton className={cn("h-3 w-[80%] rounded-sm", skeletonOnSurface)} />
     </div>
   );
 }
@@ -34,11 +43,11 @@ export function ListRowSkeleton() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1 space-y-1.5">
-        <Skeleton className="h-4 w-40 rounded-sm" />
-        <Skeleton className="h-3 w-56 max-w-full rounded-sm" />
-        <Skeleton className="h-3 w-full max-w-md rounded-sm" />
+        <Skeleton className={cn("h-4 w-40 rounded-sm", skeletonOnSurface)} />
+        <Skeleton className={cn("h-3 w-56 max-w-full rounded-sm", skeletonOnSurface)} />
+        <Skeleton className={cn("h-3 w-full max-w-md rounded-sm", skeletonOnSurface)} />
       </div>
-      <Skeleton className="size-4 shrink-0 rounded-sm" />
+      <Skeleton className={cn("size-4 shrink-0 rounded-sm", skeletonOnSurface)} />
     </div>
   );
 }
@@ -48,13 +57,19 @@ export function CardListRowSkeleton() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex min-w-0 flex-1 items-start gap-2">
-        <Skeleton className="mt-0.5 h-5 w-14 shrink-0 rounded-full" />
+        <Skeleton
+          className={cn("mt-0.5 h-5 w-14 shrink-0 rounded-full", skeletonOnSurface)}
+        />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <Skeleton className="h-4 w-48 max-w-full rounded-sm" />
-          <Skeleton className="h-3 w-64 max-w-full rounded-sm" />
+          <Skeleton
+            className={cn("h-4 w-48 max-w-full rounded-sm", skeletonOnSurface)}
+          />
+          <Skeleton
+            className={cn("h-3 w-64 max-w-full rounded-sm", skeletonOnSurface)}
+          />
         </div>
       </div>
-      <Skeleton className="size-4 shrink-0 rounded-sm" />
+      <Skeleton className={cn("size-4 shrink-0 rounded-sm", skeletonOnSurface)} />
     </div>
   );
 }
