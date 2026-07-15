@@ -20,6 +20,17 @@ export type FlowLayoutAlgorithm = "layered" | "tree";
 
 export type Positioned = Record<string, { x: number; y: number }>;
 
+/** ELK orthogonal edge route — bend points in the same coordinate space as node positions. */
+export type RoutedEdge = {
+  id: string;
+  points: Array<{ x: number; y: number }>;
+};
+
+export type LayoutWithEdges = {
+  positions: Positioned;
+  edges: RoutedEdge[];
+};
+
 const DEFAULT_SPACING = 56;
 
 function nodeSize(n: FlowNodeData): { width: number; height: number } {
@@ -174,4 +185,116 @@ export async function layoutFlow(
     }
   }
   return positions;
+}
+
+function collectElkEdgePoints(
+  edge: {
+    id?: string;
+    sections?: Array<{
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      bendPoints?: Array<{ x: number; y: number }>;
+    }>;
+  },
+): RoutedEdge | null {
+  if (!edge.id || !edge.sections || edge.sections.length === 0) return null;
+  const points: Array<{ x: number; y: number }> = [];
+  for (const section of edge.sections) {
+    points.push(section.startPoint);
+    for (const bend of section.bendPoints ?? []) points.push(bend);
+    points.push(section.endPoint);
+  }
+  if (points.length < 2) return null;
+  return { id: edge.id, points };
+}
+
+/**
+ * Node positions + orthogonal edge routes from one ELK layered pass.
+ * Feedback/cycle edges are included — ELK reverses them for ranking and still
+ * returns non-overlapping orthogonal sections. On ELK failure, positions fall
+ * back to ranked layout and `edges` is empty (caller should path locally).
+ */
+export async function layoutFlowWithEdges(
+  model: FlowModel,
+  direction: FlowLayoutDirection = "LR",
+  spacing: number = DEFAULT_SPACING,
+): Promise<LayoutWithEdges> {
+  if (model.nodes.length === 0) return { positions: {}, edges: [] };
+  // Persisted coords: keep them; routing needs a fresh ELK pass the caller can
+  // request separately. Work-cycle always omits explicit coords.
+  if (hasExplicitCoords(model)) {
+    return { positions: explicitPositions(model), edges: [] };
+  }
+
+  let elk: InstanceType<Awaited<typeof import("elkjs/lib/elk.bundled.js")>["default"]>;
+  try {
+    const Elk = (await import("elkjs/lib/elk.bundled.js")).default;
+    elk = new Elk();
+  } catch (error) {
+    console.error("[flow-layout] ELK load failed — ranked fallback 사용", error);
+    return {
+      positions: rankedFallbackPositions(model, direction, spacing),
+      edges: [],
+    };
+  }
+
+  const children = model.nodes.map((n) => {
+    const { width, height } = nodeSize(n);
+    return { id: n.id, width, height };
+  });
+  const edges = model.edges.map((e) => ({
+    id: e.id,
+    sources: [e.source],
+    targets: [e.target],
+  }));
+
+  let laidOut: Awaited<ReturnType<typeof elk.layout>>;
+  try {
+    laidOut = await elk.layout({
+      id: "root",
+      layoutOptions: {
+        "elk.algorithm": "layered",
+        "elk.direction": toElkDirection(direction),
+        "elk.edgeRouting": "ORTHOGONAL",
+        "elk.spacing.nodeNode": String(spacing),
+        "elk.spacing.edgeEdge": String(Math.max(12, Math.round(spacing / 3))),
+        "elk.spacing.edgeNode": String(Math.max(16, Math.round(spacing / 2))),
+        "elk.layered.spacing.nodeNodeBetweenLayers": String(spacing + 32),
+        "elk.layered.spacing.edgeNodeBetweenLayers": String(
+          Math.max(20, Math.round(spacing / 2)),
+        ),
+        "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+        "elk.layered.unnecessaryBendpoints": "true",
+      },
+      children,
+      edges,
+    });
+  } catch (error) {
+    console.error("[flow-layout] ELK layout failed — ranked fallback 사용", error);
+    return {
+      positions: rankedFallbackPositions(model, direction, spacing),
+      edges: [],
+    };
+  }
+
+  const positions: Positioned = {};
+  for (const child of laidOut.children ?? []) {
+    if (child.id && child.x != null && child.y != null) {
+      positions[child.id] = { x: child.x, y: child.y };
+    }
+  }
+  let fallbackY = 0;
+  for (const n of model.nodes) {
+    if (!positions[n.id]) {
+      positions[n.id] = { x: 0, y: fallbackY };
+      fallbackY += nodeSize(n).height + spacing;
+    }
+  }
+
+  const routed: RoutedEdge[] = [];
+  for (const edge of laidOut.edges ?? []) {
+    const route = collectElkEdgePoints(edge);
+    if (route) routed.push(route);
+  }
+  return { positions, edges: routed };
 }

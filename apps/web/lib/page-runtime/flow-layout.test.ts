@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { coerceFlow } from "./flow-model";
-import { hasExplicitCoords, layoutFlow } from "./flow-layout";
+import { hasExplicitCoords, layoutFlow, layoutFlowWithEdges } from "./flow-layout";
 
 describe("flow-layout", () => {
   it("returns persisted coordinates as-is when all nodes have them", async () => {
@@ -58,5 +58,30 @@ describe("flow-layout", () => {
     expect(pos.a!.y).toBeGreaterThan(pos.root!.y);
     expect(pos.b!.y).toBeGreaterThan(pos.root!.y);
     expect(pos.a!.x).not.toEqual(pos.b!.x);
+  });
+
+  it("returns orthogonal edge bend points alongside positions", async () => {
+    const model = coerceFlow({
+      nodes: [
+        { id: "a", title: "A", width: 120, height: 60 },
+        { id: "b", title: "B", width: 120, height: 60 },
+        { id: "c", title: "C", width: 120, height: 60 },
+      ],
+      edges: [
+        { id: "a-b", source: "a", target: "b" },
+        { id: "b-c", source: "b", target: "c" },
+        // feedback — ELK should still emit a route section
+        { id: "c-a", source: "c", target: "a" },
+      ],
+    });
+    const { positions, edges } = await layoutFlowWithEdges(model, "LR");
+    expect(positions.b!.x).toBeGreaterThan(positions.a!.x);
+    expect(edges.length).toBeGreaterThanOrEqual(2);
+    for (const e of edges) {
+      expect(e.points.length).toBeGreaterThanOrEqual(2);
+    }
+    const ids = edges.map((e) => e.id).toSorted();
+    expect(ids).toContain("a-b");
+    expect(ids).toContain("b-c");
   });
 });

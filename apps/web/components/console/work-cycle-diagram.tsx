@@ -9,7 +9,6 @@ import {
   ReactFlowProvider,
   useNodesInitialized,
   useReactFlow,
-  type BuiltInEdge,
   type Edge,
   type Node,
   type NodeProps,
@@ -17,8 +16,15 @@ import {
 import { Handle, Position } from "@xyflow/react";
 import { MinusIcon, PlusIcon } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  ElkOrthogonalEdge,
+  type ElkOrthogonalEdgeData,
+} from "@/lib/page-runtime/components/elk-orthogonal-edge";
 import { FlowTopToolbar, FlowViewportToolbar } from "@/lib/page-runtime/components/flow-toolbar";
-import { layoutFlow } from "@/lib/page-runtime/flow-layout";
+import {
+  layoutFlowWithEdges,
+  type RoutedEdge,
+} from "@/lib/page-runtime/flow-layout";
 import {
   SUBFLOW_HEADER_H,
   SUBFLOW_LOOP_PAD,
@@ -31,26 +37,38 @@ import {
 } from "./work-cycle-model";
 
 const DIAGRAM_HEIGHT = 720;
+/** Outer canvas spacing — room for orthogonal corridors between cycle cards. */
+const OUTER_LAYOUT_SPACING = 72;
+const NESTED_LAYOUT_SPACING = 56;
 
-/**
- * 역방향(reject_loop·back handoff) 엣지 전용 하단 핸들 — forward 흐름(좌→우)과
- * 분리해 행 아래로 우회시키면 엣지가 노드를 가로지르며 엉키지 않는다.
- */
-function LoopHandles() {
+function offsetRoutedEdges(
+  routes: RoutedEdge[],
+  dx: number,
+  dy: number,
+): RoutedEdge[] {
+  return routes.map((r) => ({
+    id: r.id,
+    points: r.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+  }));
+}
+
+/** 역방향(reject_loop·back handoff) 엣지용 하단 핸들 — forward(좌→우)와 분리해 행 아래로 우회. */
+function LoopHandle() {
+  const style = { left: "50%", transform: "translateX(-50%)" };
   return (
     <>
       <Handle
-        id="loop-in"
+        id="loop"
         type="target"
         position={Position.Bottom}
-        style={{ left: "30%" }}
-        className="!bg-muted-foreground"
+        style={style}
+        className="!pointer-events-none !h-0 !w-0 !min-h-0 !min-w-0 !border-0 !opacity-0"
       />
       <Handle
-        id="loop-out"
+        id="loop"
         type="source"
         position={Position.Bottom}
-        style={{ left: "70%" }}
+        style={style}
         className="!bg-muted-foreground"
       />
     </>
@@ -129,7 +147,7 @@ function CycleCardNode({ data, selected }: NodeProps) {
         />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
-      <LoopHandles />
+      <LoopHandle />
     </div>
   );
 }
@@ -165,7 +183,7 @@ function CycleGroupNode({ data, selected }: NodeProps) {
         />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
-      <LoopHandles />
+      <LoopHandle />
     </div>
   );
 }
@@ -211,7 +229,7 @@ function TopologyStepNode({ data, selected }: NodeProps) {
         </div>
       ) : null}
       <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
-      <LoopHandles />
+      <LoopHandle />
     </div>
   );
 }
@@ -220,6 +238,10 @@ const NODE_TYPES = {
   cycleCard: CycleCardNode,
   cycleGroup: CycleGroupNode,
   topologyStep: TopologyStepNode,
+};
+
+const EDGE_TYPES = {
+  elkOrthogonal: ElkOrthogonalEdge,
 };
 
 function FitViewWhenReady({
@@ -257,35 +279,21 @@ function FitViewWhenReady({
   return null;
 }
 
-function edgeStyle(kind: string) {
-  const dashed = kind === "feed" || kind === "handoff";
-  return {
-    style: dashed
-      ? { strokeDasharray: "6 4" }
-      : kind === "reject_loop"
-        ? { stroke: "var(--destructive)" }
-        : undefined,
-    markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 } as const,
-  };
-}
-
-/** 엣지 라벨(approved/rejected/pass …)은 작고 은은하게 — 노드보다 눈에 덜 띄어야 한다. */
-function edgeLabelProps(kind: string) {
-  return {
-    labelStyle: {
-      fontSize: 10,
-      fontWeight: 500,
-      fill: kind === "reject_loop" ? "var(--destructive)" : "var(--muted-foreground)",
-    },
-    labelBgStyle: { fill: "var(--card)", fillOpacity: 0.9 },
-    labelBgPadding: [4, 2] as [number, number],
-    labelBgBorderRadius: 4,
-  };
+function edgeStrokeStyle(kind: string): React.CSSProperties | undefined {
+  if (kind === "feed" || kind === "handoff") {
+    return { strokeDasharray: "6 4" };
+  }
+  if (kind === "reject_loop") {
+    return { stroke: "var(--destructive)" };
+  }
+  return undefined;
 }
 
 /**
  * Work-cycle map as React Flow Sub Flows: topology steps nest inside an
  * expanded cycle group via `parentId` + relative positions.
+ * Edge paths come from ELK orthogonal routing (`layoutFlowWithEdges`) so
+ * corridors avoid each other instead of RF smoothstep defaults.
  * @see https://reactflow.dev/learn/layouting/sub-flows
  */
 export function WorkCycleDiagram({
@@ -332,13 +340,28 @@ export function WorkCycleDiagram({
     let cancelled = false;
 
     async function run() {
-      const nestedPositions = new Map<
+      const nestedLayouts = new Map<
         string,
-        { positions: Record<string, { x: number; y: number }>; width: number; height: number }
+        {
+          positions: Record<string, { x: number; y: number }>;
+          width: number;
+          height: number;
+          /** Nest-local ELK routes; later shifted into absolute flow coords. */
+          routes: RoutedEdge[];
+        }
       >();
 
       for (const nest of model.nestedLayouts) {
-        const laid = await layoutFlow(
+        // Include reject_loop edges so ELK routes them orthogonally (not only
+        // forward sequence edges used for layering in buildSubflowModel).
+        const nestEdges = model.edges
+          .filter((e) => e.id.startsWith(`${nest.cycleKey}::`))
+          .map((e) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+          }));
+        const laid = await layoutFlowWithEdges(
           {
             nodes: nest.nodes.map((n) => ({
               id: n.id,
@@ -346,28 +369,28 @@ export function WorkCycleDiagram({
               width: n.width,
               height: n.height,
             })),
-            edges: nest.edges,
+            edges: nestEdges,
           },
           "LR",
+          NESTED_LAYOUT_SPACING,
         );
         let maxX = 0;
         let maxY = 0;
         for (const n of nest.nodes) {
-          const p = laid[n.id] ?? { x: 0, y: 0 };
+          const p = laid.positions[n.id] ?? { x: 0, y: 0 };
           maxX = Math.max(maxX, p.x + n.width);
           maxY = Math.max(maxY, p.y + n.height);
         }
         const offsetPositions: Record<string, { x: number; y: number }> = {};
-        for (const [id, p] of Object.entries(laid)) {
+        for (const [id, p] of Object.entries(laid.positions)) {
           offsetPositions[id] = {
             x: p.x + SUBFLOW_PAD,
             y: p.y + SUBFLOW_HEADER_H + SUBFLOW_PAD,
           };
         }
-        nestedPositions.set(nest.cycleKey, {
+        nestedLayouts.set(nest.cycleKey, {
           positions: offsetPositions,
           width: Math.max(280, maxX + SUBFLOW_PAD * 2),
-          // reject_loop 하단 우회 엣지가 그룹 경계에 잘리지 않게 아래 여백을 더한다.
           height: Math.max(
             160,
             maxY +
@@ -375,6 +398,8 @@ export function WorkCycleDiagram({
               SUBFLOW_PAD * 2 +
               (nest.hasBackEdges ? SUBFLOW_LOOP_PAD : 0),
           ),
+          // Keep routes in ELK-local space; apply pad + parent abs later.
+          routes: laid.edges,
         });
       }
 
@@ -382,7 +407,7 @@ export function WorkCycleDiagram({
 
       const topLevel = model.nodes.filter((n) => !n.parentId);
       const topWithSize = topLevel.map((n) => {
-        const nest = nestedPositions.get(n.id);
+        const nest = nestedLayouts.get(n.id);
         return {
           id: n.id,
           title: n.data.kind === "cycle" ? n.data.title : n.id,
@@ -391,26 +416,36 @@ export function WorkCycleDiagram({
         };
       });
 
-      // 바깥 패스도 forward handoff만 레이아웃에 넣는다 — launch→direction 같은
-      // 사이클을 닫는 back-edge를 포함하면 layered 랭크가 무너진다. 노드는
-      // topWithSize에 전부 있으므로 엣지가 없는 사이클도 항상 배치된다.
-      const outerPositions = await layoutFlow(
-        {
-          nodes: topWithSize,
-          edges: model.edges
-            .filter((e) => !e.id.includes("::") && !e.backward)
-            .map((e) => ({ id: e.id, source: e.source, target: e.target })),
-        },
+      // Outer pass includes forward + back handoffs — ELK orthogonal routing
+      // separates feedback corridors instead of RF smoothstep stacking them.
+      const outerEdges = model.edges
+        .filter((e) => !e.id.includes("::"))
+        .map((e) => ({ id: e.id, source: e.source, target: e.target }));
+      const outer = await layoutFlowWithEdges(
+        { nodes: topWithSize, edges: outerEdges },
         "LR",
+        OUTER_LAYOUT_SPACING,
       );
 
       if (cancelled) return;
 
-      // Parents must come before children in the RF nodes array.
+      const routeById = new Map<string, RoutedEdge>();
+      for (const r of outer.edges) routeById.set(r.id, r);
+
+      for (const [cycleKey, nest] of nestedLayouts) {
+        const parentPos = outer.positions[cycleKey] ?? { x: 0, y: 0 };
+        const abs = offsetRoutedEdges(
+          nest.routes,
+          parentPos.x + SUBFLOW_PAD,
+          parentPos.y + SUBFLOW_HEADER_H + SUBFLOW_PAD,
+        );
+        for (const r of abs) routeById.set(r.id, r);
+      }
+
       const rfNodes: Node[] = [];
       for (const n of model.nodes) {
         if (n.parentId) continue;
-        const nest = nestedPositions.get(n.id);
+        const nest = nestedLayouts.get(n.id);
         const w = nest?.width ?? n.width;
         const h = nest?.height ?? n.height;
         const baseData =
@@ -420,7 +455,7 @@ export function WorkCycleDiagram({
         rfNodes.push({
           id: n.id,
           type: n.rfType,
-          position: outerPositions[n.id] ?? { x: 0, y: 0 },
+          position: outer.positions[n.id] ?? { x: 0, y: 0 },
           data: baseData,
           style: n.rfType === "cycleGroup" ? { width: w, height: h } : undefined,
           width: n.rfType === "cycleGroup" ? w : undefined,
@@ -429,7 +464,7 @@ export function WorkCycleDiagram({
       }
       for (const n of model.nodes) {
         if (!n.parentId) continue;
-        const nest = nestedPositions.get(n.parentId);
+        const nest = nestedLayouts.get(n.parentId);
         const rel = nest?.positions[n.id] ?? { x: SUBFLOW_PAD, y: SUBFLOW_HEADER_H };
         rfNodes.push({
           id: n.id,
@@ -445,29 +480,33 @@ export function WorkCycleDiagram({
 
       setNodes(rfNodes);
       setEdges(
-        // BuiltInEdge: `type: "smoothstep"` 변형만 pathOptions(borderRadius)를 허용한다.
-        model.edges.map((e): BuiltInEdge => {
-          // 역방향 엣지는 하단 핸들로 우회 — forward 흐름과 교차하지 않는다.
-          const loop = e.backward === true;
+        model.edges.map((e): Edge => {
+          const route = routeById.get(e.id);
+          const data: ElkOrthogonalEdgeData = {
+            points: route?.points,
+            kind: e.kind,
+            label: e.label,
+          };
           return {
             id: e.id,
             source: e.source,
             target: e.target,
-            sourceHandle: loop ? "loop-out" : undefined,
-            targetHandle: loop ? "loop-in" : undefined,
-            type: "smoothstep",
-            pathOptions: { borderRadius: 12 },
+            type: "elkOrthogonal",
+            data,
             label: e.label,
             zIndex: e.id.includes("::") ? 10 : 0,
-            ...edgeLabelProps(e.kind),
-            ...edgeStyle(e.kind),
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 16,
+              height: 16,
+            },
+            style: edgeStrokeStyle(e.kind),
           };
         }),
       );
     }
 
     run().catch((error) => {
-      // 레이아웃 실패가 캔버스를 영구 빈 화면으로 만들지 않도록 표면화한다.
       console.error("[work-cycle] layout failed", error);
     });
     return () => {
@@ -487,6 +526,7 @@ export function WorkCycleDiagram({
           nodes={nodes}
           edges={edges}
           nodeTypes={NODE_TYPES}
+          edgeTypes={EDGE_TYPES}
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable
