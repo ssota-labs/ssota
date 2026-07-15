@@ -4,11 +4,10 @@ import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 
 /**
- * Card/list 표면 위 스켈레톤 채움 — 기본 `bg-muted`는 `bg-card` 위에서
- * 대비가 커서 헤더·페이지 톤보다 도드라진다. 헤더 스켈레톤과 맞추려면
- * muted를 낮춘다.
+ * Card/list 표면 위 스켈레톤 채움 — `.cn-skeleton`의 `bg-muted`가 CSS로
+ * 고정돼 유틸만으로는 덮이지 않으므로 important로 낮춘다. 헤더·페이지 톤에 맞춤.
  */
-const skeletonOnSurface = "bg-muted/40";
+const skeletonOnSurface = "!bg-muted/30";
 
 function BrowseHeaderSkeleton({ showAction = false }: { showAction?: boolean }) {
   return (
