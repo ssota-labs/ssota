@@ -3,9 +3,7 @@ import { coerceFlow } from "./flow-model";
 import {
   hasExplicitCoords,
   layoutFlow,
-  layoutFlowWithEdges,
-  snapRoutesToNodeHandles,
-  synthesizeFeedbackRoutes,
+  layoutFlowWithDagre,
 } from "./flow-layout";
 
 describe("flow-layout", () => {
@@ -66,7 +64,7 @@ describe("flow-layout", () => {
     expect(pos.a!.x).not.toEqual(pos.b!.x);
   });
 
-  it("returns orthogonal edge bend points alongside positions", async () => {
+  it("dagre LR places a chain left-to-right (React Flow official pattern)", () => {
     const model = coerceFlow({
       nodes: [
         { id: "a", title: "A", width: 120, height: 60 },
@@ -78,63 +76,23 @@ describe("flow-layout", () => {
         { id: "b-c", source: "b", target: "c" },
       ],
     });
-    const { positions, edges } = await layoutFlowWithEdges(model, "LR");
-    expect(positions.b!.x).toBeGreaterThan(positions.a!.x);
-    expect(edges.length).toBe(2);
-    for (const e of edges) {
-      expect(e.points.length).toBeGreaterThanOrEqual(2);
-      // Routes share the same coordinate space as node positions.
-      expect(e.points[0]!.x).toBeGreaterThanOrEqual(positions.a!.x);
-    }
-    expect(edges.map((e) => e.id).toSorted()).toEqual(["a-b", "b-c"]);
+    const pos = layoutFlowWithDagre(model, "LR");
+    expect(Object.keys(pos).sort()).toEqual(["a", "b", "c"]);
+    expect(pos.b!.x).toBeGreaterThan(pos.a!.x);
+    expect(pos.c!.x).toBeGreaterThan(pos.b!.x);
   });
 
-  it("snaps side-port attachments to handle centers", () => {
-    const nodes = [
-      { id: "a", x: 0, y: 100, width: 100, height: 40 },
-      { id: "b", x: 200, y: 100, width: 100, height: 40 },
-    ];
-    const edges = [
-      { id: "e1", source: "a", target: "b" },
-      { id: "e2", source: "a", target: "b" },
-    ];
-    // ELK-like stubs that miss the RF handle (side center).
-    const routes = [
-      {
-        id: "e1",
-        points: [
-          { x: 100, y: 80 },
-          { x: 150, y: 80 },
-          { x: 200, y: 80 },
-        ],
-      },
-      {
-        id: "e2",
-        points: [
-          { x: 100, y: 160 },
-          { x: 150, y: 160 },
-          { x: 200, y: 160 },
-        ],
-      },
-    ];
-    const snapped = snapRoutesToNodeHandles(nodes, edges, routes);
-    for (const r of snapped) {
-      expect(r.points[0]).toEqual({ x: 100, y: 120 });
-      expect(r.points[r.points.length - 1]).toEqual({ x: 200, y: 120 });
-    }
-  });
-
-  it("synthesizes non-overlapping feedback lanes below nodes", () => {
-    const nodes = new Map([
-      ["a", { id: "a", x: 0, y: 0, width: 100, height: 40 }],
-      ["b", { id: "b", x: 200, y: 0, width: 100, height: 40 }],
-    ]);
-    const routes = synthesizeFeedbackRoutes(nodes, [
-      { id: "b-a", source: "b", target: "a" },
-      { id: "b-a-2", source: "b", target: "a" },
-    ]);
-    expect(routes).toHaveLength(2);
-    expect(routes[0]!.points).toHaveLength(4);
-    expect(routes[1]!.points[1]!.y).toBeGreaterThan(routes[0]!.points[1]!.y);
+  it("dagre returns persisted coordinates as-is", () => {
+    const model = coerceFlow({
+      nodes: [
+        { id: "a", title: "A", x: 1, y: 2 },
+        { id: "b", title: "B", x: 3, y: 4 },
+      ],
+      edges: [{ source: "a", target: "b" }],
+    });
+    expect(layoutFlowWithDagre(model, "LR")).toEqual({
+      a: { x: 1, y: 2 },
+      b: { x: 3, y: 4 },
+    });
   });
 });
