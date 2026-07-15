@@ -3,29 +3,38 @@ import { cn } from "@ssota/ui/lib/utils";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 
+/**
+ * 스켈레톤 채움 — `.cn-skeleton`의 `bg-muted`가 CSS `@apply`로 고정돼
+ * 일반 유틸로는 덮이지 않으므로 important로 낮춘다.
+ * 헤더(페이지 배경 위 약한 막대)와 같은 톤: foreground 저불투명도.
+ */
+const skeletonQuiet = "!bg-foreground/8";
+
 function BrowseHeaderSkeleton({ showAction = false }: { showAction?: boolean }) {
   return (
     <div className="space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <Skeleton className="h-8 w-36 max-w-[45%] rounded-md" />
-        {showAction ? <Skeleton className="h-8 w-28 shrink-0 rounded-md" /> : null}
+        <Skeleton className={cn("h-8 w-36 max-w-[45%] rounded-md", skeletonQuiet)} />
+        {showAction ? (
+          <Skeleton className={cn("h-8 w-28 shrink-0 rounded-md", skeletonQuiet)} />
+        ) : null}
       </div>
-      <Skeleton className="h-4 w-full max-w-2xl rounded-md" />
+      <Skeleton className={cn("h-4 w-full max-w-2xl rounded-md", skeletonQuiet)} />
     </div>
   );
 }
 
 function SectionLabelSkeleton({ width = "w-28" }: { width?: string }) {
-  return <Skeleton className={cn("h-3 rounded-sm", width)} />;
+  return <Skeleton className={cn("h-3 rounded-sm", skeletonQuiet, width)} />;
 }
 
 export function GridCardSkeleton() {
   return (
-    <div className="space-y-2 rounded-lg border bg-card p-4">
-      <Skeleton className="size-5 rounded-sm" />
-      <Skeleton className="h-4 w-[65%] rounded-sm" />
-      <Skeleton className="h-3 w-full rounded-sm" />
-      <Skeleton className="h-3 w-[80%] rounded-sm" />
+    <div className="space-y-2 rounded-lg border border-border/50 bg-transparent p-4">
+      <Skeleton className={cn("size-5 rounded-sm", skeletonQuiet)} />
+      <Skeleton className={cn("h-4 w-[65%] rounded-sm", skeletonQuiet)} />
+      <Skeleton className={cn("h-3 w-full rounded-sm", skeletonQuiet)} />
+      <Skeleton className={cn("h-3 w-[80%] rounded-sm", skeletonQuiet)} />
     </div>
   );
 }
@@ -34,11 +43,11 @@ export function ListRowSkeleton() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1 space-y-1.5">
-        <Skeleton className="h-4 w-40 rounded-sm" />
-        <Skeleton className="h-3 w-56 max-w-full rounded-sm" />
-        <Skeleton className="h-3 w-full max-w-md rounded-sm" />
+        <Skeleton className={cn("h-4 w-40 rounded-sm", skeletonQuiet)} />
+        <Skeleton className={cn("h-3 w-56 max-w-full rounded-sm", skeletonQuiet)} />
+        <Skeleton className={cn("h-3 w-full max-w-md rounded-sm", skeletonQuiet)} />
       </div>
-      <Skeleton className="size-4 shrink-0 rounded-sm" />
+      <Skeleton className={cn("size-4 shrink-0 rounded-sm", skeletonQuiet)} />
     </div>
   );
 }
@@ -48,13 +57,19 @@ export function CardListRowSkeleton() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex min-w-0 flex-1 items-start gap-2">
-        <Skeleton className="mt-0.5 h-5 w-14 shrink-0 rounded-full" />
+        <Skeleton
+          className={cn("mt-0.5 h-5 w-14 shrink-0 rounded-full", skeletonQuiet)}
+        />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <Skeleton className="h-4 w-48 max-w-full rounded-sm" />
-          <Skeleton className="h-3 w-64 max-w-full rounded-sm" />
+          <Skeleton
+            className={cn("h-4 w-48 max-w-full rounded-sm", skeletonQuiet)}
+          />
+          <Skeleton
+            className={cn("h-3 w-64 max-w-full rounded-sm", skeletonQuiet)}
+          />
         </div>
       </div>
-      <Skeleton className="size-4 shrink-0 rounded-sm" />
+      <Skeleton className={cn("size-4 shrink-0 rounded-sm", skeletonQuiet)} />
     </div>
   );
 }
@@ -74,7 +89,8 @@ export function SegmentedListSkeleton({
   return (
     <div
       className={cn(
-        "divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
+        // 헤더와 같은 페이지 배경 톤 — bg-card 리프트로 도드라지지 않게
+        "divide-y divide-border/40 overflow-hidden rounded-lg border border-border/40 bg-transparent",
         className,
       )}
     >
@@ -168,7 +184,7 @@ export function BrowseWorkspaceListLoading({
           return (
             <section key={index} className="space-y-3">
               <SectionLabelSkeleton width={section.labelWidth} />
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+              <div className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border/40 bg-transparent">
                 {Array.from({ length: rows }, (_, rowIndex) => (
                   <ListRowSkeleton key={rowIndex} />
                 ))}

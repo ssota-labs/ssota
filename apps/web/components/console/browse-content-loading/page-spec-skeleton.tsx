@@ -1,6 +1,10 @@
 import type { JsonRenderSpec } from "@ssota/contracts";
 import { Skeleton } from "@ssota/ui/components/ui/skeleton";
-import { cn } from "@ssota/ui/lib/utils";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@ssota/ui/components/ui/tabs";
 import {
   SectionHeaderStatic,
   SegmentedListSkeleton,
@@ -93,6 +97,7 @@ function SectionContentSkeleton({ childTypes }: { childTypes: string[] }) {
   return <SegmentedListSkeleton rows={3} />;
 }
 
+/** 로딩 크롬 — 실제 TabsEl(`variant="line"`)과 동일한 TabsList 톤. */
 function TabsBarStatic({
   items,
   activeValue,
@@ -103,24 +108,19 @@ function TabsBarStatic({
   if (items.length === 0) return null;
 
   return (
-    <div className="border-border flex flex-wrap gap-4 border-b">
-      {items.map((item) => {
-        const isActive = item.value === activeValue;
-        return (
-          <span
-            key={item.value}
-            className={cn(
-              "border-b-2 pb-2 text-sm font-medium transition-colors",
-              isActive
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground",
-            )}
-          >
+    <Tabs
+      value={activeValue}
+      className="pointer-events-none flex w-fit flex-col"
+      aria-hidden
+    >
+      <TabsList variant="line">
+        {items.map((item) => (
+          <TabsTrigger key={item.value} value={item.value} tabIndex={-1}>
             {item.label}
-          </span>
-        );
-      })}
-    </div>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }
 
