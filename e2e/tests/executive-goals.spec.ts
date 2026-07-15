@@ -143,8 +143,14 @@ test.describe("Executive goals", () => {
   });
 
   test("sibling nav links Roadmap and Goals under Executive", async ({ page }) => {
+    // Wait for real content — Suspense fallback also mounts page-sibling-nav
+    await expect(page.getByRole("heading", { name: "Objectives" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("content-loading-page")).toHaveCount(0);
+
     const siblingNav = page.getByTestId("page-sibling-nav");
-    await expect(siblingNav).toBeVisible({ timeout: 15_000 });
+    await expect(siblingNav).toBeVisible();
 
     const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
     await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toBeVisible();
