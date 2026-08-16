@@ -63,15 +63,20 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
 };
 
-// The agents run exclusively on the Vercel Workflow DevKit (WorkflowAgent), so
-// the workflow build transform is always applied. Locally this uses the WDK
-// "Local World" — no Vercel deployment required.
+// The agents run exclusively on the Vercel Workflow DevKit (WorkflowAgent).
+// Local `pnpm --filter web dev` skips the transform (SSOTA_SKIP_WORKFLOW=1) so
+// Company Workspace pages do not pay a 1–5 min "Discovering workflow directives"
+// scan. Opt in with `pnpm --filter web dev:workflow` or SSOTA_SKIP_WORKFLOW=0.
+// Playwright UI specs also default to skip — see e2e/playwright.config.ts.
 export default async function config(
   phase: string,
   ctx: { defaultConfig: NextConfig },
 ): Promise<NextConfig> {
-  const { withWorkflow } = await import("workflow/next");
-  let result: NextConfig | typeof config = withWorkflow(nextConfig);
+  let result: NextConfig | typeof config = nextConfig;
+  if (process.env.SSOTA_SKIP_WORKFLOW !== "1") {
+    const { withWorkflow } = await import("workflow/next");
+    result = withWorkflow(nextConfig);
+  }
 
   if (typeof result === "function") {
     result = await result(phase, ctx);
