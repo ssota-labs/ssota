@@ -40,9 +40,8 @@ test.describe("Console onboarding screenshots", () => {
     });
 
     await page.getByRole("button", { name: "Open project" }).click();
-    await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
-    await expect(page.getByText("No graph nodes yet")).toBeVisible({
-      timeout: 15_000,
+    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({
+      timeout: 30_000,
     });
     await page.screenshot({
       path: "report/screenshots/onboarding-04-home.png",

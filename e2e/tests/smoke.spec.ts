@@ -3,11 +3,14 @@ import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 test.describe("SSOTA Console", () => {
-  test("smoke: 로그인 → 프로젝트 Overview", async ({ page }) => {
-    await loginAsSmoke(page);
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
-    // Overview hub renders the graph CTA in both empty and seeded states.
-    await expect(page.getByRole("button", { name: "Open Graph" })).toBeVisible();
+  test("smoke: 로그인 → Company Home", async ({ page }) => {
+    await loginAsSmoke(page, { skipOverviewAssert: true });
+    await gotoProject(page, "home");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/home$`));
+    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+    await expect(
+      page.getByText("Open requests, active engagements, and reports will show up here."),
+    ).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {
