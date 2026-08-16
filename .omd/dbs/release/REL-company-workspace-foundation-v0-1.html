@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="release" data-omd-id="REL-company-workspace-foundation-v0-1">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="REL-company-workspace-foundation-v0-1" />
+  <meta name="omd:kind" content="release" />
+  <meta name="omd:status" content="draft" />
+  <title>REL-company-workspace-foundation-v0-1 · Company Workspace Foundation v0.1</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">REL-company-workspace-foundation-v0-1</p>
+    <h1 data-omd-field="title">Company Workspace Foundation v0.1</h1>
+    <dl class="omd-props">
+      <dt>status</dt>
+      <dd data-omd-field="status" data-omd-value="draft">draft</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">범용 그래프 중심 제품을 고객·전문가가 실제 업무를 수행하는 Company Workspace로 전환하는 첫 UX 기반 릴리즈</dd>
+      <dt>PRDs</dt>
+      <dd data-omd-rel="prds"><a href="../prds/PRD-company-workspace-ux.html">PRD-company-workspace-ux</a></dd>
+      <dt>Features</dt>
+      <dd data-omd-rel="features">
+        <a href="../features/F-company-workspace-shell.html">F-company-workspace-shell</a>
+        <a href="../features/F-customer-workspace.html">F-customer-workspace</a>
+        <a href="../features/F-expert-workspace.html">F-expert-workspace</a>
+      </dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Theme</h2>
+    <p>데이터 구조를 그대로 노출하는 범용 그래프 콘솔이 아니라, 고객에게는 회사의 상태와 다음 행동을, 전문가에게는 검토 큐와 근거를 제공하는 업무 공간을 만든다.</p>
+
+    <h2>In scope</h2>
+    <ul>
+      <li>고객용 Company Workspace와 전문가용 Expert Workspace의 명시적 분리</li>
+      <li>회사 선택, 전역 검색, 활동·알림을 공유하는 공통 애플리케이션 셸</li>
+      <li>고객 IA: Home, Requests, Engagements, Reports, Documents, Company Data</li>
+      <li>전문가 IA: Client Portfolio, Review Queue, Engagement Workspace</li>
+      <li>도메인 상세 화면이 따를 Overview · Records · Workbench · Detail 페이지 문법</li>
+    </ul>
+
+    <h2>Out of scope</h2>
+    <ul>
+      <li>Finance, Legal, HR, Equity의 상세 업무 흐름과 정본 스키마 구현</li>
+      <li>외부 데이터 수집 파이프라인과 회계·계약 규칙 구현</li>
+      <li>그래프 데이터 마이그레이션 또는 기존 Console의 즉시 제거</li>
+      <li>고객별 자유 페이지 빌더와 임의 동적 비즈니스 로직</li>
+    </ul>
+
+    <h2>Exit criteria</h2>
+    <ul>
+      <li>고객과 전문가가 서로 다른 시작점과 내비게이션을 가진다.</li>
+      <li>모든 핵심 페이지가 사용자 질문 또는 업무 결과로 설명된다.</li>
+      <li>Company Data는 정본 탐색의 2차 진입점이며 홈 내비게이션의 중심이 아니다.</li>
+      <li>IA, 두 셸 layout, 페이지 인벤토리와 surface boundary가 연결된 계획 그래프로 검증된다.</li>
+    </ul>
+  </main>
+</body>
+</html>

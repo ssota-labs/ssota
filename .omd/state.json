@@ -1,0 +1,195 @@
+{
+  "contractVersion": "1.0",
+  "skillVersion": "0.2.0",
+  "templateVersion": "0.2.0",
+  "uiSnapshot": {
+    "distribution": "skill-template",
+    "vocabularyDigest": "b1e9cd04c195828d578d42587e854c5b4da695dff98bd2d111bd68e321879556"
+  },
+  "projectDigest": "228962c603f555825e23f2a2627e7372e3d94603d663dace96da60552d6b668d",
+  "inventory": {
+    "sections": [
+      "home",
+      "vision",
+      "starting",
+      "domain",
+      "workflow",
+      "planning",
+      "plans",
+      "adr",
+      "spec"
+    ],
+    "catalogs": [
+      "glossary",
+      "models",
+      "policies",
+      "prds",
+      "stories",
+      "spec-data-model",
+      "spec-system-model",
+      "plans",
+      "adr"
+    ],
+    "vocabulary": [
+      "Card",
+      "Cards",
+      "File",
+      "Files",
+      "Folder",
+      "DocKind",
+      "DocStatus",
+      "AdrStatus",
+      "Decision",
+      "SpecVersion",
+      "Canvas",
+      "CanvasLegend",
+      "DocsInlineToc",
+      "DocsSidebarFolder",
+      "indexOnlyPageTree",
+      "createCatalogNavigation"
+    ],
+    "contentSource": "local"
+  },
+  "files": {
+    ".omd/assets/omd-doc.css": {
+      "ownership": "omd-managed",
+      "digest": "7f550cb2078bfcc578a6b3afc130d54a37a643ceb278347857f3d022f9050bca"
+    },
+    ".omd/dbs/index.html": {
+      "ownership": "omd-managed",
+      "digest": "c17786ead653bc0508a671d5f1707873950a29e1cbad8dcbddec77d5a3dc0a57"
+    },
+    ".omd/dbs/glossary/index.html": {
+      "ownership": "omd-managed",
+      "digest": "d38c17fef82a1beabfb435fb18ab3feab911dfc433aa1fd06c4e5aed0f860b91"
+    },
+    ".omd/dbs/models/index.html": {
+      "ownership": "omd-managed",
+      "digest": "ff4331ab13c24dab4f474876e5473dc917435a2e9cf4bfc4155049b24f3bee03"
+    },
+    ".omd/dbs/policies/index.html": {
+      "ownership": "omd-managed",
+      "digest": "cb3ca928f029fbc8a68b3ba2b7f3d6486fd5188f11a333e74151544e218a1198"
+    },
+    ".omd/dbs/prds/index.html": {
+      "ownership": "omd-managed",
+      "digest": "de292eb4c0fe396551b61f6fb18e1321b894e351fe5962d02d63201c3023c237"
+    },
+    ".omd/dbs/stories/index.html": {
+      "ownership": "omd-managed",
+      "digest": "b77735814fd9c687874df5c60c676edec11c7e1b0017b5cdf92adac0e7801a8b"
+    },
+    ".omd/dbs/data-model/index.html": {
+      "ownership": "omd-managed",
+      "digest": "e2334af653d25104491ce36abcbe5b0986bd0007bf66886359e8352a77db15e3"
+    },
+    ".omd/dbs/system-model/index.html": {
+      "ownership": "omd-managed",
+      "digest": "45cbd8ea4babde91d500a927f14395a9008cc4355b0878c660bc3ece5fc4161b"
+    },
+    ".omd/dbs/plans/index.html": {
+      "ownership": "omd-managed",
+      "digest": "7927f0a83b3b24bc677c5d08e384cbbc8faf7b9ae09aae9890b3fc589a220d71"
+    },
+    ".omd/dbs/adr/index.html": {
+      "ownership": "omd-managed",
+      "digest": "36da6ee7e747af450c657a22ac22ee4cfeaf2c3aea330d083524f75f4566e674"
+    },
+    ".omd/dbs/specs/index.html": {
+      "ownership": "omd-managed",
+      "digest": "bc1fe18962079c7e00cecd089c14cdc22e35be2449378970b1c71e863ca0810c"
+    },
+    ".omd/dbs/release/index.html": {
+      "ownership": "omd-managed",
+      "digest": "34f0f9fd43cf054ed73e08fe7c8f33553f22014f691647447fd643b50d64b196"
+    },
+    ".omd/dbs/features/index.html": {
+      "ownership": "omd-managed",
+      "digest": "c46d1317fa28287cabc2989fb2ce530e56f8339d37bbb6e2e84a2761b47288b0"
+    },
+    ".omd/dbs/ia/index.html": {
+      "ownership": "omd-managed",
+      "digest": "f4156dd3c483a5a4c320ef77a15c7077170aa65e0c2c902943efad5fe5d3f4b8"
+    },
+    ".omd/dbs/pages/index.html": {
+      "ownership": "omd-managed",
+      "digest": "a360720f03f57d0e575fdb6fa822aa4e7d251b126939bd63ab29e2777b3bf4aa"
+    },
+    ".omd/dbs/layouts/index.html": {
+      "ownership": "omd-managed",
+      "digest": "4bee1c49a196c07da9fe26577555bc47531e3b4c88cea5447bf6ecc6e9d60487"
+    },
+    ".omd/dbs/screen-states/index.html": {
+      "ownership": "omd-managed",
+      "digest": "ab6f59262be753753170ebf5f5adad92fc4c4ffa883d462c15dfd09284bf88f3"
+    },
+    ".omd/dbs/archive/index.html": {
+      "ownership": "omd-managed",
+      "digest": "c45477c5cfed24d633c89a2569dca07eec98073ae03d334b3de42abdb088a71a"
+    },
+    "docs/content/docs/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "bff77ba137b6fb8861e2e88c563bfecf6257f56249f20043b0bb08c965edc30b"
+    },
+    "docs/content/docs/workflow/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "a165c9d5041a4381d0e1ec64d0fc6a972b8d65b951871a00e5ededc69225a485"
+    },
+    "docs/content/docs/domain/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "434192442b35bbc335768b330b17eef3ff42e4d3347261764d440f0cfaba925f"
+    },
+    "docs/content/docs/planning/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "aa85a62fa64b738337c8c4cb602b52256bb7a4d5f25ef03726e49321eb6ec292"
+    },
+    "docs/content/docs/spec/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "48b7bb6ff1d30e1715cd5f2520167c1649966dc8e54c8bbcdc269a840355e231"
+    },
+    "docs/content/docs/domain/glossary/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "2c5e1b5693e8f121327a4d9c18dd9dc5032ae8916481f71f40e6ed888086143e"
+    },
+    "docs/content/docs/domain/models/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "4e0cd6278477c7c7d03ae03d2b65673eb9e72189227947dd5965d3b2cc901337"
+    },
+    "docs/content/docs/domain/policies/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "14f15e240616ad70f6e5637c4079ef79d09355babab1dfa2c26fb3c06401208a"
+    },
+    "docs/content/docs/planning/prds/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "91bc6f854c4fdadf65d730208c9d20c503b0f179799e79c53710060335ee634d"
+    },
+    "docs/content/docs/planning/stories/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "1cc20d58d7381336afe1fdc569c9e16d422f341331a0da51930f24a0aa509d10"
+    },
+    "docs/content/docs/spec/data-model/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "f8b63f087bbc18fa82f1e04f076b0d91e12d1fe9354861b6ccf5e6b28885db40"
+    },
+    "docs/content/docs/spec/system-model/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "65d542fe882c7e15801ed22342e0e1b73b6e34a74f17f054499bc0c540978890"
+    },
+    "docs/content/docs/plans/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "62cecddf93295a7a566eb5cff82d7b04e44d9c8efd37d144a192e29e64b765ab"
+    },
+    "docs/content/docs/adr/meta.json": {
+      "ownership": "omd-managed",
+      "digest": "38b4d9d3aa186c3b05343a74a2c39610483c9ba22f5aa0dac18158336a43b718"
+    },
+    "AGENTS.md": {
+      "ownership": "omd-managed",
+      "digest": "00bd267a30f38a3ae86059335acb03fe097d6e1f97825ed97c7205f03412fdb6"
+    },
+    "CLAUDE.md": {
+      "ownership": "omd-managed",
+      "digest": "0176e19e86fddcd4749982e759a1157250e471f5aaf30302591b1e0fcba5daf4"
+    }
+  }
+}

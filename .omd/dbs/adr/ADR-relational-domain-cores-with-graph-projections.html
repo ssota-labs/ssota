@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="adr" data-omd-id="ADR-relational-domain-cores-with-graph-projections">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="ADR-relational-domain-cores-with-graph-projections" />
+  <meta name="omd:kind" content="adr" />
+  <meta name="omd:stage" content="accepted" />
+  <title>ADR-relational-domain-cores-with-graph-projections · Relational Domain Cores with Graph Projections</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">ADR-relational-domain-cores-with-graph-projections</p>
+    <h1 data-omd-field="title">Relational Domain Cores with Graph Projections</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">핵심 비즈니스 데이터와 불변식은 도메인별 관계형 모델이 소유하고 그래프는 재생성 가능한 projection으로 사용한다.</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Context</h2>
+    <p>범용 node/edge + JSONB 모델은 새로운 타입을 빠르게 추가할 수 있지만 실제 회사 업무의 관계는 대부분 Finance, Legal, HR, Equity 등 한 bounded context 안에서 반복된다. 핵심 제약, 조인, 정합성 검사를 동적 schema와 edge에 맡기면 도메인 로직이 분산되고 이중 정본이 생긴다.</p>
+
+    <h2>Decision</h2>
+    <p>도메인별 관계형 schema와 명시적 command/query를 canonical source of record로 삼는다. JSONB는 외부 원본과 롱테일 payload에 사용한다. 검색, AI context와 드문 cross-domain 탐색을 위한 graph는 관계형 정본에서 파생하며 언제든 재생성할 수 있어야 한다.</p>
+
+    <h2>Consequences</h2>
+    <ul>
+      <li>DB 제약과 transaction으로 핵심 비즈니스 불변식을 보장할 수 있다.</li>
+      <li>도메인 모듈마다 migration과 API 계약이 필요해 초기 타입 추가 비용은 높아진다.</li>
+      <li>cross-domain 연결은 engagement, evidence, company 등 명시적 bridge에 한정된다.</li>
+      <li>기존 graph 데이터의 cutover는 별도 migration release로 다룬다.</li>
+    </ul>
+
+    <h2>Alternatives considered</h2>
+    <ul>
+      <li><strong>모든 데이터를 generic node/edge로 유지</strong> — 유연하지만 도메인 제약과 운영 UX가 약하다.</li>
+      <li><strong>도메인마다 별도 database</strong> — 강한 격리는 가능하지만 초기 팀 규모에서 운영·transaction 비용이 과하다.</li>
+      <li><strong>관계형과 graph를 모두 쓰기 정본으로 유지</strong> — 동기화 실패와 충돌 해결 비용 때문에 채택하지 않는다.</li>
+    </ul>
+  </main>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="page" data-omd-id="SCR-company-home">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="SCR-company-home" />
+  <meta name="omd:kind" content="page" />
+  <title>SCR-company-home · Company Home</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">SCR-company-home</p>
+    <h1 data-omd-field="title">Company Home</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">고객이 선택된 회사의 현재 상태, 중요한 변화와 다음 행동을 30초 안에 파악한다.</dd>
+      <dt>IA</dt>
+      <dd data-omd-rel="ia"><a href="../ia/IA-company-home.html">IA-company-home</a></dd>
+      <dt>Layouts</dt>
+      <dd data-omd-rel="layouts"><a href="../layouts/LAY-customer-workspace-shell.html">LAY-customer-workspace-shell</a></dd>
+      <dt>Page States</dt>
+      <dd data-omd-rel="screenStates"></dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div class="active">Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div>Company Data</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Company switcher · Search · Notifications</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Company status · as-of date · one primary action</div>
+            <div class="omd-wire-block">Next actions · overdue requests</div>
+            <div class="omd-wire-block">Risks · changes · opportunities</div>
+            <div class="omd-wire-block">Active engagements · recent approved reports</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Company switcher · Search · Notifications</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div class="active">Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div>Company Data</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Company status · as-of date · one primary action</div>
+            <div class="omd-wire-block">Next actions · overdue requests</div>
+            <div class="omd-wire-block">Risks · changes · opportunities</div>
+            <div class="omd-wire-block">Active engagements · recent approved reports</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Purpose</h2>
+    <p>회사의 모든 데이터를 요약하려 하지 않고 지금 알아야 할 것과 해야 할 것을 선별한다.</p>
+
+    <h2>Primary actions</h2>
+    <p>가장 중요한 미완료 요청 처리 또는 전문가에게 질문하기 중 현재 문맥에 맞는 하나의 주요 행동을 제공한다.</p>
+
+    <h2>Content regions</h2>
+    <ul>
+      <li>회사 상태와 데이터 기준 시점</li>
+      <li>다음 행동과 마감 임박 요청</li>
+      <li>중요 변화·위험·기회</li>
+      <li>진행 중 engagement와 최근 승인 보고서</li>
+    </ul>
+
+    <h2>Empty / error notes</h2>
+    <p>연결된 데이터가 없으면 빈 차트를 보여주지 않고 첫 연결 또는 자료 제출 행동을 안내한다. 일부 소스 실패는 전체 홈 오류로 승격하지 않고 기준 시점과 영향 범위를 표시한다.</p>
+  </main>
+</body>
+</html>

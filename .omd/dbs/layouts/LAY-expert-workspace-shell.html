@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="layout" data-omd-id="LAY-expert-workspace-shell">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="LAY-expert-workspace-shell" />
+  <meta name="omd:kind" content="layout" />
+  <title>LAY-expert-workspace-shell · Expert Workspace Shell</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">LAY-expert-workspace-shell</p>
+    <h1 data-omd-field="title">Expert Workspace Shell</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">전문가가 여러 고객의 예외를 검토하고 근거와 결과물을 연결하는 고밀도 작업 셸</dd>
+      <dt>Pages</dt>
+      <dd data-omd-rel="pages">
+        <a href="../pages/SCR-client-portfolio.html">SCR-client-portfolio</a>
+        <a href="../pages/SCR-review-queue.html">SCR-review-queue</a>
+        <a href="../pages/SCR-engagement-workspace.html">SCR-engagement-workspace</a>
+      </dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div class="active">Client Portfolio</div>
+          <div>Review Queue</div>
+          <div>Engagement Workspace</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Client · Engagement · Search · Filters</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Work item list</div>
+            <div class="omd-wire-block">Review detail · evidence · decision actions</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Client · Engagement · Search · Filters</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div class="active">Client Portfolio</div>
+          <div>Review Queue</div>
+          <div>Engagement Workspace</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Work item list</div>
+            <div class="omd-wire-block">Review detail · evidence · decision actions</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Role</h2>
+    <p>고객용 셸과 분리된 전문가 전용 공간이다. 여러 고객을 오가며 자료 미비, 정합성 오류, AI 제안과 승인 대기를 처리하고 모든 판단을 원본 근거에 연결한다.</p>
+
+    <h2>Regions</h2>
+    <ul>
+      <li>Top bar: 고객·engagement 전환, 전역 검색, 알림</li>
+      <li>Primary navigation: Client Portfolio, Review Queue</li>
+      <li>Context navigation: 선택된 engagement의 Evidence, Findings, Tasks, Deliverables</li>
+      <li>Main split pane: 작업 대상 목록과 검토 상세</li>
+      <li>Evidence rail: 원본 문서, 출처, 변경 이력, 승인 상태</li>
+    </ul>
+
+    <h2>Responsive notes</h2>
+    <p>전문가 핵심 작업은 데스크톱 우선이다. 1280px 이상에서는 목록·상세·근거의 3영역을 허용하고, 좁은 화면에서는 근거 rail을 drawer로 전환한다. 필터와 배치는 URL에 보존한다.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="page" data-omd-id="SCR-review-queue">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="SCR-review-queue" />
+  <meta name="omd:kind" content="page" />
+  <title>SCR-review-queue · Review Queue</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">SCR-review-queue</p>
+    <h1 data-omd-field="title">Review Queue</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">전문가가 자료 미비, 정합성 오류, AI 제안과 승인 대기를 근거와 함께 처리한다.</dd>
+      <dt>IA</dt>
+      <dd data-omd-rel="ia"><a href="../ia/IA-review-queue.html">IA-review-queue</a></dd>
+      <dt>Layouts</dt>
+      <dd data-omd-rel="layouts"><a href="../layouts/LAY-expert-workspace-shell.html">LAY-expert-workspace-shell</a></dd>
+      <dt>Page States</dt>
+      <dd data-omd-rel="screenStates"></dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div>Client Portfolio</div>
+          <div class="active">Review Queue</div>
+          <div>Engagement Workspace</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Client · Engagement · Search · Filters</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Filterable queue · SLA · exception type</div>
+            <div class="omd-wire-block">Selected item detail · decision actions</div>
+            <div class="omd-wire-block">Evidence rail · change history</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Client · Engagement · Search · Filters</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div>Client Portfolio</div>
+          <div class="active">Review Queue</div>
+          <div>Engagement Workspace</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Filterable queue · SLA · exception type</div>
+            <div class="omd-wire-block">Selected item detail · decision actions</div>
+            <div class="omd-wire-block">Evidence rail · change history</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Purpose</h2>
+    <p>자동화가 확실한 항목은 숨기고 사람 판단이 필요한 예외만 우선순위와 SLA에 따라 제시한다.</p>
+
+    <h2>Primary actions</h2>
+    <p>승인, 반려, 수정, 고객 확인 요청과 다음 항목 이동을 제공한다.</p>
+
+    <h2>Content regions</h2>
+    <p>필터 가능한 queue, 선택 항목 상세, 원본 evidence rail, 변경 이력과 명시적 decision action으로 구성한다.</p>
+
+    <h2>Empty / error notes</h2>
+    <p>queue가 비었으면 처리 완료 시점과 필터 상태를 설명한다. 원본을 읽을 수 없으면 결정 action을 비활성화하고 복구 경로를 제공한다.</p>
+  </main>
+</body>
+</html>

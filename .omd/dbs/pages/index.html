@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko" data-omd-catalog="pages">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pages · catalog</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: ["class"],
+    theme: {
+      extend: {
+        colors: {
+          border: "hsl(var(--border))",
+          input: "hsl(var(--input))",
+          ring: "hsl(var(--ring))",
+          background: "hsl(var(--background))",
+          foreground: "hsl(var(--foreground))",
+          primary: {
+            DEFAULT: "hsl(var(--primary))",
+            foreground: "hsl(var(--primary-foreground))",
+          },
+          secondary: {
+            DEFAULT: "hsl(var(--secondary))",
+            foreground: "hsl(var(--secondary-foreground))",
+          },
+          muted: {
+            DEFAULT: "hsl(var(--muted))",
+            foreground: "hsl(var(--muted-foreground))",
+          },
+          accent: {
+            DEFAULT: "hsl(var(--accent))",
+            foreground: "hsl(var(--accent-foreground))",
+          },
+          card: {
+            DEFAULT: "hsl(var(--card))",
+            foreground: "hsl(var(--card-foreground))",
+          },
+        },
+        borderRadius: {
+          lg: "var(--radius)",
+          md: "calc(var(--radius) - 2px)",
+          sm: "calc(var(--radius) - 4px)",
+        },
+        fontFamily: {
+          sans: ["var(--omd-font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+          mono: ["var(--omd-font-mono)", "ui-monospace", "monospace"],
+          display: ["var(--omd-font-display)", "ui-serif", "Georgia", "serif"],
+        },
+      },
+    },
+  };
+</script>
+</head>
+<body class="omd-catalog-page min-h-screen bg-background text-foreground antialiased">
+  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <nav class="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <a class="font-medium text-primary hover:underline underline-offset-4" href="../index.html">Catalogs</a>
+      <span aria-hidden="true">/</span>
+      <span class="text-foreground">Pages</span>
+    </nav>
+    <header class="mb-6 rounded-xl border bg-card text-card-foreground shadow-sm px-5 py-4">
+      <p class="omd-id mb-2">pages</p>
+      <h1 class="font-display text-2xl font-bold tracking-tight">Pages</h1>
+    </header>
+    <main>
+      <div class="rounded-md border bg-card text-card-foreground shadow-sm">
+      <div class="relative w-full overflow-auto">
+        <table class="w-full caption-bottom text-sm">
+          <thead class="[&_tr]:border-b">
+            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+              <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground w-[7.5rem]">ID</th>
+              <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Title</th>
+              <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Summary</th>
+              <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground w-[7rem]">Status</th>
+            </tr>
+          </thead>
+          <tbody class="[&_tr:last-child]:border-0">
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-client-portfolio.html"><span class="omd-id">SCR-client-portfolio</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-client-portfolio.html">Client Portfolio</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">전문가가 담당 고객, engagement, 위험과 검토 부하를 우선순위별로 파악한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-company-data.html"><span class="omd-id">SCR-company-data</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-company-data.html">Company Data</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 Finance, Legal, People, Equity의 검증된 정본을 도메인별로 탐색한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-company-home.html"><span class="omd-id">SCR-company-home</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-company-home.html">Company Home</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 선택된 회사의 현재 상태, 중요한 변화와 다음 행동을 30초 안에 파악한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-documents.html"><span class="omd-id">SCR-documents</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-documents.html">Documents</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 회사 원본 문서의 수집, 처리, 연결과 최신 버전을 확인한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-engagement-workspace.html"><span class="omd-id">SCR-engagement-workspace</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-engagement-workspace.html">Engagement Workspace</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">전문가가 단일 engagement의 근거, findings, 작업, 결정과 결과물을 한 문맥에서 관리한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-engagements.html"><span class="omd-id">SCR-engagements</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-engagements.html">Engagements</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 진행 중인 컨설팅 engagement의 단계, 마일스톤과 결과물을 확인한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-reports.html"><span class="omd-id">SCR-reports</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-reports.html">Reports</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 전문가가 승인한 진단, 자문과 정기 보고서를 읽고 공유한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-requests.html"><span class="omd-id">SCR-requests</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-requests.html">Requests</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">고객이 전문가의 자료·확인 요청을 목적과 기한에 맞춰 처리한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./SCR-review-queue.html"><span class="omd-id">SCR-review-queue</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./SCR-review-queue.html">Review Queue</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">전문가가 자료 미비, 정합성 오류, AI 제안과 승인 대기를 근거와 함께 처리한다.</td>
+              <td class="p-4 align-middle"><span class="text-muted-foreground">—</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </main>
+  </div>
+</body>
+</html>

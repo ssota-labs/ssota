@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="page" data-omd-id="SCR-documents">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="SCR-documents" />
+  <meta name="omd:kind" content="page" />
+  <title>SCR-documents · Documents</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">SCR-documents</p>
+    <h1 data-omd-field="title">Documents</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">고객이 회사 원본 문서의 수집, 처리, 연결과 최신 버전을 확인한다.</dd>
+      <dt>IA</dt>
+      <dd data-omd-rel="ia"><a href="../ia/IA-documents.html">IA-documents</a></dd>
+      <dt>Layouts</dt>
+      <dd data-omd-rel="layouts"><a href="../layouts/LAY-customer-workspace-shell.html">LAY-customer-workspace-shell</a></dd>
+      <dt>Page States</dt>
+      <dd data-omd-rel="screenStates"></dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div>Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div class="active">Documents</div>
+          <div>Company Data</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Company switcher · Search · Notifications</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Recent documents · processing status</div>
+            <div class="omd-wire-block">Type · engagement filters</div>
+            <div class="omd-wire-block">Versions · extraction · validation</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Company switcher · Search · Notifications</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div>Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div class="active">Documents</div>
+          <div>Company Data</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Recent documents · processing status</div>
+            <div class="omd-wire-block">Type · engagement filters</div>
+            <div class="omd-wire-block">Versions · extraction · validation</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Purpose</h2>
+    <p>문서함을 단순 파일 저장소가 아니라 요청, engagement, 도메인 정본의 근거를 확인하는 surface로 제공한다.</p>
+
+    <h2>Primary actions</h2>
+    <p>업로드, 외부 연결, 새 버전 추가와 연결된 요청 열기를 제공한다.</p>
+
+    <h2>Content regions</h2>
+    <p>최근 문서, 처리 상태, 문서 유형·engagement 필터, 버전과 추출·검증 상태로 구성한다.</p>
+
+    <h2>Empty / error notes</h2>
+    <p>파싱 실패는 원본 보존 여부와 재처리 상태를 표시한다. 파일이 없으면 첫 업로드보다 연결할 요청이 있는지 먼저 안내한다.</p>
+  </main>
+</body>
+</html>

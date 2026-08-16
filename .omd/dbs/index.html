@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oh My Docs · Handbook catalogs</title>
+  <link rel="stylesheet" href="../assets/omd-doc.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
+            muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+            card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
+          },
+          borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
+          fontFamily: {
+            sans: ["var(--omd-font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+            mono: ["var(--omd-font-mono)", "ui-monospace", "monospace"],
+            display: ["var(--omd-font-display)", "ui-serif", "Georgia", "serif"],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="omd-home-page min-h-screen bg-background text-foreground antialiased">
+  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <header class="mb-8 rounded-xl border bg-card text-card-foreground shadow-sm px-5 py-5">
+      <p class="omd-id mb-2">Oh My Docs</p>
+      <h1 class="font-display text-2xl font-bold tracking-tight">Handbook catalogs</h1>
+    </header>
+
+    <main class="space-y-8">
+      <section>
+        <h2 class="mb-3 font-display text-lg font-semibold tracking-tight">제품 UX</h2>
+        <div class="rounded-md border bg-card text-card-foreground shadow-sm">
+          <div class="relative w-full overflow-auto">
+            <table class="w-full caption-bottom text-sm">
+              <thead class="[&_tr]:border-b">
+                <tr class="border-b transition-colors hover:bg-muted/50">
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Catalog</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Prefix</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Path</th>
+                </tr>
+              </thead>
+              <tbody class="[&_tr:last-child]:border-0">
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./release/index.html">Release</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">REL-*</code></td><td class="p-4 align-middle"><a href="./release/index.html"><code class="font-mono text-xs text-muted-foreground">release/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./features/index.html">Features</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">F-*</code></td><td class="p-4 align-middle"><a href="./features/index.html"><code class="font-mono text-xs text-muted-foreground">features/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./ia/index.html">Information architecture</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">IA-*</code></td><td class="p-4 align-middle"><a href="./ia/index.html"><code class="font-mono text-xs text-muted-foreground">ia/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./pages/index.html">Pages</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">SCR-*</code></td><td class="p-4 align-middle"><a href="./pages/index.html"><code class="font-mono text-xs text-muted-foreground">pages/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./layouts/index.html">Layouts</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">LAY-*</code></td><td class="p-4 align-middle"><a href="./layouts/index.html"><code class="font-mono text-xs text-muted-foreground">layouts/</code></a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="mb-3 font-display text-lg font-semibold tracking-tight">도메인</h2>
+        <div class="rounded-md border bg-card text-card-foreground shadow-sm">
+          <div class="relative w-full overflow-auto">
+            <table class="w-full caption-bottom text-sm">
+              <thead class="[&_tr]:border-b">
+                <tr class="border-b transition-colors hover:bg-muted/50">
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Catalog</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Prefix</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Path</th>
+                </tr>
+              </thead>
+              <tbody class="[&_tr:last-child]:border-0">
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./glossary/index.html">Glossary</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">TERM-*</code></td><td class="p-4 align-middle"><a href="./glossary/index.html"><code class="font-mono text-xs text-muted-foreground">glossary/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./models/index.html">Models</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">MODEL-*</code></td><td class="p-4 align-middle"><a href="./models/index.html"><code class="font-mono text-xs text-muted-foreground">models/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./policies/index.html">policy</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">POLICY-*</code></td><td class="p-4 align-middle"><a href="./policies/index.html"><code class="font-mono text-xs text-muted-foreground">policies/</code></a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="mb-3 font-display text-lg font-semibold tracking-tight">기획</h2>
+        <div class="rounded-md border bg-card text-card-foreground shadow-sm">
+          <div class="relative w-full overflow-auto">
+            <table class="w-full caption-bottom text-sm">
+              <thead class="[&_tr]:border-b">
+                <tr class="border-b transition-colors hover:bg-muted/50">
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Catalog</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Prefix</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Path</th>
+                </tr>
+              </thead>
+              <tbody class="[&_tr:last-child]:border-0">
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./prds/index.html">PRDs</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">PRD-*</code></td><td class="p-4 align-middle"><a href="./prds/index.html"><code class="font-mono text-xs text-muted-foreground">prds/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./stories/index.html">Stories</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">US-*</code></td><td class="p-4 align-middle"><a href="./stories/index.html"><code class="font-mono text-xs text-muted-foreground">stories/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./data-model/index.html">Data model</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">DM-*</code></td><td class="p-4 align-middle"><a href="./data-model/index.html"><code class="font-mono text-xs text-muted-foreground">data-model/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./system-model/index.html">System model</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">SYSM-*</code></td><td class="p-4 align-middle"><a href="./system-model/index.html"><code class="font-mono text-xs text-muted-foreground">system-model/</code></a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="mb-3 font-display text-lg font-semibold tracking-tight">개발</h2>
+        <div class="rounded-md border bg-card text-card-foreground shadow-sm">
+          <div class="relative w-full overflow-auto">
+            <table class="w-full caption-bottom text-sm">
+              <thead class="[&_tr]:border-b">
+                <tr class="border-b transition-colors hover:bg-muted/50">
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Catalog</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Prefix</th>
+                  <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Path</th>
+                </tr>
+              </thead>
+              <tbody class="[&_tr:last-child]:border-0">
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./plans/index.html">Plans</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">PLAN-*</code></td><td class="p-4 align-middle"><a href="./plans/index.html"><code class="font-mono text-xs text-muted-foreground">plans/</code></a></td></tr>
+                <tr class="border-b transition-colors hover:bg-muted/50"><td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./adr/index.html">ADR</a></td><td class="p-4 align-middle"><code class="font-mono text-xs text-muted-foreground">ADR-*</code></td><td class="p-4 align-middle"><a href="./adr/index.html"><code class="font-mono text-xs text-muted-foreground">adr/</code></a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

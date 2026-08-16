@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="page" data-omd-id="SCR-company-data">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="SCR-company-data" />
+  <meta name="omd:kind" content="page" />
+  <title>SCR-company-data · Company Data</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">SCR-company-data</p>
+    <h1 data-omd-field="title">Company Data</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">고객이 Finance, Legal, People, Equity의 검증된 정본을 도메인별로 탐색한다.</dd>
+      <dt>IA</dt>
+      <dd data-omd-rel="ia"><a href="../ia/IA-company-data.html">IA-company-data</a></dd>
+      <dt>Layouts</dt>
+      <dd data-omd-rel="layouts"><a href="../layouts/LAY-customer-workspace-shell.html">LAY-customer-workspace-shell</a></dd>
+      <dt>Page States</dt>
+      <dd data-omd-rel="screenStates"></dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div>Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div class="active">Company Data</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Company switcher · Search · Notifications</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Finance · Legal · People · Equity domain cards</div>
+            <div class="omd-wire-block">Status · as-of date · open quality issues</div>
+            <div class="omd-wire-block">Open overview · report an error</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Company switcher · Search · Notifications</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div>Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div class="active">Company Data</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Finance · Legal · People · Equity domain cards</div>
+            <div class="omd-wire-block">Status · as-of date · open quality issues</div>
+            <div class="omd-wire-block">Open overview · report an error</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Purpose</h2>
+    <p>회사 데이터의 정본 상태와 최신성을 확인하는 2차 탐색 허브다. 백엔드 테이블이나 graph catalog를 직접 노출하지 않는다.</p>
+
+    <h2>Primary actions</h2>
+    <p>도메인 overview 열기, 데이터 출처와 최신성 확인, 오류 신고를 제공한다.</p>
+
+    <h2>Content regions</h2>
+    <p>Finance, Legal, People, Equity 도메인 카드와 각 도메인의 상태·기준 시점·미해결 품질 이슈 요약으로 구성한다.</p>
+
+    <h2>Empty / error notes</h2>
+    <p>아직 출시되지 않은 도메인은 가짜 데이터를 표시하지 않고 지원 범위와 예정 상태를 명시한다.</p>
+  </main>
+</body>
+</html>
