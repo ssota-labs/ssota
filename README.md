@@ -359,16 +359,12 @@ url = "https://mcp.ssota.ai/api/mcp"
 
 For stdio-only setups, bridge with `npx mcp-remote https://mcp.ssota.ai/api/mcp`.
 
-The repo ships a ready-made bundle at [`plugins/ssota-plugin/`](plugins/ssota-plugin/)
-(MCP config + skills) with per-client walkthroughs in
-[`plugins/ssota-plugin/examples/`](plugins/ssota-plugin/examples/).
-
 ### 2 · Load the AX skill
 
 Two skills work together: **`ssota-mcp`** (connect + resolve scope) and
 **`ssota-ax-author`** (author the environment). They live in `.agents/skills/`
-with Claude and Cursor mirrors, and inside the plugin bundle. Install the
-plugin, or symlink the skill into your client's skills directory:
+with Claude and Cursor mirrors. Symlink the skill into your client's skills
+directory:
 
 ```bash
 ln -s "$PWD/.agents/skills/ssota-ax-author" .claude/skills/ssota-ax-author
