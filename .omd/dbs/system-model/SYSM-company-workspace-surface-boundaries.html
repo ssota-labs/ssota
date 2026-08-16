@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="system-model" data-omd-id="SYSM-company-workspace-surface-boundaries">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="SYSM-company-workspace-surface-boundaries" />
+  <meta name="omd:kind" content="system-model" />
+  <meta name="omd:stage" content="draft" />
+  <meta name="omd:specType" content="system-model" />
+  <title>SYSM-company-workspace-surface-boundaries · Company Workspace Surface Boundaries</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">SYSM-company-workspace-surface-boundaries</p>
+    <h1 data-omd-field="title">Company Workspace Surface Boundaries</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="draft">draft</dd>
+      <dt>specType</dt>
+      <dd data-omd-field="specType">system-model</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">관계형 도메인 정본, 고객 경험, 전문가 운영, 선언적 조회 화면의 책임 경계를 정의한다.</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Contract</h2>
+    <p>비즈니스 정본과 불변식은 도메인 모듈이 소유한다. 고객·전문가 UI는 도메인 API가 제공한 typed view model을 사용한다. 그래프와 선언적 페이지 spec은 검색·조회·구성의 projection이며 정본 쓰기 경로가 아니다.</p>
+
+    <h2>Components</h2>
+    <ul>
+      <li><strong>Domain modules</strong> — Finance, Legal, HR, Equity, Operations의 관계형 정본과 명령</li>
+      <li><strong>Customer Workspace</strong> — 상태, 요청, engagement, 보고서와 문서</li>
+      <li><strong>Expert Workspace</strong> — portfolio, review queue, evidence와 승인</li>
+      <li><strong>Read projections</strong> — company snapshot, risk register, search/context index</li>
+      <li><strong>Shared UI primitives</strong> — table, detail, timeline, evidence, review, diff, approval</li>
+    </ul>
+
+    <h2>Interfaces</h2>
+    <ul>
+      <li>핵심 쓰기는 <code>createNode</code>가 아니라 도메인 명령으로 제공한다.</li>
+      <li>고객 UI는 자신의 company scope와 승인된 결과만 조회한다.</li>
+      <li>전문가 UI는 할당된 고객과 engagement의 검토·승인 인터페이스를 사용한다.</li>
+      <li>공통 셸은 identity, company context, search, notification만 소유한다.</li>
+    </ul>
+
+    <h2>Boundaries</h2>
+    <ul>
+      <li>고객과 전문가 surface는 route와 layout 수준에서 분리한다.</li>
+      <li>도메인별 transactional workbench는 명시적 코드로 작성한다.</li>
+      <li>json-render는 read-only dashboard, report, 고객별 가벼운 구성에 한정한다.</li>
+      <li>JSONB는 외부 원본과 롱테일 payload에 사용하고 핵심 검색·제약 필드는 컬럼으로 승격한다.</li>
+      <li>context graph는 도메인 정본에서 재생성 가능해야 한다.</li>
+    </ul>
+
+    <h2>Acceptance</h2>
+    <ul>
+      <li>동일 비즈니스 레코드가 graph와 domain table의 이중 정본이 되지 않는다.</li>
+      <li>고객·전문가 화면의 권한 상승이 클라이언트 상태만으로 발생하지 않는다.</li>
+      <li>도메인 workbench가 자유 JSON action 정의에 의존하지 않는다.</li>
+      <li>신규 도메인 모듈을 추가해도 공통 셸과 persona 경계가 유지된다.</li>
+    </ul>
+  </main>
+</body>
+</html>

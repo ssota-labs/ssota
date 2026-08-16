@@ -6,7 +6,7 @@ SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로
 
 Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `accounts`, `account_memberships`, `account_connections`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/software-development-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 이 저장소에서 제거되었다 — 복원·의존 금지 ([ARCH-03], 아래 Legacy Runtime 절).
 
-기획·스펙의 SSOT는 Notion의 SSOTA-on-SSOTA 개발 Playbook이다. 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다.
+기획·스펙의 SSOT는 로컬 Oh My Docs catalog(`.omd/dbs/**/*.html`)다. `.omd/project.json`의 `contentSource.ssot`를 따르며, 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다. 기존 Notion SSOTA-on-SSOTA Playbook은 historical reference다.
 
 ### Stack
 
@@ -139,9 +139,10 @@ pnpm db:seed                 # smoke 계정 + console org/project + graph 인스
 ## Development Workflow
 
 ```bash
-pnpm dev                     # turbo run dev — web + mcp 동시 기동
+pnpm dev                     # turbo run dev — web + mcp + docs 동시 기동
 pnpm dev --filter web        # 콘솔만
 pnpm dev --filter mcp        # MCP 앱만
+pnpm --filter docs dev       # Product Handbook (:3002)
 pnpm design-lab              # Design Lab (apps/design-lab, port 6007)
 pnpm build                   # turbo run build (전체)
 pnpm lint && pnpm typecheck  # 린트 + 타입 체크
@@ -612,3 +613,41 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 `apps/web/vitest.config.ts`의 `resolve.alias`는 `apps/web/tsconfig.json`의 `paths`를 미러링한다 (shadcn 컨벤션: `@/lib/utils`·`@/components/ui/*`·`@/hooks/*`는 `packages/ui/src`로, `@/*`는 `apps/web`로). Vitest는 tsconfig paths를 읽지 않으므로, transitively 로드되는 `packages/ui` 소스의 `@/` self-import(`@/components/ui/…`)가 해석되려면 이 alias가 필요하다. **`packages/ui`의 `@/` 매핑을 바꾸면 이 vitest alias도 함께 갱신**한다 (drift 주의). alias는 most-specific-first 순서여야 한다.
 
 > 과거 pre-existing 실패는 모두 수정됨: adapter `task-port`는 `beforeAll`에서 필요한 workflow instruction 시드(self-contained), smoke overview는 seeded 환경에서 안정적인 "Open Workflow Map" CTA assert, onboarding은 submit selector를 `getByRole(Continue)`로 범위 지정, cutover에서 제거된 `executive/goals` stale spec 삭제, `web#test` registry는 위 vitest alias로 해소.
+
+<!-- oh-my-docs:start -->
+# Oh My Docs
+
+This repository uses a docs-first workflow. Canonical product intent lives in
+**one** handbook SSOT — either local HTML catalogs (`.omd/dbs/<catalog>/*.html`)
+or Notion — never more than one as authoritative.
+
+## Content source (SSOT)
+
+1. Read `.omd/project.json` and use `contentSource.ssot`
+   (`local` | `notion`).
+2. Missing `contentSource` means `local`.
+3. If `.omd/project.json` is missing, run `inspect` / ask the user to choose
+   SSOT and `adopt` before inventing handbook files.
+4. For `local`, edit HTML files under `.omd/dbs` (see
+   `references/html-document-contract.md`). For `notion`, edit the single
+   Home page: only `# 도메인` / `# 기획` / `# 개발` section headers, with
+   catalog DBs stacked inline under them (no per-catalog headings, no child
+   pages, no sidebar) via the host Notion MCP. Do not treat an unselected
+   provider as truth.
+
+## Documentation is always first
+
+Any decision, agreement, requirement, design choice, open question, or new
+discussion that should outlive this chat must be written into the selected SSOT
+— not left only in conversation.
+
+1. Before and during the talk, check whether the topic already exists in the SSOT.
+2. Create or update the matching handbook artifacts as the discussion progresses.
+3. Catalog entries (PRD, story, plan, ADR, …) go in the **catalog store** — a
+   Notion inline database row on Home, or a local `.omd/dbs/<catalog>/*.html`
+   file — never as ad-hoc child pages. **Planning ≠ Plans**:
+   implementation plans belong in Plans (`dbs.plans` / `.omd/dbs/plans`).
+4. Prefer `node <skill>/scripts/omd.mjs new <kind> --title "…" --yes` (local)
+   or the Notion catalog workflow (notion) over ad-hoc files or chat-only notes.
+5. Run `node <skill>/scripts/omd.mjs check` after meaningful documentation edits.
+<!-- oh-my-docs:end -->

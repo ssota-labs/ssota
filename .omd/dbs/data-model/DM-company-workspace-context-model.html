@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="spec" data-omd-id="DM-company-workspace-context-model">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="DM-company-workspace-context-model" />
+  <meta name="omd:kind" content="spec" />
+  <meta name="omd:stage" content="draft" />
+  <meta name="omd:specType" content="data-model" />
+  <title>DM-company-workspace-context-model · Company Workspace Context Model</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">DM-company-workspace-context-model</p>
+    <h1 data-omd-field="title">Company Workspace Context Model</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="draft">draft</dd>
+      <dt>specType</dt>
+      <dd data-omd-field="specType">data-model</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">Company Workspace가 사용하는 tenant, company, engagement, evidence와 persona 문맥의 관계형 계약</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Contract</h2>
+    <p>Company Workspace는 generic node를 정본으로 사용하지 않는다. 각 bounded context는 관계형 테이블과 도메인 명령을 소유하고, 공통 workspace는 식별자와 read model만 조합한다.</p>
+
+    <h2>Entities</h2>
+    <ul>
+      <li><strong>Tenant</strong> — 계약·보안·청구 격리 단위</li>
+      <li><strong>Company</strong> — 고객이 전환하며 조회하는 실제 법인 또는 사업체</li>
+      <li><strong>Engagement</strong> — 교차 도메인 자료와 업무가 만나는 컨설팅 프로젝트</li>
+      <li><strong>ActorMembership</strong> — 고객·전문가의 tenant/company/engagement 접근 범위</li>
+      <li><strong>Evidence</strong> — 원본 문서와 외부 데이터의 provenance</li>
+      <li><strong>ReviewItem</strong> — 사람 판단이 필요한 예외와 명시적 상태 전이</li>
+    </ul>
+
+    <h2>Fields</h2>
+    <p>모든 도메인 레코드는 tenant와 owning company를 명시한다. engagement 연결은 필요할 때만 추가한다. 외부 원본은 source, observed_at, imported_at, checksum과 연결된 evidence를 보존한다. 핵심 검색·제약·조인 필드는 typed column이며 JSONB는 롱테일 payload에 한정한다.</p>
+
+    <h2>Invariants</h2>
+    <ul>
+      <li>tenant, company, engagement를 동일한 scope 식별자로 취급하지 않는다.</li>
+      <li>cross-domain 연결은 명시적 business key 또는 engagement에서만 만든다.</li>
+      <li>AI 추출 결과는 승인 전까지 source record와 분리한다.</li>
+      <li>context graph와 search index는 관계형 정본에서 재생성 가능하다.</li>
+      <li>고객은 own company의 승인된 데이터만, 전문가는 할당 범위만 조회한다.</li>
+    </ul>
+
+    <h2>Acceptance</h2>
+    <ul>
+      <li>동일 레코드가 domain table과 graph에 이중 쓰기되지 않는다.</li>
+      <li>Company 전환이 tenant 권한을 변경하지 않는다.</li>
+      <li>Engagement 삭제가 도메인 정본을 연쇄 삭제하지 않는다.</li>
+      <li>모든 고객 표시 값에서 기준 시점과 provenance를 추적할 수 있다.</li>
+    </ul>
+  </main>
+</body>
+</html>

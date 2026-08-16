@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="layout" data-omd-id="LAY-customer-workspace-shell">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="LAY-customer-workspace-shell" />
+  <meta name="omd:kind" content="layout" />
+  <title>LAY-customer-workspace-shell · Customer Workspace Shell</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">LAY-customer-workspace-shell</p>
+    <h1 data-omd-field="title">Customer Workspace Shell</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">고객이 선택된 회사의 상태, 할 일, engagement와 결과물을 탐색하는 단순한 업무 셸</dd>
+      <dt>Pages</dt>
+      <dd data-omd-rel="pages">
+        <a href="../pages/SCR-company-home.html">SCR-company-home</a>
+        <a href="../pages/SCR-requests.html">SCR-requests</a>
+        <a href="../pages/SCR-engagements.html">SCR-engagements</a>
+        <a href="../pages/SCR-reports.html">SCR-reports</a>
+        <a href="../pages/SCR-documents.html">SCR-documents</a>
+        <a href="../pages/SCR-company-data.html">SCR-company-data</a>
+      </dd>
+    </dl>
+  </header>
+  <div class="omd-wireframes">
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="desktop">
+      <h2>Desktop</h2>
+      <div class="omd-wire-shell">
+        <aside class="omd-wire-sidebar">
+          <div class="active">Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div>Company Data</div>
+        </aside>
+        <div class="omd-wire-main">
+          <div class="omd-wire-crumb">Company switcher · Search · Notifications</div>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Page title · one primary action</div>
+            <div class="omd-wire-block">Status-first content</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="omd-wireframe" data-omd-wireframe="shell" data-omd-viewport="mobile">
+      <h2>Mobile</h2>
+      <div class="omd-wire-phone">
+        <div class="omd-wire-mobile-bar">
+          <span class="omd-wire-menu" aria-hidden="true">☰</span>
+          <span>Company switcher · Search · Notifications</span>
+        </div>
+        <div class="omd-wire-mobile-stage">
+          <aside class="omd-wire-sidebar">
+          <div class="active">Home</div>
+          <div>Requests</div>
+          <div>Engagements</div>
+          <div>Reports</div>
+          <div class="omd-wire-nav-sep" role="presentation"></div>
+          <div>Documents</div>
+          <div>Company Data</div>
+          </aside>
+          <div class="omd-wire-body">
+            <div class="omd-wire-block">Page title · one primary action</div>
+            <div class="omd-wire-block">Status-first content</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <main class="omd-doc-body">
+    <h2>Role</h2>
+    <p>고객에게 내부 운영 복잡도를 숨기고 현재 회사에 필요한 정보와 행동만 제공한다. Company Data는 정본을 확인할 때 사용하는 보조 영역이며 첫 화면의 중심이 아니다.</p>
+
+    <h2>Regions</h2>
+    <ul>
+      <li>Top bar: 회사 선택, 검색, 알림, 계정</li>
+      <li>Primary navigation: Home, Requests, Engagements, Reports</li>
+      <li>Secondary navigation: Documents, Company Data</li>
+      <li>Page header: 현재 회사, 페이지 목적, 주요 행동 하나</li>
+      <li>Body: 상태 요약과 다음 행동을 먼저, 정본 표는 필요할 때만 노출</li>
+    </ul>
+
+    <h2>Responsive notes</h2>
+    <p>데스크톱에서는 고정 sidebar를 사용하고 좁은 화면에서는 drawer로 접는다. 카드와 표를 단순 축소하지 않고, 다음 행동과 상태를 우선 노출하며 44px 이상의 터치 영역을 유지한다.</p>
+  </main>
+</body>
+</html>

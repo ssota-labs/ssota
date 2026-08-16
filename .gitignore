@@ -12,6 +12,7 @@ build/
 !apps/web/app/**/build/**
 out/
 .next/
+docs/.source/
 .nuxt/
 .output/
 *.tsbuildinfo

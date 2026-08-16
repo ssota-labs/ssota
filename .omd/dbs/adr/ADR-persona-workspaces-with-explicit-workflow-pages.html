@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="adr" data-omd-id="ADR-persona-workspaces-with-explicit-workflow-pages">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="ADR-persona-workspaces-with-explicit-workflow-pages" />
+  <meta name="omd:kind" content="adr" />
+  <meta name="omd:stage" content="accepted" />
+  <title>ADR-persona-workspaces-with-explicit-workflow-pages · Persona Workspaces with Explicit Workflow Pages</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">ADR-persona-workspaces-with-explicit-workflow-pages</p>
+    <h1 data-omd-field="title">Persona Workspaces with Explicit Workflow Pages</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">고객과 전문가 workspace를 분리하고 핵심 업무는 명시적 typed page로, 선언적 UI는 조회·보고 구성에 한정한다.</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Context</h2>
+    <p>generic CRUD와 graph editor는 시스템 구조를 잘 보여주지만 고객의 다음 행동이나 전문가의 검토 판단을 안내하지 못한다. 고객과 전문가는 같은 회사 데이터를 보더라도 목적, 밀도, 권한, 오류 처리 방식이 다르다.</p>
+
+    <h2>Decision</h2>
+    <p>Customer Workspace와 Expert Workspace를 route와 layout 수준에서 분리한다. 핵심 transactional flow와 domain workbench는 typed React page와 명시적 server action/API로 구현한다. json-render는 dashboard, report, read-only projection과 가벼운 고객별 구성에 사용한다.</p>
+
+    <h2>Consequences</h2>
+    <ul>
+      <li>persona별 정보 구조와 접근 제어를 이해하기 쉬워진다.</li>
+      <li>공통 UI는 primitive와 page grammar 수준에서 공유하고 거대한 조건부 page component는 만들지 않는다.</li>
+      <li>새 도메인은 Overview, Records, Workbench, Detail 문법을 따르되 모든 화면을 만들 필요는 없다.</li>
+      <li>기존 GRAPH-08의 “모든 페이지 json-render” 규칙은 구현 PR 전에 supersede해야 한다.</li>
+    </ul>
+
+    <h2>Alternatives considered</h2>
+    <ul>
+      <li><strong>하나의 Console에서 권한별 숨김</strong> — 조건 조합과 정보 밀도 충돌이 커진다.</li>
+      <li><strong>DB schema별 CRUD 페이지</strong> — 구현은 단순하지만 사용자 목표가 아니라 저장 구조를 내비게이션으로 만든다.</li>
+      <li><strong>모든 화면을 JSON spec으로 생성</strong> — 조회 구성에는 유리하지만 복잡한 상호작용과 타입 안전성을 약화한다.</li>
+    </ul>
+  </main>
+</body>
+</html>

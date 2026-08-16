@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="plan" data-omd-id="PLAN-company-workspace-foundation-delivery">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="PLAN-company-workspace-foundation-delivery" />
+  <meta name="omd:kind" content="plan" />
+  <meta name="omd:stage" content="draft" />
+  <meta name="omd:changeType" content="product" />
+  <title>PLAN-company-workspace-foundation-delivery · Company Workspace Foundation Delivery</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">PLAN-company-workspace-foundation-delivery</p>
+    <h1 data-omd-field="title">Company Workspace Foundation Delivery</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="draft">draft</dd>
+      <dt>changeType</dt>
+      <dd data-omd-field="changeType" data-omd-value="product">product</dd>
+      <dt>codeAreas</dt>
+      <dd data-omd-field="codeAreas" data-omd-value="apps/web, packages/contracts, packages/ui, e2e">apps/web, packages/contracts, packages/ui, e2e</dd>
+      <dt>PRD</dt>
+      <dd data-omd-rel="prd"><a href="../prds/PRD-company-workspace-ux.html">PRD-company-workspace-ux</a></dd>
+      <dt>Stories</dt>
+      <dd data-omd-rel="stories">
+        <a href="../stories/US-customer-understands-company-status-and-next-actions.html">US-customer-understands-company-status-and-next-actions</a>
+        <a href="../stories/US-customer-manages-requests-and-engagement-progress.html">US-customer-manages-requests-and-engagement-progress</a>
+        <a href="../stories/US-expert-resolves-client-review-exceptions-with-evidence.html">US-expert-resolves-client-review-exceptions-with-evidence</a>
+      </dd>
+      <dt>Specs</dt>
+      <dd data-omd-rel="specs"><a href="../data-model/DM-company-workspace-context-model.html">DM-company-workspace-context-model</a></dd>
+      <dt>Specs (System model)</dt>
+      <dd data-omd-rel="systemSpecs"><a href="../system-model/SYSM-company-workspace-surface-boundaries.html">SYSM-company-workspace-surface-boundaries</a></dd>
+      <dt>ADRs</dt>
+      <dd data-omd-rel="adrs">
+        <a href="../adr/ADR-relational-domain-cores-with-graph-projections.html">ADR-relational-domain-cores-with-graph-projections</a>
+        <a href="../adr/ADR-persona-workspaces-with-explicit-workflow-pages.html">ADR-persona-workspaces-with-explicit-workflow-pages</a>
+      </dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Goal</h2>
+    <p>Company Workspace v0.1의 공통 셸과 persona별 IA를 구현 가능한 슬라이스로 나누되, 상세 도메인 업무를 같은 릴리즈에 섞지 않는다.</p>
+
+    <h2>Approach</h2>
+    <p>먼저 persona와 company context 경계를 구현하고, 고객 Home과 전문가 Review Queue를 대표 vertical slice로 연결한다. 기존 graph UI는 즉시 삭제하지 않고 새 진입점 뒤에서 단계적으로 교체한다.</p>
+
+    <h2>Steps</h2>
+    <ol>
+      <li>공통 company context와 persona routing 계약을 확정한다.</li>
+      <li>Customer Workspace와 Expert Workspace의 layout을 별도 컴포넌트로 구현한다.</li>
+      <li>페이지 인벤토리의 route와 empty/loading/error 상태를 정의한다.</li>
+      <li>Company Home의 status/next-action read model과 Review Queue의 exception read model을 연결한다.</li>
+      <li>관련 Playwright E2E와 대화형 UI 검증 산출물을 만든다.</li>
+    </ol>
+
+    <h2>Risks</h2>
+    <ul>
+      <li>기존 GRAPH-08과 새 typed domain page 방향이 충돌하므로 구현 전 ADR과 규칙 갱신이 필요하다.</li>
+      <li>화면을 먼저 만들며 tenant, legal entity, engagement 문맥을 다시 혼동할 수 있다.</li>
+      <li>공통 컴포넌트를 과도하게 일반화하면 기존 범용 runtime 문제가 반복된다.</li>
+    </ul>
+
+    <h2>Verification</h2>
+    <ul>
+      <li><code>omd check</code>와 저장소 문서 하네스를 통과한다.</li>
+      <li>고객과 전문가 대표 플로우를 persona별 Playwright spec으로 검증한다.</li>
+      <li>Company Home에서 다음 행동, Review Queue에서 근거 기반 결정을 대화형으로 확인한다.</li>
+      <li>상세 도메인 CRUD가 이번 릴리즈 diff에 포함되지 않았는지 확인한다.</li>
+    </ul>
+  </main>
+</body>
+</html>

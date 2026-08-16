@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="ia" data-omd-id="IA-review-queue">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="IA-review-queue" />
+  <meta name="omd:kind" content="ia" />
+  <title>IA-review-queue · Review Queue</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">IA-review-queue</p>
+    <h1 data-omd-field="title">Review Queue</h1>
+    <dl class="omd-props">
+      <dt>summary</dt>
+      <dd data-omd-field="summary">전문가가 사람 판단이 필요한 검토 예외를 근거와 SLA에 따라 처리하는 구조</dd>
+      <dt>Pages</dt>
+      <dd data-omd-rel="pages"><a href="../pages/SCR-review-queue.html">SCR-review-queue</a></dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Purpose</h2>
+    <p>자료 미비, 정합성 오류, AI 제안과 승인 대기 중 사람 판단이 필요한 항목만 모은다.</p>
+
+    <h2>Structure</h2>
+    <p>필터 가능한 queue → 선택 항목 상세 → 원본 evidence → 변경 이력 → 명시적 decision action으로 이어진다.</p>
+
+    <h2>Entry points</h2>
+    <p>사이드바 Review Queue, Client Portfolio의 예외 요약과 알림 딥링크에서 진입한다.</p>
+
+    <h2>Notes</h2>
+    <p>원본을 읽을 수 없으면 결정 action을 비활성화하며 자동 처리된 항목은 기본 queue에서 제외한다.</p>
+  </main>
+</body>
+</html>
