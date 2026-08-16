@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="adr" data-omd-id="ADR-organization-is-the-company">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="ADR-organization-is-the-company" />
+  <meta name="omd:kind" content="adr" />
+  <meta name="omd:stage" content="accepted" />
+  <title>ADR-organization-is-the-company · Organization is the company</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">ADR-organization-is-the-company</p>
+    <h1 data-omd-field="title">Organization is the company</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">한 회사는 한 계정이다. 사용자 언어는 회사뿐이고, Teamspace는 제품 개념이 아니다. 전문가의 Client Portfolio는 멤버인 회사 목록이다.</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Context</h2>
+    <p>기존 콘솔은 Organization 아래 Teamspace(구 project)를 두어 그래프를 격리했다. 기획 초안은 여기에 Company를 세 번째 층으로 올려, 계정·팀 폴더·고객 법인을 따로 설명했다. 가입자가 보는 대상은 “우리 회사” 하나인데 이름이 세 개가 되었다.</p>
+
+    <h2>Decision</h2>
+    <p>v0.1 제품 모델은 <strong>한 회사 = 한 계정</strong>이다. 코드의 <code>organizations</code>가 그 회사다. 별도 Company 테이블을 만들지 않는다.</p>
+    <ul>
+      <li>사용자 언어는 “회사”다. Organization, tenant 같은 말은 UI에 쓰지 않는다.</li>
+      <li>멤버·빌링·설정은 그 회사 계정의 관리 화면이다. Company Data는 같은 회사의 업무 정본(재무·계약 등)이지, 다른 엔티티가 아니다.</li>
+      <li>고객/전문가는 역할이다. 고객은 보통 한 회사 멤버다. 전문가가 여러 회사를 보려면 그 회사 계정들에 초대한다. Client Portfolio = 내가 멤버인 회사 목록.</li>
+      <li>Teamspace는 제품 개념이 아니다. 사이드바·온보딩·IA에 두지 않는다. 기존 DB/URL은 구현 중 숨기고, 이후 <code>/{companySlug}/…</code>로 평탄화한다.</li>
+      <li>한 로그인 안에 고객사 레코드를 여러 개 두는 모델은 이번 범위가 아니다.</li>
+    </ul>
+
+    <h2>Consequences</h2>
+    <ul>
+      <li>회사 스위처는 “계정 안 법인 전환”이 아니다. 여러 회사 멤버십이 있을 때만 회사 목록을 고른다.</li>
+      <li>Engagement는 테넌시가 아니라 그 회사 안의 업무 단위다.</li>
+      <li>첫 구현은 teamspace 컬럼을 당장 드롭하지 않아도 된다. 다만 새 화면은 teamspace를 사용자에게 보여 주지 않는다.</li>
+    </ul>
+
+    <h2>Alternatives considered</h2>
+    <ul>
+      <li><strong>Organization ≠ Company</strong> — 같은 대상을 두 이름으로 나눠 온보딩과 권한이 복잡해진다. 지주·다법인 수요가 생기기 전에는 필요 없다.</li>
+      <li><strong>한 계정 안 고객사 목록</strong> — 회계법인형 모델. Expert Portfolio는 쉬워지지만 고객의 “우리 회사”와 어긋난다. 지금은 회사 계정에 전문가를 초대하는 쪽이 단순하다.</li>
+      <li><strong>Teamspace를 회사 안 팀으로 살림</strong> — Slack 팀 같은 기능이 필요할 때 다시 검토한다. v0.1 내비게이션에 넣지 않는다.</li>
+    </ul>
+  </main>
+</body>
+</html>
