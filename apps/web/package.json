@@ -6,8 +6,9 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "next dev --port 3000",
-    "dev:portless": "next dev",
+    "dev": "SSOTA_SKIP_WORKFLOW=1 next dev --port 3000",
+    "dev:portless": "SSOTA_SKIP_WORKFLOW=1 next dev",
+    "dev:workflow": "SSOTA_SKIP_WORKFLOW=0 next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
