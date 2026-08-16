@@ -15,9 +15,13 @@ export async function gotoApp(page: Page, path = "") {
   await page.goto(`${DEFAULT_APP_BASE}${suffix}`);
 }
 
-export async function gotoProject(page: Page, path = "") {
+export async function gotoProject(
+  page: Page,
+  path = "",
+  options?: Parameters<Page["goto"]>[1],
+) {
   const suffix = path.startsWith("/") ? path : path ? `/${path}` : "";
-  await page.goto(`${DEFAULT_CONSOLE_BASE}${suffix}`);
+  await page.goto(`${DEFAULT_CONSOLE_BASE}${suffix}`, options);
 }
 
 export async function gotoGraphNodes(page: Page, nodeTypeSlug = "document") {

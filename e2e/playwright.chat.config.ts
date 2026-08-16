@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
+import { playwrightMediaUse } from "./playwright-media";
 import { withWebDeps } from "./web-server-command";
 
 // Focused config for the chat + connections e2e: only the web server, with the
@@ -36,7 +37,7 @@ export default defineConfig({
   timeout: 60_000,
   outputDir: "./report/chat-results",
   reporter: [["list"]],
-  use: { baseURL: webUrl, trace: "on", screenshot: "only-on-failure" },
+  use: { baseURL: webUrl, ...playwrightMediaUse },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {

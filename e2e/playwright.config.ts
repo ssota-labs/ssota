@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
+import { playwrightMediaUse } from "./playwright-media";
 import { withWebDeps } from "./web-server-command";
 
 const webPort = process.env.WEB_PORT ?? "3100";
@@ -48,9 +49,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: webUrl,
-    trace: "on",
-    screenshot: "on",
-    video: "on",
+    ...playwrightMediaUse,
   },
   expect: {
     toHaveScreenshot: {
@@ -73,24 +72,34 @@ export default defineConfig({
         ...chatStubWebEnv,
         MARKETING_ONLY: "false",
         PORT: webPort,
+        // UI specs don't start Workflow DevKit agents. Skipping the transform
+        // avoids a 1–5 min "Discovering workflow directives" on cold org pages.
+        // Agent/chat specs that need `"use workflow"`: SSOTA_SKIP_WORKFLOW=0.
+        SSOTA_SKIP_WORKFLOW: process.env.SSOTA_SKIP_WORKFLOW ?? "1",
       },
     },
-    {
-      command: withWebDeps(`pnpm --filter mcp exec next dev --port ${mcpPort}`),
-      url: mcpUrl,
-      reuseExistingServer: !!process.env.REUSE_SERVERS,
-      timeout: 120_000,
-      env: {
-        ...process.env,
-        ...defaultSupabaseEnv,
-        PORT: mcpPort,
-      },
-    },
-    {
-      command: `pnpm --filter design-lab exec vite --port ${designLabPort} --host 127.0.0.1`,
-      url: designLabUrl,
-      reuseExistingServer: !!process.env.REUSE_SERVERS,
-      timeout: 120_000,
-    },
+    ...(process.env.E2E_WEB_ONLY === "1"
+      ? []
+      : [
+          {
+            command: withWebDeps(
+              `pnpm --filter mcp exec next dev --port ${mcpPort}`,
+            ),
+            url: mcpUrl,
+            reuseExistingServer: !!process.env.REUSE_SERVERS,
+            timeout: 120_000,
+            env: {
+              ...process.env,
+              ...defaultSupabaseEnv,
+              PORT: mcpPort,
+            },
+          },
+          {
+            command: `pnpm --filter design-lab exec vite --port ${designLabPort} --host 127.0.0.1`,
+            url: designLabUrl,
+            reuseExistingServer: !!process.env.REUSE_SERVERS,
+            timeout: 120_000,
+          },
+        ]),
   ],
 });
