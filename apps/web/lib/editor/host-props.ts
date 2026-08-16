@@ -4,7 +4,7 @@ import type { SsotaMentionItem } from "@ssota/editor";
 import {
   searchMentionNodesAction,
   uploadEditorImageAction,
-} from "@/app/actions";
+} from "@/lib/editor/actions";
 
 export function createSsotaEditorHostProps(teamspaceId: string) {
   return {

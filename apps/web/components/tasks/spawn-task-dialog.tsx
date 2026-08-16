@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
-import { spawnTaskAction } from "@/app/actions";
+import { spawnTaskAction } from "@/app/[orgSlug]/[teamspaceSlug]/tasks/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,

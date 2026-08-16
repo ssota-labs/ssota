@@ -60,7 +60,10 @@ import {
   ScheduleSheet,
   type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
-import { updateAgentDefinitionAction, updateTeamspaceMainConfigAction } from "@/app/actions";
+import {
+  updateAgentDefinitionAction,
+  updateTeamspaceMainConfigAction,
+} from "@/app/[orgSlug]/[teamspaceSlug]/agents/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";

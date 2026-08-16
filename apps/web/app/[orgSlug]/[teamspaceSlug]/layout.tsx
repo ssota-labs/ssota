@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { signOutAction } from "@/app/actions";
+import { signOutAction } from "@/app/auth/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
 import { enforceBuilderEntitlement, getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
 import { PendingInvitationsBanner } from "@/components/settings/members/pending-invitations-banner";

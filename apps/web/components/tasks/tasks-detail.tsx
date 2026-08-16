@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import type { TaskStatus } from "@ssota/contracts";
-import { updateTaskStatusAction } from "@/app/actions";
+import { updateTaskStatusAction } from "@/app/[orgSlug]/[teamspaceSlug]/tasks/actions";
 import { SpawnTaskDialog, type AgentOption } from "@/components/tasks/spawn-task-dialog";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
 import { TasksKanbanBoard } from "@/components/tasks/tasks-kanban-board";
