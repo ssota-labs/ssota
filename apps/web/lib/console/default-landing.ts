@@ -18,5 +18,5 @@ export async function getDefaultProjectPath(userId: string): Promise<string> {
   return orgPath({
     orgSlug: org.slug,
     teamspaceSlug: projects[0]!.slug,
-  }, "overview");
+  }, "home");
 }

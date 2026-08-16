@@ -7,5 +7,5 @@ export default async function ProjectIndexPage({
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
   const { orgSlug, teamspaceSlug } = await params;
-  redirect(orgPath({ orgSlug, teamspaceSlug }, "overview"));
+  redirect(orgPath({ orgSlug, teamspaceSlug }, "home"));
 }

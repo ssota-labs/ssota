@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
-import { enforceBuilderEntitlement, getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
-import { isCompanyWorkspaceRelativePath } from "@/lib/company-workspace/navigation";
+import { CompanyWorkspaceLayoutView } from "../company-workspace-layout-view";
+import { getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { resolveBuilderContext } from "@/lib/request-context";
-import { registerTeamspaceOrganization } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-export default async function ProjectLayout({
+export default async function CompanyWorkspaceLayout({
   children,
   params,
 }: {
@@ -23,32 +22,20 @@ export default async function ProjectLayout({
 
   const builder = await resolveBuilderContext(orgSlug, teamspaceSlug);
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
-  registerTeamspaceOrganization(project.id, org.id);
-
-  const relativePath = getConsoleRelativePath(returnTo, orgSlug, teamspaceSlug);
-  await enforceBuilderEntitlement({
-    organizationId: org.id,
-    orgSlug,
-    relativePath,
-  });
-
-  if (isCompanyWorkspaceRelativePath(relativePath)) {
-    return children;
-  }
-
   const user = await getCurrentUser();
-  const { ConsoleShellLayoutView } = await import("./console-shell-layout-view");
+  const relativePath = getConsoleRelativePath(returnTo, orgSlug, teamspaceSlug);
+
   return (
-    <ConsoleShellLayoutView
+    <CompanyWorkspaceLayoutView
       orgSlug={orgSlug}
       teamspaceSlug={teamspaceSlug}
       org={org}
       project={project}
       userId={builder.userId}
       userEmail={user?.email ?? ""}
-      returnTo={returnTo}
+      relativePath={relativePath}
     >
       {children}
-    </ConsoleShellLayoutView>
+    </CompanyWorkspaceLayoutView>
   );
 }
