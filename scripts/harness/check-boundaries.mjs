@@ -77,9 +77,9 @@ const allowedPaths = (name) => new Set(loadAllowlist(name).map((entry) => entry.
   const pages = walkFiles("apps/web/app", { exts: ["page.tsx", "page.ts"] });
   for (const file of pages) {
     if (allowed.has(file)) continue;
-    reporter.fail("GRAPH-08", `미등재 라우트: ${file} — 페이지 UI는 json-render 조합만 허용됩니다`, [
-      "도메인 화면이라면 React 라우트가 아니라 L3 page 노드(properties.spec) + L2 catalog 컴포넌트 조합으로 구성하세요",
-      `인프라 라우트(인증·onboarding 등)가 맞다면 scripts/harness/allowlists/routes.json에 {"path": "${file}", "ruleId": "GRAPH-08", "reason": "<사유>"}를 추가하세요`,
+    reporter.fail("GRAPH-08", `미등재 라우트: ${file} — 새 typed 페이지는 routes.json에 등록해야 합니다`, [
+      "Company Workspace 등 트랜잭션 화면이면 scripts/harness/allowlists/routes.json에 등록하세요",
+      "대시보드·리포트라면 L3 page 노드 json-render 조합을 쓰세요",
     ]);
   }
 }
