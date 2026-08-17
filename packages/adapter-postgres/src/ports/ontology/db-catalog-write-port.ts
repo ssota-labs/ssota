@@ -1,0 +1,170 @@
+import { and, eq } from "drizzle-orm";
+import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts";
+import type { CatalogWritePort } from "@ssota/core";
+import type { Db } from "../../db/client.js";
+import * as schema from "../../db/schema.js";
+import type { DbCatalogScope } from "./db-catalog-read-port.js";
+
+function mapNodeCatalogRow(
+  row: typeof schema.nodeCatalog.$inferSelect,
+): NodeCatalogRow {
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    key: row.key,
+    label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
+    propertySchema: row.propertySchema ?? {},
+  };
+}
+
+function mapEdgeCatalogRow(
+  row: typeof schema.edgeCatalog.$inferSelect,
+): EdgeCatalogRow {
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    key: row.key,
+    label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
+    domainCatalogIds: row.domainCatalogIds ?? [],
+    rangeCatalogIds: row.rangeCatalogIds ?? [],
+    propertySchema: row.propertySchema ?? null,
+  };
+}
+
+export function createDbCatalogWritePort(
+  db: Db,
+  scope: DbCatalogScope,
+): CatalogWritePort {
+  const { organizationId } = scope;
+
+  return {
+    async upsertNodeCatalog(entry) {
+      const description = entry.description ?? "";
+      const keywords = entry.keywords ?? [];
+      if (entry.id) {
+        const [row] = await db
+          .update(schema.nodeCatalog)
+          .set({
+            key: entry.key,
+            label: entry.label,
+            description,
+            keywords,
+            propertySchema: entry.propertySchema ?? {},
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.nodeCatalog.organizationId, organizationId),
+              eq(schema.nodeCatalog.id, entry.id),
+            ),
+          )
+          .returning();
+        return mapNodeCatalogRow(row!);
+      }
+
+      const [row] = await db
+        .insert(schema.nodeCatalog)
+        .values({
+          organizationId,
+          key: entry.key,
+          label: entry.label,
+          description,
+          keywords,
+          propertySchema: entry.propertySchema ?? {},
+        })
+        .onConflictDoUpdate({
+          target: [schema.nodeCatalog.organizationId, schema.nodeCatalog.key],
+          set: {
+            label: entry.label,
+            description,
+            keywords,
+            propertySchema: entry.propertySchema ?? {},
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return mapNodeCatalogRow(row!);
+    },
+
+    async upsertEdgeCatalog(entry) {
+      const description = entry.description ?? "";
+      const keywords = entry.keywords ?? [];
+      if (entry.id) {
+        const [row] = await db
+          .update(schema.edgeCatalog)
+          .set({
+            key: entry.key,
+            label: entry.label,
+            description,
+            keywords,
+            domainCatalogIds: entry.domainCatalogIds,
+            rangeCatalogIds: entry.rangeCatalogIds,
+            propertySchema: entry.propertySchema,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.edgeCatalog.organizationId, organizationId),
+              eq(schema.edgeCatalog.id, entry.id),
+            ),
+          )
+          .returning();
+        return mapEdgeCatalogRow(row!);
+      }
+
+      const [row] = await db
+        .insert(schema.edgeCatalog)
+        .values({
+          organizationId,
+          key: entry.key,
+          label: entry.label,
+          description,
+          keywords,
+          domainCatalogIds: entry.domainCatalogIds ?? [],
+          rangeCatalogIds: entry.rangeCatalogIds ?? [],
+          propertySchema: entry.propertySchema ?? null,
+        })
+        .onConflictDoUpdate({
+          target: [schema.edgeCatalog.organizationId, schema.edgeCatalog.key],
+          set: {
+            label: entry.label,
+            description,
+            keywords,
+            domainCatalogIds: entry.domainCatalogIds ?? [],
+            rangeCatalogIds: entry.rangeCatalogIds ?? [],
+            propertySchema: entry.propertySchema ?? null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return mapEdgeCatalogRow(row!);
+    },
+
+    async deleteNodeCatalog(id) {
+      await db
+        .delete(schema.nodeCatalog)
+        .where(
+          and(
+            eq(schema.nodeCatalog.organizationId, organizationId),
+            eq(schema.nodeCatalog.id, id),
+          ),
+        );
+    },
+
+    async deleteEdgeCatalog(id) {
+      await db
+        .delete(schema.edgeCatalog)
+        .where(
+          and(
+            eq(schema.edgeCatalog.organizationId, organizationId),
+            eq(schema.edgeCatalog.id, id),
+          ),
+        );
+    },
+  };
+}

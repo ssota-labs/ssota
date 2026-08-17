@@ -20,7 +20,7 @@ import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
 import { seedSwdlSkillsAndBindings } from "./seed/swdl-skills.js";
-import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/shared/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
@@ -149,10 +149,10 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
     // Platform Console chat (outside Domain Pack): Main config/agent only.
     const { seedTeamspaceMainConfig } = await import(
-      "../ports/teamspace-main-config-port.js"
+      "../ports/agents/teamspace-main-config-port.js"
     );
     const { seedMainAgentDefinition } = await import(
-      "../ports/agent-definition-port.js"
+      "../ports/agents/agent-definition-port.js"
     );
     await seedTeamspaceMainConfig(db, teamspaceId);
     await seedMainAgentDefinition(db, teamspaceId);
@@ -341,7 +341,7 @@ async function seedDefaultSandboxEnvironments(db: ReturnType<typeof createDb>["d
   const projects = await db
     .select({ id: schema.teamspaces.id })
     .from(schema.teamspaces);
-  const { createSandboxEnvironmentPort } = await import("../ports/sandbox-environment-port.js");
+  const { createSandboxEnvironmentPort } = await import("../ports/shared/sandbox-environment-port.js");
   for (const { id: teamspaceId } of projects) {
     const port = createSandboxEnvironmentPort(db, { teamspaceId });
     const existing = await port.getByKey("sandbox.dev_node24");

@@ -4,7 +4,7 @@ import {
   fetchGithubRepoTree,
   libraryRefsFromSkills,
   skillBundleFromFolderFiles,
-} from "../src/ports/skill-github-discover.js";
+} from "../src/ports/agents/skill-github-discover.js";
 
 const VALID_SKILL = `---
 name: test-skill

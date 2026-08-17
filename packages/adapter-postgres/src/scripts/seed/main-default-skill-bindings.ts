@@ -3,7 +3,7 @@ import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { MAIN_DEFAULT_SKILL_KEYS } from "@ssota/contracts";
 import type { Db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { createSkillPort } from "../../ports/skill-port.js";
+import { createSkillPort } from "../../ports/agents/skill-port.js";
 
 /**
  * Idempotent: bind main agent to platform default skill pack with ready locks.

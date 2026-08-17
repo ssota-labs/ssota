@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 import type { Db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { createDbAccountReadPort } from "../../ports/account-read-port.js";
+import { createDbAccountReadPort } from "../../ports/platform/account-read-port.js";
 
 /**
  * SWDL Domain Pack schedules — Direction cadence (Cycle A) + Orchestrator (B–D/G).

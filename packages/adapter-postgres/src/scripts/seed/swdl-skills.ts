@@ -11,7 +11,7 @@ import {
 } from "@ssota/contracts/agents";
 import type { Db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { createSkillPort } from "../../ports/skill-port.js";
+import { createSkillPort } from "../../ports/agents/skill-port.js";
 
 const CONTRACTS_SKILLS_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
