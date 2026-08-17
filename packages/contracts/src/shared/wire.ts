@@ -15,8 +15,8 @@ import {
   ExecuteActionResultSchema,
   ActionPreviewResultSchema,
 } from "./definitions.js";
-import { WorkflowSchema } from "./workflow.js";
-import { TaskIndexSchema, TaskSchema } from "./task.js";
+import { WorkflowSchema } from "../agents/workflow.js";
+import { TaskIndexSchema, TaskSchema } from "../agents/task.js";
 
 /** ISO-8601 timestamp string on the wire (JSON-serialized Date). */
 export const IsoDateTimeSchema = z.string().min(1);

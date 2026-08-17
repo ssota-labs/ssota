@@ -40,7 +40,7 @@ const pagesTree = JSON.parse(
   readFileSync(
     join(
       dirname(fileURLToPath(import.meta.url)),
-      "../../seed-packs/software-development-workflow/pages-tree.json",
+      "../../../seed-packs/software-development-workflow/pages-tree.json",
     ),
     "utf8",
   ),

@@ -1,4 +1,4 @@
-import type { BlockNoteContent } from "./workflow-instruction.js";
+import type { BlockNoteContent } from "../agents/workflow-instruction.js";
 
 /**
  * Markdown ↔ BlockNote conversion for graph node content.

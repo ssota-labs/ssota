@@ -4,7 +4,7 @@ import {
   ExecuteActionClientInputSchema,
   NodeCatalogEntrySchema,
   NodeSchema,
-} from "./index.js";
+} from "../index.js";
 
 describe("wire schemas", () => {
   it("parses a node catalog entry wire payload", () => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LifecycleStatusSchema } from "./definitions.js";
+import { LifecycleStatusSchema } from "../shared/definitions.js";
 import { ContextSpecSchema } from "./workflow-context.js";
 import {
   RouteBlockSchema,

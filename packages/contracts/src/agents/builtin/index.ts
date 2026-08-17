@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ExecutorTypeSchema } from "../definitions.js";
+import { ExecutorTypeSchema } from "../../shared/definitions.js";
 import {
   ToolBundleSchema,
   NodeScopeSchema,

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import edgeCatalogSeed from "../../seed-packs/software-development-workflow/edge-catalog.json" with {
+import edgeCatalogSeed from "../../../seed-packs/software-development-workflow/edge-catalog.json" with {
   type: "json",
 };
 import { EDGE_TYPES, NODE_TYPES } from "./index.js";
-import { SWDL_AGENT_SKILL_KEYS, SWDL_SKILL_KEYS } from "../agents/skills/swdl-skill-pack.js";
-import { SWDL_AGENT_IDS } from "../agents/swdl-ids.js";
+import { SWDL_AGENT_SKILL_KEYS, SWDL_SKILL_KEYS } from "../../agents/builtin/skills/swdl-skill-pack.js";
+import { SWDL_AGENT_IDS } from "../../agents/builtin/swdl-ids.js";
 
 type EdgeSeed = {
   key: string;

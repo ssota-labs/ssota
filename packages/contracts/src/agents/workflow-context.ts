@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LifecycleStatusSchema } from "./definitions.js";
+import { LifecycleStatusSchema } from "../shared/definitions.js";
 
 export const ContextFilterOperatorSchema = z.enum([
   "equals",

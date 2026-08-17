@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import edgeCatalogSeed from "../../seed-packs/software-development-workflow/edge-catalog.json" with {
+import edgeCatalogSeed from "../../../seed-packs/software-development-workflow/edge-catalog.json" with {
   type: "json",
 };
-import gatePoliciesSeed from "../../seed-packs/software-development-workflow/gate-policies.json" with {
+import gatePoliciesSeed from "../../../seed-packs/software-development-workflow/gate-policies.json" with {
   type: "json",
 };
-import pagesTreeSeed from "../../seed-packs/software-development-workflow/pages-tree.json" with {
+import pagesTreeSeed from "../../../seed-packs/software-development-workflow/pages-tree.json" with {
   type: "json",
 };
-import workCyclesSeed from "../../seed-packs/software-development-workflow/work-cycles.json" with {
+import workCyclesSeed from "../../../seed-packs/software-development-workflow/work-cycles.json" with {
   type: "json",
 };
 import { parseGatePath, type GatePathHop } from "./gate-path.js";

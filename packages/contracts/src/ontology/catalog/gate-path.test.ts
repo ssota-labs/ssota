@@ -3,8 +3,8 @@ import { GatePathParseError, parseGatePath } from "./gate-path.js";
 import { gatePolicyPropertiesSchema } from "./gate-policy-schemas.js";
 import { parseNodeProperties } from "./node-types.js";
 import { workCyclePropertiesSchema } from "./work-cycle-schemas.js";
-import gatePoliciesSeed from "../../seed-packs/software-development-workflow/gate-policies.json" with { type: "json" };
-import workCyclesSeed from "../../seed-packs/software-development-workflow/work-cycles.json" with { type: "json" };
+import gatePoliciesSeed from "../../../seed-packs/software-development-workflow/gate-policies.json" with { type: "json" };
+import workCyclesSeed from "../../../seed-packs/software-development-workflow/work-cycles.json" with { type: "json" };
 
 describe("parseGatePath", () => {
   it("parses self property paths", () => {

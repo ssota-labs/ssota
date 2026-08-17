@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 const uiRoot = path.resolve(__dirname, "../../packages/ui/src");
 const contractsCatalogRoot = path.resolve(
   __dirname,
-  "../../packages/contracts/src/catalog/index.ts",
+  "../../packages/contracts/src/ontology/catalog/index.ts",
 );
 
 export default defineConfig({
