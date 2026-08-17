@@ -53,11 +53,11 @@
   "files": {
     ".omd/assets/omd-doc.css": {
       "ownership": "omd-managed",
-      "digest": "7f550cb2078bfcc578a6b3afc130d54a37a643ceb278347857f3d022f9050bca"
+      "digest": "62fcf791f52fa72738d5c19f8faa6f6138b8bf45cc4b868b78be82579e4f52d4"
     },
     ".omd/dbs/index.html": {
       "ownership": "omd-managed",
-      "digest": "c17786ead653bc0508a671d5f1707873950a29e1cbad8dcbddec77d5a3dc0a57"
+      "digest": "c76b7ac9d6d27d685e224920cede8ab44c42aedf08df97807c2e7b0bbc91bcd7"
     },
     ".omd/dbs/glossary/index.html": {
       "ownership": "omd-managed",
@@ -89,11 +89,11 @@
     },
     ".omd/dbs/plans/index.html": {
       "ownership": "omd-managed",
-      "digest": "7927f0a83b3b24bc677c5d08e384cbbc8faf7b9ae09aae9890b3fc589a220d71"
+      "digest": "0e11c44cb971a4178792933ad9bce83cba9e7b9163c59e1a594bb46003aeaad3"
     },
     ".omd/dbs/adr/index.html": {
       "ownership": "omd-managed",
-      "digest": "36da6ee7e747af450c657a22ac22ee4cfeaf2c3aea330d083524f75f4566e674"
+      "digest": "55630d5deb64ebc78b4efe5d47c43ca081cb64a62590bb98596c78795b9556c2"
     },
     ".omd/dbs/specs/index.html": {
       "ownership": "omd-managed",
