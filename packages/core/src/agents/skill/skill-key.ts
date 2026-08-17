@@ -1,5 +1,5 @@
-import { toCatalogLabel } from "../catalog-slug.js";
-import { toRouteSlug } from "../console-slug.js";
+import { toCatalogLabel } from "../../ontology/catalog-slug.js";
+import { toRouteSlug } from "../../shared/console-slug.js";
 
 const SKILL_KEY_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const SKILL_KEY_MAX_LEN = 48;

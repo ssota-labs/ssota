@@ -3,7 +3,7 @@ import {
   type RouteOutletTarget,
   type Workflow as WireWorkflow,
 } from "@ssota/contracts";
-import type { Workflow } from "../domain/types.js";
+import type { Workflow } from "../../shared/domain/types.js";
 
 export type WorkflowPackage = {
   workflow: WireWorkflow;

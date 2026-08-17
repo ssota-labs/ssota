@@ -26,7 +26,7 @@ import type {
   Node,
   NodeCatalogEntry,
   Task,
-} from "./types.js";
+} from "../../shared/domain/types.js";
 
 function toIso(date: Date): string {
   return date.toISOString();

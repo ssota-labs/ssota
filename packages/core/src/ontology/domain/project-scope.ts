@@ -1,6 +1,6 @@
 import type { Effect } from "@ssota/contracts";
-import type { Node } from "./types.js";
-import { ActionRejectedError } from "./types.js";
+import type { Node } from "../../shared/domain/types.js";
+import { ActionRejectedError } from "../../shared/domain/types.js";
 
 export async function enforceProjectScope(
   teamspaceId: string,

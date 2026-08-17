@@ -4,7 +4,7 @@ import type {
   Task,
   TaskPort,
   TaskQueryInput,
-} from "../domain/types.js";
+} from "../../shared/domain/types.js";
 import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
 import type { AgentDefinition } from "@ssota/contracts";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";

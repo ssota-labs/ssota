@@ -1,4 +1,4 @@
-import type { Organization } from "../domain/types.js";
+import type { Organization } from "../../shared/domain/types.js";
 
 export type OrganizationMemberRole = "owner" | "member";
 

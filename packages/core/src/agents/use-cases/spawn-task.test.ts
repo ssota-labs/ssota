@@ -4,7 +4,7 @@ import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
-} from "../testing/in-memory-graph.js";
+} from "../../ontology/testing/in-memory-graph.js";
 import {
   createInMemoryState,
   createInMemoryPorts,

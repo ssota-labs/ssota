@@ -10,9 +10,9 @@ import {
 } from "@ssota/contracts";
 import type { GraphNode } from "../domain/graph-types.js";
 import { GraphError } from "../domain/graph-errors.js";
-import { TaskError } from "../domain/task-errors.js";
+import { TaskError } from "../../agents/domain/task-errors.js";
 import type { GraphReadPort } from "../ports/graph-read-port.js";
-import type { SpawnTaskDeps } from "../use-cases/spawn-task.js";
+import type { SpawnTaskDeps } from "../../agents/use-cases/spawn-task.js";
 
 export type GateEvalContext = {
   hook: GateHook;
@@ -335,11 +335,11 @@ async function spawnTask(
   spawnDeps: SpawnTaskDeps,
   teamspaceId: string,
   input: Parameters<
-    typeof import("../use-cases/spawn-task.js").spawnTask
+    typeof import("../../agents/use-cases/spawn-task.js").spawnTask
   >[2],
 ): Promise<void> {
   // Dynamic import avoids circular dependency with spawn-task.ts
-  const { spawnTask: spawn } = await import("../use-cases/spawn-task.js");
+  const { spawnTask: spawn } = await import("../../agents/use-cases/spawn-task.js");
   await spawn(spawnDeps, teamspaceId, input);
 }
 

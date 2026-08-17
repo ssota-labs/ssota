@@ -1,4 +1,4 @@
-import { toCatalogSlug } from "./catalog-slug.js";
+import { toCatalogSlug } from "../ontology/catalog-slug.js";
 
 const WORKFLOW_KEY_PATTERN = /^[a-z][a-z0-9_]*$/;
 

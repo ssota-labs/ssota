@@ -10,7 +10,7 @@ import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphWritePort } from "../../ports/graph-write-port.js";
 import { assertGraphNodeInProject } from "../../domain/graph-scope.js";
-import type { SpawnTaskDeps } from "../spawn-task.js";
+import type { SpawnTaskDeps } from "../../../agents/use-cases/spawn-task.js";
 
 export async function updateNode(
   deps: {

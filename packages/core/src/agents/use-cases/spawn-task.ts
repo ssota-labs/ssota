@@ -1,14 +1,14 @@
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { TaskError } from "../domain/task-errors.js";
-import { assertGraphNodeInProject } from "../domain/graph-scope.js";
-import type { GraphReadPort } from "../ports/graph-read-port.js";
+import { assertGraphNodeInProject } from "../../ontology/domain/graph-scope.js";
+import type { GraphReadPort } from "../../ontology/ports/graph-read-port.js";
 import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
-import type { Task, TaskPort } from "../domain/types.js";
+import type { Task, TaskPort } from "../../shared/domain/types.js";
 import type { SpawnTaskInput } from "@ssota/contracts";
 import {
   evaluateGatePolicies,
   type GatePolicySource,
-} from "../gate/evaluate-gate-policies.js";
+} from "../../ontology/gate/evaluate-gate-policies.js";
 
 export interface SpawnTaskDeps {
   tasks: TaskPort;

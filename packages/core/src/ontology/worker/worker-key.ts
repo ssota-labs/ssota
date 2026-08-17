@@ -1,4 +1,4 @@
-import { toRouteSlug } from "../console-slug.js";
+import { toRouteSlug } from "../../shared/console-slug.js";
 
 const WORKER_KEY_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const WORKER_KEY_MAX_LEN = 48;

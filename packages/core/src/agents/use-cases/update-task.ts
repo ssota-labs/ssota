@@ -1,8 +1,8 @@
 import type { UpdateTaskInput } from "@ssota/contracts";
 import { TaskError } from "../domain/task-errors.js";
-import { assertGraphNodeInProject } from "../domain/graph-scope.js";
-import type { GraphReadPort } from "../ports/graph-read-port.js";
-import type { Task, TaskPort } from "../domain/types.js";
+import { assertGraphNodeInProject } from "../../ontology/domain/graph-scope.js";
+import type { GraphReadPort } from "../../ontology/ports/graph-read-port.js";
+import type { Task, TaskPort } from "../../shared/domain/types.js";
 
 export interface UpdateTaskDeps {
   tasks: TaskPort;

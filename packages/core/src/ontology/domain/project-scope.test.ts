@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { assertNodeInProjectScope, enforceProjectScope } from "./project-scope.js";
-import { ActionRejectedError } from "./types.js";
-import type { Node } from "./types.js";
+import { ActionRejectedError } from "../../shared/domain/types.js";
+import type { Node } from "../../shared/domain/types.js";
 
 const PROJECT_A = "00000000-0000-4000-8000-000000000001";
 const PROJECT_B = "00000000-0000-4000-8000-000000000099";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 import { createContractsCatalogReadPort } from "../adapters/contracts-catalog-read-port.js";
-import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
+import type { AgentDefinitionReadPort } from "../../agents/ports/agent-definition-port.js";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
@@ -11,11 +11,11 @@ import {
   createInMemoryPorts,
   createInMemoryState,
   TEST_PROJECT_ID,
-} from "../testing/in-memory.js";
+} from "../../agents/testing/in-memory.js";
 import type { GatePolicyRecord, GatePolicySource } from "./evaluate-gate-policies.js";
 import { createNode } from "../use-cases/graph/create-node.js";
 import { updateNode } from "../use-cases/graph/update-node.js";
-import { spawnTask } from "../use-cases/spawn-task.js";
+import { spawnTask } from "../../agents/use-cases/spawn-task.js";
 import { createEdge } from "../use-cases/graph/create-edge.js";
 
 const TEAM = TEST_PROJECT_ID;

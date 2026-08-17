@@ -41,7 +41,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
     paths: [
       "packages/adapter-postgres/src/db/schema.ts",
-      "packages/core/src/ports/graph-write-port.ts",
+      "packages/core/src/ontology/ports/graph-write-port.ts",
     ],
     allowlist: [
       {
@@ -68,7 +68,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     area: "graph",
     rule: "Catalog는 organization_id로 격리, 인스턴스는 teamspace_id로 귀속 — cross-org edge는 ORG_MISMATCH.",
     enforcement: [
-      { kind: "unit-test", testPath: "packages/core/src/use-cases/graph/graph.test.ts" },
+      { kind: "unit-test", testPath: "packages/core/src/ontology/use-cases/graph/graph.test.ts" },
       { kind: "docs-sync" },
     ],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
@@ -95,7 +95,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     area: "graph",
     rule: "타입·properties 검증은 API 동작 — catalog에 없는 catalogKey·property_schema 위반은 커밋 전 reject.",
     enforcement: [
-      { kind: "unit-test", testPath: "packages/core/src/use-cases/graph/graph.test.ts" },
+      { kind: "unit-test", testPath: "packages/core/src/ontology/use-cases/graph/graph.test.ts" },
       { kind: "docs-sync" },
     ],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
@@ -184,11 +184,11 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
         reason: "잔존 legacy executeAction 코드 — 하네스 도입 시점 실측. 신규 사용 금지, 제거 대상 (스캐너가 신규 도입만 차단)",
       },
       {
-        path: "packages/core/src/domain/types.ts",
+        path: "packages/core/src/shared/domain/types.ts",
         reason: "잔존 legacy ActionCommitPort 타입 — 제거 대상",
       },
       {
-        path: "packages/core/src/testing/in-memory.ts",
+        path: "packages/core/src/agents/testing/in-memory.ts",
         reason: "잔존 legacy in-memory 어댑터 — 제거 대상",
       },
     ],
