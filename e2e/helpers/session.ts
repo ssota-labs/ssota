@@ -1,3 +1,4 @@
+import { LOCAL_SUPABASE_DEMO_ANON_KEY } from "./local-supabase";
 import type { Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { SMOKE_EMAIL, SMOKE_PASSWORD } from "@ssota/adapter-postgres";
@@ -9,7 +10,7 @@ const supabaseUrl =
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   process.env.SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+  LOCAL_SUPABASE_DEMO_ANON_KEY;
 
 const MAX_CHUNK = 3180;
 
