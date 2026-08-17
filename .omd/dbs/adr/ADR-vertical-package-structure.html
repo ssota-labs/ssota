@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="adr" data-omd-id="ADR-vertical-package-structure">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="ADR-vertical-package-structure" />
+  <meta name="omd:kind" content="adr" />
+  <meta name="omd:stage" content="accepted" />
+  <title>ADR-vertical-package-structure · Vertical Folder Structure inside Horizontal Packages</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">ADR-vertical-package-structure</p>
+    <h1 data-omd-field="title">Vertical Folder Structure inside Horizontal Packages</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">패키지는 수평(contracts·core·adapter)으로 유지하고, 각 패키지 내부를 ontology·agents·platform·shared 버티컬 폴더로 나눈다. 버티컬 간 의존 방향은 harness가 강제한다.</dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Context</h2>
+    <p><code>packages/core</code>의 <code>domain/</code>에 graph-errors와 billing-errors·account-errors가 한 폴더에 있고, <code>ports/</code>에는 19개 포트가, <code>packages/contracts</code> 루트에는 29개 파일이 평면으로 나열되어 있다. 서로 다른 제품 관심사 — 온톨로지(그래프·카탈로그·액션·함수), 에이전트(정의·툴·워크플로우·스킬), 플랫폼(계정·조직·빌링) — 가 한 네임스페이스에 섞여, 어느 파일이 어느 관심사인지 폴더 구조가 말해주지 않는다.</p>
+    <p>버티컬을 별도 패키지(<code>@ssota/ontology</code> 등)로 승격하는 안을 검토했으나 기각했다. (1) Drizzle 스키마가 하나라 adapter를 쪼개면 순환 또는 4번째 패키지를 강요한다. (2) core 4.7k줄은 Turborepo 캐시 이득이 없는 크기다. (3) 경계 강제는 이미 있는 <code>harness:boundaries</code> 경로 스캔으로 충분하다. (4) P0–P2(온톨로지 슬라이스)가 곧 이 코드를 대량 수정한다.</p>
+
+    <h2>Decision</h2>
+    <p>패키지 경계는 그대로 두고([ARCH-01] 불변), <code>contracts</code>·<code>core</code>·<code>adapter-postgres</code>의 <code>src/</code> 내부를 네 버티컬 폴더로 재배치한다.</p>
+    <ul>
+      <li><strong><code>ontology/</code></strong> — node/edge catalog, graph, gate, page(json-render spec), worker <em>타입 정의</em>(ADR-runtime-ontology의 L3 함수 타입), 향후 action·GraphEdits.</li>
+      <li><strong><code>agents/</code></strong> — agent-definition, builtin 에이전트·스킬 팩, workflows, schedule, task, worker <em>실행</em>(agent-runtime), chat·connector 계약.</li>
+      <li><strong><code>platform/</code></strong> — organizations, teamspaces, memberships, billing, accounts, onboarding, beta-signup.</li>
+      <li><strong><code>shared/</code></strong> — wire, markdown-blocknote, sandbox 계약, 프로젝트 template, 공용 스코프 상수.</li>
+    </ul>
+    <p>worker는 의도적으로 갈린다 — <strong>정의는 ontology(함수 = 온톨로지 L3), 실행은 agents(런타임 엔진)</strong>. <code>contracts/src/invariants/</code>는 제품 도메인이 아니라 저장소 거버넌스(harness 룰 SSOT)이므로 버티컬에 넣지 않고 루트에 남긴다.</p>
+    <p><strong>의존 방향</strong> — 버티컬 간 방향을 harness 규칙으로 강제한다:</p>
+    <pre>platform  ←  ontology  ←  agents
+    ↖________shared________↗</pre>
+    <ul>
+      <li>ontology·agents는 platform의 id(organization·teamspace)를 참조할 수 있다. <strong>역방향(platform → ontology/agents) 금지.</strong></li>
+      <li>agents → ontology 허용(에이전트는 그래프를 조작한다). <strong>ontology → agents 금지</strong>(테스트 파일은 예외).</li>
+      <li>shared는 어느 버티컬도 import하지 않는다.</li>
+    </ul>
+    <p><strong>공개 표면은 불변</strong> — <code>@ssota/contracts/catalog</code> 같은 subpath 스펙과 패키지 barrel export는 유지하고, package.json exports의 dist 경로만 새 위치로 갱신한다. 소비 코드(apps·mcp·agent-runtime)는 변경하지 않는다.</p>
+
+    <h2>Consequences</h2>
+    <ul>
+      <li>파일 위치가 관심사를 말해주고, P0–P2 신규 코드(action·GraphEdits·검증 층)가 처음부터 <code>ontology/</code>에 앉는다.</li>
+      <li>버티컬 간 결합이 harness 실패로 드러난다 — 지금 구조가 숨기던 결합이 allowlist 항목으로 가시화된다.</li>
+      <li>이후 패키지 승격이 필요해지면 폴더가 이미 패키지 모양이라 이동이 기계적이다.</li>
+      <li><strong>대가:</strong> 한 번의 대량 경로 변경으로 열린 브랜치들과 충돌한다. 열린 PR이 없는 시점에 레이어당 1커밋으로 수행한다.</li>
+      <li><strong>대가:</strong> git blame이 이동 커밋을 경유한다 (<code>git log --follow</code>로 추적).</li>
+    </ul>
+
+    <h2>Alternatives considered</h2>
+    <ul>
+      <li><strong>버티컬 패키지 신설</strong>(<code>@ssota/ontology</code>·<code>@ssota/agents</code>·<code>@ssota/platform</code>) — 경계 강제력은 최강이지만 단일 Drizzle 스키마와 충돌하고, 현 규모에서 빌드·버전 관리 비용만 늘린다. 폴더가 정리된 뒤 필요 시 승격한다.</li>
+      <li><strong>현상 유지 + 명명 규칙만</strong> — 비용 0이지만 강제력이 없어 지금의 혼재가 재발한다.</li>
+      <li><strong>full matrix</strong>(버티컬 × 레이어 = 9+ 패키지) — 저장소 규모 대비 관리 비용이 압도적이다.</li>
+    </ul>
+  </main>
+</body>
+</html>
