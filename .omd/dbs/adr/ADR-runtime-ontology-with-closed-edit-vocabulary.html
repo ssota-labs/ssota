@@ -36,12 +36,24 @@
     <p>선행 결정 <a href="./ADR-relational-domain-cores-with-graph-projections.html">ADR-relational-domain-cores-with-graph-projections</a>는 도메인별 관계형 스키마를 정본으로 삼았다. DB 제약을 얻지만 타입 추가를 릴리즈에 묶어, 런타임 도메인 정의라는 제품 목표와 정면 충돌한다.</p>
     <p>과거 generic runtime(<code>executeAction</code> + JSON rule 해석)은 저장소에서 제거되었다. 실패 원인은 “범용성” 자체가 아니라 <strong>액션의 행동을 데이터로 두고 런타임에 해석</strong>한 것이다. 이 결정은 그 실패를 반복하지 않도록 <em>인터페이스는 데이터, 행동은 코드</em>로 경계를 고정한다.</p>
 
+    <h2>현행 구현 실측</h2>
+    <p>이 결정은 그린필드가 아니다. 저장소를 감사한 결과 세 층이 고르게 비어 있는 것이 아니라 <strong>L3(함수)가 L2(액션)보다 훨씬 더 구현되어 있고, 가장 큰 실제 갭은 “동적 로직”이 아니라 검증 층</strong>이다.</p>
+    <ul>
+      <li><strong>L1 저장·저작 ✅</strong> — <code>node_catalog</code>/<code>edge_catalog</code>에 <code>property_schema</code>·<code>domain_catalog_ids</code>·<code>range_catalog_ids</code> 컬럼이 있고, <code>CatalogWritePort</code>와 agent-runtime의 <code>create_node_type</code>/<code>create_edge_type</code> 도구로 <strong>이미 런타임 타입 저작이 가능하다</strong>.</li>
+      <li><strong>L1 검증 ❌ (최우선 갭)</strong> — <code>validateNodeProperties</code>는 <code>isKnownNodeType(catalogKey)</code>일 때만 하드코딩된 contracts Zod로 파싱하고 <strong>런타임 정의 타입은 properties를 무검증 통과</strong>시킨다. <code>validateEdgeProperties</code>는 모든 타입에 대해 no-op이다. <code>create-edge</code>는 source/target 존재만 확인하고 <code>domain_catalog_ids</code>/<code>range_catalog_ids</code>를 읽지 않는다 — <code>[GRAPH-05]</code>의 edge domain/range 검증은 <strong>문서만 있고 미구현</strong>이다. 즉 카탈로그의 스키마 필드가 전부 불활성이다.</li>
+      <li><strong>L2 criteria ✅</strong> — Gate Policy 엔진이 이미 submission criteria에 해당한다. <code>when</code>(4 hooks) · <code>match</code> · <code>require[]</code>(그래프 경로 표현식 + <code>count{min,max}</code> + <code>ifMissing</code>) · <code>onFail</code>(<code>GATE_PENDING</code>/<code>GATE_REJECTED</code>) · <code>onPass.effects</code>(닫힌 집합, 현재 <code>spawn_task</code>). 정책은 그래프 노드로 저장되어 런타임 로드된다. <code>parseGatePath</code>가 문법을 고정하므로 <strong>이미 닫힌 DSL</strong>이며, 애초 구상한 criteria kind 열거보다 표현력이 높다.</li>
+      <li><strong>L2 쓰기 정의 ❌</strong> — Gate는 “쓰기를 막는” 층이고 “쓰기를 정의하는” 층이 없다. 파라미터 스키마·편집 op 어휘·권한·감사 기록·단일 트랜잭션 커밋이 부재하다.</li>
+      <li><strong>L3 ✅ (커밋 모델만 불일치)</strong> — <code>workers</code> 테이블이 함수 타입이다(<code>input_schema</code>·<code>output_schema</code>·<code>script</code>·<code>runtime=vercel_sandbox</code>·teamspace + optional <code>account_id</code>). <code>executeWorker</code>가 inputSchema 검증 · <code>dryRun</code> · <code>permissions</code> · <strong>브로커된 SDK 브리지</strong>로 실행하며 sandbox 코드는 DB를 직접 만지지 않는다. <strong>다만 SDK가 <code>graph.createNode</code>/<code>updateNode</code>/<code>createEdge</code>로 호출마다 커밋</strong>하므로 워커 1회 실행이 여러 독립 커밋이 되고 단일 트랜잭션·aggregate 락이 없다.</li>
+      <li><strong>에이전트 주변 ✅</strong> — <code>agent_definitions</code>, <code>schedules</code>(cron + IANA tz), <code>tasks</code>, <code>agent_runs</code>/<code>agent_run_messages</code>, sandbox 4테이블 + <code>SandboxHandle</code>, skills(+GitHub discover·lock), Composio 및 Slack·Notion·GitHub·Linear·Discord 커넥터, chat.</li>
+    </ul>
+    <p>따라서 이 결정은 <strong>새 층을 짓는 것이 아니라 (a) 비어 있는 검증 층을 채우고, (b) Gate 위에 쓰기 봉투를 얹고, (c) 워커 커밋 모델을 트랜잭션으로 모으는 것</strong>이다.</p>
+
     <h2>Decision</h2>
     <p>온톨로지를 세 층으로 나눈다. 인스턴스는 전부 <code>nodes</code>/<code>edges</code>에 저장하고 <strong>도메인 전용 테이블을 만들지 않는다</strong>.</p>
     <ul>
       <li><strong>L1 타입</strong> — <code>node_catalog</code>/<code>edge_catalog</code>. 완전 동적(데이터). <code>property_schema</code>로 properties를 검증하고 <code>invariants</code>로 DB 강제 불변식을 선언한다.</li>
-      <li><strong>L2 선언적 액션</strong> — 파라미터 스키마 + criteria + 편집 op. 완전 동적(데이터). <strong>편집 op와 criteria kind는 닫힌 집합이다.</strong> 분기·루프·산술식을 넣지 않는다.</li>
-      <li><strong>L3 함수</strong> — 프로젝트별 코드. 에이전트가 생성하고 sandbox에서 실행한다. <strong>커밋하지 않는다</strong> — 서버가 준 읽기 컨텍스트와 파라미터를 받아 <code>GraphEdits</code>를 반환하며, DB에 접근하지 않는다.</li>
+      <li><strong>L2 선언적 액션</strong> — 파라미터 스키마 + criteria + 편집 op. 완전 동적(데이터). <strong>편집 op는 닫힌 집합이다.</strong> criteria는 <strong>새 어휘를 만들지 않고 기존 Gate Policy 엔진을 재사용</strong>한다 — <code>parseGatePath</code>가 문법을 고정하므로 이미 닫힌 DSL이다. 분기·루프·산술식을 넣지 않는다.</li>
+      <li><strong>L3 함수</strong> — 프로젝트별 코드(<code>workers</code>). 에이전트가 생성하고 sandbox에서 실행한다. <strong>커밋하지 않는다</strong> — 서버가 준 읽기 컨텍스트와 파라미터를 받아 <code>GraphEdits</code>를 반환하며, DB에 접근하지 않는다. 현행 워커 SDK는 호출마다 커밋하므로 <strong>편집 서술 반환으로 전환한다</strong>(전환 전까지 워커의 다중 쓰기는 원자적이지 않음을 알려진 한계로 둔다).</li>
     </ul>
     <p><strong>단일 커밋 경로.</strong> 편집이 L2 폼에서 왔든 L3 코드에서 왔든, 서버가 닫힌 op 집합·<code>property_schema</code>·권한·criteria를 검증한 뒤 한 트랜잭션에서 커밋한다(aggregate root 행 락 + 감사 기록). L2와 L3의 차이는 “그 편집을 누가 계산했나”뿐이다.</p>
     <p><strong>Aggregate 경계는 노드 설계의 1차 결정이다.</strong> 독립적으로 참조되고 수명이 다른 것만 노드로 만든다. 종속 세부는 properties 또는 엣지 properties로 둔다. 예: 분개행은 노드가 아니라 전표 → 계정 엣지의 properties다.</p>
@@ -57,11 +69,11 @@
     <ul>
       <li><strong>[ARCH-03] 폐기</strong> — “legacy generic runtime 복원 금지”를 삭제한다. 금지 대상이 “범용 액션”이 아니라 “행동을 데이터로 두는 인터프리터”였음을 아래 규칙으로 정밀화한다.</li>
       <li><strong>[ACTION-01] 신설</strong> — 모든 그래프 쓰기는 Action 커밋 경로를 지난다. seed·admin script·MCP·에이전트에 예외를 두지 않는다.</li>
-      <li><strong>[ACTION-02] 신설</strong> — <code>GraphEdits</code> op와 criteria kind는 닫힌 집합이다. 확장은 ADR을 요구한다. plpgsql 평가기가 커지면(대략 30줄 초과) 설계 경고로 취급한다.</li>
-      <li><strong>[ACTION-03] 신설</strong> — L3 함수는 커밋하지 않고 편집을 서술한다. sandbox 코드에 DB 접근을 주지 않는다.</li>
+      <li><strong>[ACTION-02] 신설</strong> — <code>GraphEdits</code> op는 닫힌 집합이다. criteria는 Gate Policy 문법(<code>parseGatePath</code>)을 재사용하며 <strong>새 kind 열거를 만들지 않는다</strong>. 어느 쪽이든 확장은 ADR을 요구한다. plpgsql 평가기가 커지면(대략 30줄 초과) 설계 경고로 취급한다.</li>
+      <li><strong>[ACTION-03] 신설</strong> — L3 함수는 커밋하지 않고 편집을 서술한다. sandbox 코드에 DB 접근을 주지 않는다. <strong>현행 워커 SDK의 직접 커밋(<code>graph.createNode</code> 등)은 이 규칙 위반으로 등록하고 전환 대상으로 추적한다.</strong></li>
       <li><strong>[ACTION-04] 신설</strong> — 생성된 L3 함수는 함께 생성된 테스트 통과를 실행 전제로 한다.</li>
       <li><strong>[GRAPH-02] 강화</strong> — “<code>GraphWritePort</code>로만”을 “Action 커밋 경로로만”으로 좁힌다.</li>
-      <li><strong>[GRAPH-05] 확장</strong> — 검증 대상에 <code>node_catalog.invariants</code>를 포함한다.</li>
+      <li><strong>[GRAPH-05] 구현 + 확장</strong> — 현재 이 룰은 <strong>문서만 있고 미구현</strong>이다(edge domain/range 미검증, <code>validateEdgeProperties</code> no-op, 런타임 정의 타입의 <code>property_schema</code> 미사용). 먼저 <em>구현</em>하고, 그 다음 검증 대상에 <code>node_catalog.invariants</code>를 포함한다.</li>
       <li><strong>[GRAPH-03] [GRAPH-04] [GRAPH-06] 유지</strong> — org/teamspace 격리, 인스턴스 → catalog FK only, 노드 봉투 = title + properties. 이 결정이 오히려 강화한다.</li>
       <li><strong>[GRAPH-08] 무관</strong> — 트랜잭션 화면 typed React 원칙은 그대로 두며 <a href="./ADR-persona-workspaces-with-explicit-workflow-pages.html">ADR-persona-workspaces-with-explicit-workflow-pages</a>도 유효하다.</li>
     </ul>
@@ -71,6 +83,7 @@
       <li>타입과 액션이 릴리즈 없이 늘어난다. 사용자·에이전트가 도메인을 저작할 수 있다.</li>
       <li>커밋 경로가 하나라 권한·감사·트랜잭션이 한 곳에 모인다. MCP 도구 표면과 UI 폼이 같은 선언에서 생성된다.</li>
       <li><strong>대가:</strong> DB가 properties의 타입을 검사하지 못한다. Action 단일 경로와 reconciliation 잡은 편의 기능이 아니라 하중을 받는 구조물이다. 우회 경로를 하나 열면 그만큼 정합성이 사라진다.</li>
+      <li><strong>현재 이 방어선은 비어 있다.</strong> 위 실측대로 런타임 정의 타입은 properties가 무검증 통과하고, 엣지는 domain/range·properties 모두 검증되지 않는다. 즉 “앱이 유일 방어선”이라는 전제가 아직 성립하지 않으므로 <strong>검증 층 구현이 이 결정의 첫 작업이며, 그 전에 런타임 타입 저작을 사용자에게 개방하면 오염을 막을 수단이 전혀 없다.</strong></li>
       <li><strong>대가:</strong> cross-domain 참조에 FK를 쓸 수 없다. 참조 무결성은 엣지 + criteria로 표현하며 <code>on delete</code> 같은 DB 시맨틱을 잃는다.</li>
       <li><strong>대가:</strong> 집계는 뷰·expression index·stored generated column 승격에 의존한다. 계정 잔액 같은 파생값은 액션이 갱신하지 않고 읽기 전용 뷰로 둔다.</li>
       <li><strong>대가:</strong> L3은 sandbox 부팅 레이턴시가 있다. L2로 표현되는 것은 L2로 둔다.</li>
