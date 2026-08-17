@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="plan" data-omd-id="PLAN-finance-ontology-first-slice">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="PLAN-finance-ontology-first-slice" />
+  <meta name="omd:kind" content="plan" />
+  <meta name="omd:stage" content="draft" />
+  <meta name="omd:changeType" content="product" />
+  <title>PLAN-finance-ontology-first-slice · Finance Ontology First Slice</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">PLAN-finance-ontology-first-slice</p>
+    <h1 data-omd-field="title">Finance Ontology First Slice</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage">draft</dd>
+      <dt>changeType</dt>
+      <dd data-omd-field="changeType">product</dd>
+      <dt>codeAreas</dt>
+      <dd data-omd-field="codeAreas">packages/contracts, packages/core, packages/adapter-postgres, supabase/migrations, apps/web</dd>
+      <dt>ADRs</dt>
+      <dd data-omd-rel="adrs"><a href="../adr/ADR-runtime-ontology-with-closed-edit-vocabulary.html">ADR-runtime-ontology-with-closed-edit-vocabulary</a></dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Goal</h2>
+    <p>회계 액션 3개로 <a href="../adr/ADR-runtime-ontology-with-closed-edit-vocabulary.html">3층 구조</a>를 수직 관통하고, <strong>L2 닫힌 어휘의 경계를 추측이 아니라 데이터로 확정한다</strong>. 이 슬라이스의 산출물은 회계 기능이 아니라 <em>L2로 어디까지 되고 어디서 L3이 필요한지에 대한 판정</em>이다.</p>
+
+    <h2>Approach</h2>
+    <p>세 액션을 난이도 순이 아니라 <strong>L2 경계를 가로지르는 순</strong>으로 고른다.</p>
+    <ul>
+      <li><code>finance.post_journal_entry</code> — <strong>L2로 되어야 한다.</strong> <code>sum_balance</code> criteria + create op 조합. 되지 않으면 L2 어휘 설계가 틀린 것이다.</li>
+      <li><code>finance.close_fiscal_period</code> — <strong>L2 경계 시험.</strong> 시산표 검증이 criteria kind로 표현 가능한가. 여기서 어휘를 늘리고 싶은 압력이 처음 발생하며, 그 압력에 굴복하는지가 이 슬라이스의 진짜 시험이다.</li>
+      <li><code>finance.void_journal_entry</code> — <strong>L3이 필요할 것으로 예상한다.</strong> 기존 엣지를 읽어 차·대를 뒤집는 계산이므로 편집이 입력에서 파생되지 않는다.</li>
+    </ul>
+    <p>Aggregate 경계는 전표를 root로 둔다. <strong>분개행은 노드가 아니라 전표 → 계정 엣지</strong>이고 금액은 그 엣지 properties에 산다. 전표 없이 분개행이 존재할 수 없고 행 단독 수정이 없으므로 불변식이 한 aggregate 안에서 닫힌다. 원장은 append-only이며 취소는 역분개로 처리해 감사 추적이 데이터 구조에서 나오게 한다.</p>
+    <p>거부 케이스를 먼저 작성한다([TEST-01]). 통과 케이스만 있으면 이 설계가 진짜인지 판명되지 않는다.</p>
+
+    <h2>Steps</h2>
+    <ol>
+      <li><strong>계약</strong> — <code>GraphEdits</code> 닫힌 op 집합(<code>create_node</code>, <code>update_properties</code>, <code>create_edge</code>, <code>delete_edge</code>, <code>set_status</code>)과 criteria kind 집합(<code>required</code>, <code>enum</code>, <code>range</code>, <code>unique</code>, <code>sum_balance</code>, <code>referenced_status</code>)을 <code>packages/contracts</code>에 Zod로 정의한다.</li>
+      <li><strong>카탈로그 시드</strong> — <code>finance.account</code>, <code>finance.fiscal_period</code>, <code>finance.journal_entry</code> 노드 타입과 <code>posts_to</code>, <code>in_period</code>, <code>reverses</code> 엣지 타입. <code>property_schema</code>와 <code>invariants</code>(<code>sum_balance</code>) 포함.</li>
+      <li><strong>DB 불변식</strong> — <code>nodes</code>에 범용 deferred constraint trigger. <code>WHEN</code> 절이 아니라 함수 본문에서 <code>node_catalog.invariants</code>를 조회해 org별 uuid 하드코딩을 피한다. 평가기는 <code>sum_balance</code>만 지원한다.</li>
+      <li><strong>커밋 경로</strong> — <code>runAction</code>: 파라미터 파싱 → criteria 평가 → 권한 확인 → aggregate root <code>FOR UPDATE</code> → 편집 적용 → 감사 기록. 한 트랜잭션.</li>
+      <li><strong>액션 1</strong> — <code>post_journal_entry</code>를 L2만으로 구현한다.</li>
+      <li><strong>액션 2</strong> — <code>close_fiscal_period</code>. criteria kind로 표현되는지 판정하고, 안 되면 <strong>어휘를 늘리지 말고</strong> L3 필요로 기록한다.</li>
+      <li><strong>액션 3</strong> — <code>void_journal_entry</code>. L3 없이 되는지 먼저 시도한 뒤 L3 필요성을 확정한다.</li>
+      <li><strong>거부 케이스</strong> — 불균형 전표가 COMMIT에서 거부 / 동시 쓰기 2건 중 하나 거부 / 마감 기간 쓰기 거부 / catalog 스키마 위반 properties 거부 / Action 우회 직접 INSERT가 trigger에 걸림.</li>
+      <li><strong>파생 조회</strong> — <code>account_balances</code> 뷰. 액션이 잔액을 갱신하지 않음을 확인한다.</li>
+      <li><strong>reconciliation 스켈레톤</strong> — 전 노드 <code>property_schema</code> 재검증 + 집계 대조 리포트.</li>
+      <li><strong>판정 기록</strong> — L2/L3 경계 결과를 ADR에 반영한다. L3이 필요하다고 확정되면 sandbox 실행 경로는 <strong>별도 PLAN</strong>으로 분리한다.</li>
+    </ol>
+    <p>L3 실행(sandbox 부팅·함수 버전 관리·생성 테스트 게이트)은 <strong>이 슬라이스 비범위</strong>다. 3단계까지의 판정 없이 sandbox를 열면 필요 없는 인프라를 먼저 짓게 된다.</p>
+
+    <h2>Risks</h2>
+    <ul>
+      <li><strong>L2 어휘 확장 압력</strong> — 가장 큰 위험이며 과거 <code>executeAction</code>이 죽은 경로다. 2단계에서 criteria kind를 추가하고 싶어지면 그 자체를 신호로 취급하고 L3으로 넘긴다. plpgsql 평가기가 30줄을 넘으면 경고([ACTION-02]).</li>
+      <li><strong>앱이 유일 방어선인 불변식</strong> — properties 타입 검증은 DB가 못 한다. Action 우회 경로가 하나라도 있으면 오염된다. 8단계의 우회 INSERT 테스트로 trigger 커버 범위를 명시적으로 확인한다.</li>
+      <li><strong>Aggregate 경계 오판</strong> — 분개행을 노드로 만들면 균형 검증이 aggregate를 벗어나 락 범위가 무너진다. 2단계 시드에서 이 경계를 고정한다.</li>
+      <li><strong>집계 성능</strong> — 엣지 properties의 JSONB 합산. 필요 시 <code>edges</code>에 stored generated column 승격 + 부분 인덱스. 조기 최적화하지 않고 측정 후 대응한다.</li>
+      <li><strong>슬라이스 비대</strong> — 회계 도메인을 완성하려는 유혹. 이 슬라이스의 산출물은 회계 기능이 아니라 경계 판정이다.</li>
+    </ul>
+
+    <h2>Verification</h2>
+    <ul>
+      <li><code>pnpm test --filter @ssota/contracts</code> — 닫힌 op·criteria 스키마.</li>
+      <li><code>pnpm test --filter @ssota/core</code> — 순수 회계 함수(차대 균형·기간 판정·역분개 생성). DB 없이 통과해야 한다.</li>
+      <li><code>pnpm test --filter @ssota/adapter-postgres</code> — 거부 케이스 5종(8단계). 통과 케이스보다 먼저 그린이 되어야 한다.</li>
+      <li>마이그레이션 up/down 확인 — Tier 3.</li>
+      <li>L2/L3 경계 판정이 ADR에 반영되었는지 확인. 이 항목 없이 슬라이스를 닫지 않는다.</li>
+    </ul>
+  </main>
+</body>
+</html>
