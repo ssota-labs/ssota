@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy Playwright E2E report outputs into a stable artifacts directory for PRs and agents.
+# Copy Playwright E2E report outputs (HTML/JSON; media only when CI recorded a failure).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,6 +11,12 @@ OUT="$DEST/run-$TIMESTAMP"
 if [[ ! -d "$SRC" ]]; then
   echo "e2e-artifacts: skip — no report dir at $SRC"
   exit 0
+fi
+
+if ! mkdir -p "$DEST" 2>/dev/null; then
+  DEST="$ROOT/e2e/report/artifacts"
+  OUT="$DEST/run-$TIMESTAMP"
+  echo "e2e-artifacts: /opt/cursor not writable — using $DEST"
 fi
 
 mkdir -p "$OUT/screenshots" "$OUT/videos" "$OUT/traces"

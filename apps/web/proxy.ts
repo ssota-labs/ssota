@@ -68,6 +68,13 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "graph",
   "work-cycle",
   "n",
+  "home",
+  "requests",
+  "engagements",
+  "reports",
+  "documents",
+  "company-data",
+  "expert",
 ]);
 
 const GLOBAL_PREFIXES = [
@@ -111,11 +118,9 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
   const [orgSlug, second, ...rest] = parts;
 
   if (parts.length === 1) {
-    const teamspaceSlug =
-      request.cookies.get(TEAMSPACE_COOKIE)?.value ?? DEFAULT_TEAMSPACE_SLUG;
     const url = request.nextUrl.clone();
-    url.pathname = `/${orgSlug}/${teamspaceSlug}/overview`;
-    return NextResponse.rewrite(url);
+    url.pathname = `/${orgSlug}/home`;
+    return NextResponse.redirect(url);
   }
 
   if (!second) {
@@ -181,9 +186,13 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set("x-pathname", pathname);
     const rewriteTarget = orgResponse.headers.get("x-middleware-rewrite");
     if (rewriteTarget) {
-      return NextResponse.rewrite(new URL(rewriteTarget), {
+      const rewrite = NextResponse.rewrite(new URL(rewriteTarget), {
         request: { headers: requestHeaders },
       });
+      for (const cookie of sessionResponse.cookies.getAll()) {
+        rewrite.cookies.set(cookie);
+      }
+      return rewrite;
     }
     return orgResponse;
   }

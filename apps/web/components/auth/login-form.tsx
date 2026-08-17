@@ -1,6 +1,6 @@
 "use client";
 
-import { signInAction } from "@/app/actions";
+import { signInAction } from "@/app/login/actions";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";

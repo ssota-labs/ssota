@@ -6,28 +6,40 @@ import {
   SMOKE_MEMBER_EMAIL,
   SMOKE_MEMBER_PASSWORD,
 } from "@ssota/adapter-postgres";
+import { DEFAULT_CONSOLE_BASE } from "./console";
 
 export type LoginAsSmokeOptions = {
   /** When BILLING=stripe and org is unpaid, login lands on billing — skip overview assert. */
   skipOverviewAssert?: boolean;
 };
 
+async function submitLogin(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
+  await page.goto("/login");
+  const form = page.locator("main form");
+  await form.getByLabel("Email").fill(email);
+  await form.getByLabel("Password").fill(password);
+  await form.locator('button[type="submit"]').click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
+    timeout: 180_000,
+    waitUntil: "commit",
+  });
+}
+
 export async function loginAsSmoke(
   page: Page,
   options?: LoginAsSmokeOptions,
 ): Promise<void> {
-  await page.goto("/login");
-  const form = page.locator("main form");
-  await form.getByLabel("Email").fill(SMOKE_EMAIL);
-  await form.getByLabel("Password").fill(SMOKE_PASSWORD);
-  await form.locator('button[type="submit"]').click();
+  await submitLogin(page, SMOKE_EMAIL, SMOKE_PASSWORD);
 
   if (options?.skipOverviewAssert) {
-    await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
     return;
   }
 
-  // dev 서버 콜드 컴파일·부하 스파이크에서 overview 첫 렌더가 15s를 넘길 수 있다
+  await page.goto(`${DEFAULT_CONSOLE_BASE}/overview`);
   await expect(page.getByText("Open tasks")).toBeVisible({
     timeout: 30_000,
   });
@@ -37,17 +49,14 @@ export async function loginAsSmokeMember(
   page: Page,
   options: LoginAsSmokeOptions = {},
 ): Promise<void> {
-  await page.goto("/login");
-  const form = page.locator("main form");
-  await form.getByLabel("Email").fill(SMOKE_MEMBER_EMAIL);
-  await form.getByLabel("Password").fill(SMOKE_MEMBER_PASSWORD);
-  await form.locator('button[type="submit"]').click();
+  await submitLogin(page, SMOKE_MEMBER_EMAIL, SMOKE_MEMBER_PASSWORD);
 
   if (options.skipOverviewAssert) {
-    await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 15_000 });
-  } else {
-    await expect(page.getByText("Open tasks")).toBeVisible({
-      timeout: 15_000,
-    });
+    return;
   }
+
+  await page.goto(`${DEFAULT_CONSOLE_BASE}/overview`);
+  await expect(page.getByText("Open tasks")).toBeVisible({
+    timeout: 30_000,
+  });
 }

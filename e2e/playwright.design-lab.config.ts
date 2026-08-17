@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { playwrightMediaUse } from "./playwright-media";
 
 const designLabPort = process.env.DESIGN_LAB_PORT ?? "6107";
 const designLabUrl =
@@ -26,8 +27,7 @@ export default defineConfig({
   },
   use: {
     baseURL: designLabUrl,
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
+    ...playwrightMediaUse,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

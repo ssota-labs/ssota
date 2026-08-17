@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { FileTextIcon } from "@phosphor-icons/react";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
-import { signOutAction } from "@/app/actions";
+import { signOutAction } from "@/app/auth/actions";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { NavItemIcon } from "@/lib/console/nav-icons";
 import { appProjectPath } from "@/lib/console/app-paths";

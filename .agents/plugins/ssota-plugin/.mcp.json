@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "ssota": {
-      "type": "http",
-      "url": "https://mcp.ssota.ai/api/mcp"
-    }
-  }
-}

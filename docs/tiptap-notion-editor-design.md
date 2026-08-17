@@ -48,7 +48,7 @@ Tiptap 3 기반으로 Notion 과 동등한 블록 에디터를 만든다. 핵심
 | **Workflow** (`workflows.spec` JSONB → `agentNotes` string) | 문자열 | `<Textarea>` (`workflow-settings-sheet.tsx`) | 2순위 — textarea 교체 |
 | **Task** (`tasks.context`/`result` JSONB, `title`) | title 평문, context JSON | 읽기전용 시트 | 3순위 — 설명 필드 추가 |
 
-데이터 접근 패턴(준수 대상): **Server Action → core use-case / port(예: `GraphWritePort`·`TaskPort`) → adapter ports → Supabase(Drizzle)**, 이후 `revalidatePath`. 예: `apps/web/app/actions.ts` 의 `updateTaskStatusAction`. 에디터 저장도 이 흐름을 따른다(직접 supabase mutate 금지, 레거시 `executeAction` 사용 금지).
+데이터 접근 패턴(준수 대상): **Server Action → core use-case / port(예: `GraphWritePort`·`TaskPort`) → adapter ports → Supabase(Drizzle)**, 이후 `revalidatePath`. 예: `apps/web/app/[orgSlug]/[teamspaceSlug]/tasks/actions.ts` 의 `updateTaskStatusAction`. 에디터 저장도 이 흐름을 따른다(직접 supabase mutate 금지, 레거시 `executeAction` 사용 금지).
 
 ---
 

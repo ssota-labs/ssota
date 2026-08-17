@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CaretLeftIcon } from "@phosphor-icons/react";
-import { signOutAction } from "@/app/actions";
+import { signOutAction } from "@/app/auth/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 

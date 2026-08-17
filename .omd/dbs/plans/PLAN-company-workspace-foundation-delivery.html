@@ -42,6 +42,8 @@
       <dd data-omd-rel="adrs">
         <a href="../adr/ADR-relational-domain-cores-with-graph-projections.html">ADR-relational-domain-cores-with-graph-projections</a>
         <a href="../adr/ADR-persona-workspaces-with-explicit-workflow-pages.html">ADR-persona-workspaces-with-explicit-workflow-pages</a>
+        <a href="../adr/ADR-keep-tenant-platform-replace-product-surfaces.html">ADR-keep-tenant-platform-replace-product-surfaces</a>
+        <a href="../adr/ADR-organization-is-the-company.html">ADR-organization-is-the-company</a>
       </dd>
     </dl>
   </header>
@@ -50,7 +52,7 @@
     <p>Company Workspace v0.1의 공통 셸과 persona별 IA를 구현 가능한 슬라이스로 나누되, 상세 도메인 업무를 같은 릴리즈에 섞지 않는다.</p>
 
     <h2>Approach</h2>
-    <p>먼저 persona와 company context 경계를 구현하고, 고객 Home과 전문가 Review Queue를 대표 vertical slice로 연결한다. 기존 graph UI는 즉시 삭제하지 않고 새 진입점 뒤에서 단계적으로 교체한다.</p>
+    <p>한 회사 = 한 계정(<a href="../adr/ADR-organization-is-the-company.html">ADR-organization-is-the-company</a>)으로 persona routing을 두고, 고객 Home과 전문가 Review Queue를 대표 slice로 연결한다. 멤버·빌링은 회사 계정 설정으로 유지하고, SWDL/그래프 화면은 새 셸을 기본 진입으로 올린 뒤 숨기고 삭제한다. 상세는 <a href="../adr/ADR-keep-tenant-platform-replace-product-surfaces.html">ADR-keep-tenant-platform-replace-product-surfaces</a>.</p>
 
     <h2>Steps</h2>
     <ol>
@@ -64,7 +66,7 @@
     <h2>Risks</h2>
     <ul>
       <li>기존 GRAPH-08과 새 typed domain page 방향이 충돌하므로 구현 전 ADR과 규칙 갱신이 필요하다.</li>
-      <li>화면을 먼저 만들며 tenant, legal entity, engagement 문맥을 다시 혼동할 수 있다.</li>
+      <li>화면을 먼저 만들며 회사 계정과 engagement, 옛 teamspace를 다시 혼동할 수 있다.</li>
       <li>공통 컴포넌트를 과도하게 일반화하면 기존 범용 runtime 문제가 반복된다.</li>
     </ul>
 

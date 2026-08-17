@@ -81,7 +81,7 @@
     },
     ".omd/dbs/data-model/index.html": {
       "ownership": "omd-managed",
-      "digest": "e2334af653d25104491ce36abcbe5b0986bd0007bf66886359e8352a77db15e3"
+      "digest": "c0ae773e22f8bdfa6c1f485129977f7ba858bbcecdcdb273865c60a14fe429ed"
     },
     ".omd/dbs/system-model/index.html": {
       "ownership": "omd-managed",
@@ -93,7 +93,7 @@
     },
     ".omd/dbs/adr/index.html": {
       "ownership": "omd-managed",
-      "digest": "55630d5deb64ebc78b4efe5d47c43ca081cb64a62590bb98596c78795b9556c2"
+      "digest": "1bb420e48ab930decda8fdcb25100c74db01c18de0a55e49e89c1dbd786642d2"
     },
     ".omd/dbs/specs/index.html": {
       "ownership": "omd-managed",
@@ -109,7 +109,7 @@
     },
     ".omd/dbs/ia/index.html": {
       "ownership": "omd-managed",
-      "digest": "f4156dd3c483a5a4c320ef77a15c7077170aa65e0c2c902943efad5fe5d3f4b8"
+      "digest": "e2778375189a5db158bbb8d71567ce500d0162ac9aa9a3ed74de0b95db22cb17"
     },
     ".omd/dbs/pages/index.html": {
       "ownership": "omd-managed",
@@ -185,11 +185,11 @@
     },
     "AGENTS.md": {
       "ownership": "omd-managed",
-      "digest": "00bd267a30f38a3ae86059335acb03fe097d6e1f97825ed97c7205f03412fdb6"
+      "digest": "7bb42ddc373e4b93ce0dd5f2a9d848630ad5315855feb11b415a8bb23fdb818e"
     },
     "CLAUDE.md": {
       "ownership": "omd-managed",
-      "digest": "0176e19e86fddcd4749982e759a1157250e471f5aaf30302591b1e0fcba5daf4"
+      "digest": "adc64b6c3d38349363320c648e9189f592af3de75b1334cbb910fc7977a1ced1"
     }
   }
 }

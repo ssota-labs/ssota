@@ -46,7 +46,7 @@ e2e/
 5. **[GRAPH-05] 타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
 6. **[GRAPH-06] 노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
 7. **[GRAPH-07] 시드 pack** — `packages/contracts/seed-packs/software-development-workflow/`(L1 catalog + pages + workspace). `seedDevWorkflowCatalog` + `applyDevWorkflowPack`이 onboarding·`pnpm db:seed`에서 호출.
-8. **[GRAPH-08] 페이지 UI는 json-render 조합만** — L3 `page.properties.spec`은 L2 catalog 컴포넌트(`DocumentEditor`, `DataTable`, `ArtifactWorkbench` 등)를 `bindings`·`actions`와 함께 선언적으로 조합한다. 도메인 전용 React 페이지·라우트(`DesignStudioPage`, `/design/ui-components/[id]` 등)를 추가하지 않는다. URL 선택은 `url_selection` binding + `SelectionProvider`로 처리한다.
+8. **[GRAPH-08] 트랜잭션 화면은 typed React, 대시보드·리포트는 json-render** — Company Workspace 등 워크플로 페이지는 typed React 라우트로 구현하고 `scripts/harness/allowlists/routes.json`에 등록한다. L3 `page.properties.spec` json-render 조합은 대시보드·리포트에 쓴다. URL 선택은 typed 페이지의 search params 또는 json-render의 `url_selection` binding으로 처리한다.
 
 **명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action`.
 
@@ -140,7 +140,8 @@ pnpm db:seed                 # smoke 계정 + console org/project + graph 인스
 
 ```bash
 pnpm dev                     # turbo run dev — web + mcp + docs 동시 기동
-pnpm dev --filter web        # 콘솔만
+pnpm dev --filter web        # 콘솔만 (Workflow DevKit skip — 페이지 콜드 컴파일)
+pnpm --filter web dev:workflow  # 에이전트/채팅 로컬 (withWorkflow)
 pnpm dev --filter mcp        # MCP 앱만
 pnpm --filter docs dev       # Product Handbook (:3002)
 pnpm design-lab              # Design Lab (apps/design-lab, port 6007)
@@ -153,24 +154,24 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 
 ## Frontend 작업 완료 정의 (에이전트·PR 공통)
 
-**[PR-03]** `apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 4단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
+**[PR-03]** `apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 구현 + 정적 검증 + **변경 범위 E2E**까지가 완료다. 전체 스위트·비디오·트레이스는 PR 전에 돌리지 않는다.
 
 ```
 1. 구현 + 정적 검증
-2. E2E (Playwright — 자동 스크린샷·비디오·HTML 리포트)
-3. 대화형 UI 검증 (agent-browser 또는 Computer Use)
-4. PR/요약에 산출물 첨부
+2. 변경 범위 E2E (`pnpm e2e:changed`)
+3. (선택) 대화형 UI 검증 — E2E가 못 덮는 시각·탐색만
+4. PR/요약에 실행한 스펙·결과 기록 (미디어 첨부 없음)
 ```
 
 ### UI 검증 우선순위
 
 | 순위 | 도구 | 역할 |
 |------|------|------|
-| **1** | **Playwright E2E** (`pnpm e2e`) | 기능·회귀 SSOT. 성공/실패 모두 스크린샷·비디오·trace 기록 + HTML 리포트 |
-| **2** | **agent-browser** | E2E 이후 탐색적 검증·스크린샷·녹화. dev 서버(:3000) 대상 |
-| **3** | **Computer Use** (`computerUse` 서브에이전트, `RecordScreen`) | E2E 이후 실제 화면 조작·스크롤·모달·네비 탐색·데모 녹화 |
+| **1** | **Playwright E2E** (`pnpm e2e:changed`) | 이번 브랜치에서 추가·수정된 스펙만. 전체 스위트는 `pnpm e2e:ci` / `verify:final` |
+| **2** | **agent-browser** | 필요할 때만. 탐색적 검증. dev 서버(:3000) 대상 |
+| **3** | **Computer Use** (`computerUse` 서브에이전트) | 필요할 때만. 스크롤·모달 등 E2E assertion 밖 UX |
 
-Playwright가 커버하지 못하는 **시각·탐색·인터랙션**은 agent-browser 또는 Computer Use로 보강한다. 둘 다 E2E를 대체하지 않는다.
+Playwright가 커버하지 못하는 **시각·탐색·인터랙션**만 agent-browser 또는 Computer Use로 보강한다. 둘 다 E2E를 대체하지 않는다. 사용자가 데모를 요청하지 않으면 녹화하지 않는다.
 
 ### 1. 구현 + 정적 검증
 
@@ -180,13 +181,13 @@ Playwright가 커버하지 못하는 **시각·탐색·인터랙션**은 agent-b
 
 ### 2. E2E
 
-- 변경한 화면·플로우에 맞는 Playwright 스펙을 실행한다. 신규 UX면 **테스트 추가**를 우선 검토한다.
-- **사용자 UI 피드백(버그·UX 개선)은 같은 PR에 E2E를 반드시 추가한다.** 피드백 항목과 테스트명(`pnpm e2e --grep '<키워드>'`)을 PR 설명에 1:1로 적는다. Editor Lab·`@ssota/editor`는 `e2e/tests/editor-lab.spec.ts`.
+- 신규 UX면 **테스트 추가**를 우선 검토한다. PR 전 기본은 **`pnpm e2e:changed`** — `origin/main` 대비 추가·수정된 `e2e/tests/**/*.spec.ts`만 실행한다. 전체 스위트는 돌리지 않는다.
+- **사용자 UI 피드백(버그·UX 개선)은 같은 PR에 E2E를 반드시 추가한다.** 피드백 항목과 스펙 파일/`--grep` 키워드를 PR 설명에 1:1로 적는다. Editor Lab·`@ssota/editor`는 `e2e/tests/editor-lab.spec.ts`.
 - 실행 전: Cloud는 `pnpm cloud:prepare`, 로컬은 `pnpm e2e:prepare` 또는 `supabase start` + migrate + seed.
-- **`pnpm e2e`** = Playwright 실행 → `scripts/e2e-artifacts.sh`로 `/opt/cursor/artifacts/e2e/latest`에 산출물 복사 → (로컬·DISPLAY 있을 때) HTML 리포트 자동 오픈. CI/Cloud 무인 실행은 `pnpm e2e:ci` (`--no-report`).
-- `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3101을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
-- 관련 테스트만 돌릴 때: `pnpm e2e -- --grep '<키워드>'` (예: `--grep onboarding`).
-- 실패 시 수정 후 재실행. E2E 산출물·리포트 규칙은 아래 **E2E 리포트** 절을 따른다.
+- **`pnpm e2e:changed`** = 변경 스펙만. **`pnpm e2e:ci`** = 전체 스위트 (`verify:final` / CI). 명시적으로 지정할 때만 `pnpm e2e -- tests/<file>.spec.ts` 또는 `--grep '<키워드>'`.
+- Playwright는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3101을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
+- 공유 헬퍼만 바꿨고 스펙 파일이 없으면 영향 스펙을 명시해 돌리거나 `pnpm e2e:ci` (`verify:final`).
+- 실패 시 수정 후 재실행. 비디오·트레이스·스크린샷은 로컬 `off`, CI에서만 실패 시 남긴다.
 
 ### 3. 대화형 UI 검증 (agent-browser / Computer Use)
 
@@ -198,14 +199,13 @@ E2E 통과 후, 변경 플로우를 **사람처럼** 다시 훑는다. 스크롤
 - 설치: `npm i -g agent-browser && agent-browser install`.
 - dev 서버: `pnpm dev --filter web` (:3000). E2E 직후 tmux로 재기동.
 - 뷰포트: `agent-browser set viewport 1440 900 2`.
-- 플로우별 스크린샷 + 필요 시 **녹화**(agent-browser video / 단계별 캡처).
-- 저장: `/opt/cursor/artifacts/screenshots/`, `/opt/cursor/artifacts/videos/`.
+- 사용자가 데모를 요청한 경우에만 스크린샷·녹화. 저장: `/opt/cursor/artifacts/screenshots/`, `/opt/cursor/artifacts/videos/`.
 
 **Computer Use**
 
 - `Task` 서브에이전트 `subagent_type=computerUse`로 변경 화면을 실제 조작한다.
 - 네비게이션·스크롤·폼·모달 등 **탐색적** 검증에 적합. E2E 스펙에 넣기 애매한 UX도 여기서 확인.
-- 움직이는 플로우는 `RecordScreen`으로 데모 녹화 (`/opt/cursor/artifacts/`).
+- 사용자가 데모를 요청한 경우에만 `RecordScreen` (`/opt/cursor/artifacts/`).
 - Cloud Agent에서도 사용 가능 (아래 `.cursor/CLOUD.md`).
 
 **agent-browser 최소 예시**
@@ -218,19 +218,17 @@ agent-browser screenshot --full /opt/cursor/artifacts/screenshots/onboarding-ste
 agent-browser close
 ```
 
-### 4. PR/요약 시각 보고
+### 4. PR/요약
 
-- `/opt/cursor/artifacts/e2e/latest/`(Playwright) + `/opt/cursor/artifacts/screenshots/`·`videos/`(agent-browser/Computer Use)에서 **스크린샷 2–4장**, **대표 비디오 1개**를 PR/요약에 첨부 (markdown `<img>` / `<video>`, 절대 경로).
-- 무엇을 바꿨는지 한 줄 요약 + 캡처가 보여주는 상태 설명.
-- E2E `--grep` 키워드, agent-browser/Computer Use로 확인한 항목.
+- 실행한 명령(`pnpm e2e:changed`)과 스펙 파일·결과(pass/fail). 비디오·트레이스·스크린샷은 첨부하지 않는다.
 - 실패했던 경우: 수정 내용과 재실행 결과.
+- 사용자가 데모를 요청한 경우에만 스크린샷·비디오를 남긴다.
 
 ### 완료 체크리스트 (프론트 PR)
 
 - [ ] UI 구현 및 lint/typecheck 통과
-- [ ] `pnpm e2e` (또는 Cloud `pnpm e2e:ci`) — 산출물 `/opt/cursor/artifacts/e2e/latest`
-- [ ] agent-browser 또는 Computer Use로 변경 플로우 탐색·녹화
-- [ ] PR/요약에 스크린샷·비디오 첨부
+- [ ] `pnpm e2e:changed` (추가·수정된 스펙). 전체 스위트는 `verify:final` / `pnpm e2e:ci`
+- [ ] (선택) E2E가 못 덮는 UX만 agent-browser / Computer Use
 - [ ] 커밋·푸시·PR 업데이트
 
 ## Console v2.7 PR 순서 (graph foundation)
@@ -304,16 +302,16 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 
 ### E2E 리포트 (에이전트·PR 공통)
 
-E2E를 실행한 턴(특히 web/studio/e2e 변경 PR)에서는 **스크린샷·비디오·HTML 리포트**를 사용자에게 제공한다. 매번 요청받지 않아도 된다.
+로컬 Playwright는 비디오·트레이스·스크린샷을 **끈다**. CI(`CI=1`)에서만 실패 시 남긴다 (`on-first-retry` / `only-on-failure` / `retain-on-failure`).
 
 **실행**
 
 ```bash
 # dev 서버 tmux 세션이 3000/3001을 쓰면 e2e 전에 종료 (Playwright는 3100/3101 사용)
 cd e2e && pnpm exec playwright install chromium   # 최초 1회
-pnpm e2e              # 테스트 + artifacts 복사 + (로컬) HTML 리포트 오픈
-pnpm e2e:ci           # CI/Cloud: 리포트 오픈 생략, artifacts만
-pnpm e2e -- --grep onboarding
+pnpm e2e:changed      # origin/main 대비 추가·수정된 스펙만 (PR 전 기본)
+pnpm e2e:ci           # 전체 스위트 — verify:final / CI
+pnpm e2e -- tests/company-workspace.spec.ts   # 파일 지정
 ```
 
 **산출물 경로** (`e2e/playwright.config.ts` + `scripts/e2e-artifacts.sh`)
@@ -321,16 +319,13 @@ pnpm e2e -- --grep onboarding
 | 종류 | 경로 |
 |---|---|
 | HTML 리포트 (원본) | `e2e/report/html/index.html` |
-| 에이전트 복사본 (latest) | `/opt/cursor/artifacts/e2e/latest/` |
-| 스크린샷 | `…/latest/screenshots/` |
-| 비디오 | `…/latest/videos/` |
-| trace | `…/latest/traces/` |
-| JSON 요약 | `…/latest/results.json` |
+| JSON 요약 | `/opt/cursor/artifacts/e2e/latest/results.json` |
+| 실패 미디어 (CI만) | `…/latest/screenshots/` · `videos/` · `traces/` |
 
 **에이전트 응답 규칙**
 
-- E2E 실행 후 PR/작업 요약에 **주요 스크린샷 2–4장**과 **대표 플로우 비디오 1개**를 첨부한다. Playwright 산출물은 `pnpm e2e`가 `/opt/cursor/artifacts/e2e/latest/`에 자동 복사한다. agent-browser·Computer Use 산출물은 `screenshots/`·`videos/`에 저장.
-- 실패 시 HTML 리포트 경로와 실패 테스트명·스크린샷을 함께 남긴다.
+- 실행한 스펙과 pass/fail만 적는다. 스크린샷·비디오를 PR에 첨부하지 않는다.
+- 실패 시 테스트명과 HTML 리포트 경로(`e2e/report/html/index.html`)를 남긴다.
 - `e2e/report/`는 `.gitignore` 대상 — 커밋하지 않는다.
 
 ## Code Style
@@ -400,24 +395,7 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 - 제목: `[core|adapter|mcp|web|e2e|infra] 요약` — Console UI는 `[web] Console v2.7 PR N — …` 형식 권장.
 - **[PR-01]** 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
 - **[PR-02]** 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 `## Invariant 사유` 섹션으로 근거를 명시한다 (해당 `[GRAPH-*]` 등 ID 나열).
-
-### PR 본문 하네스 (pr-forensics) — 푸시 전 로컬 확인
-
-**코드·테스트가 그린이어도** Harness job `pr-forensics`는 **PR 본문 문자열**을 기계 검사한다. CI까지 가서 본문만 고치며 빈 커밋을 반복하지 않도록, **푸시 직전**에 로컬에서 동일 검사를 돌린다.
-
-```bash
-pnpm harness:pr-forensics
-# PR 미생성·gh 없음: draft 본문 파일로
-pnpm harness:pr-forensics -- --body-file /tmp/pr-body.md
-```
-
-| 룰 | 트리거 | PR 본문에 **반드시** 들어가야 하는 것 |
-|---|---|---|
-| **[PR-03]** | `apps/web`·`packages/ui`의 `.tsx`/`.css` (test/spec 제외) | `## 검증` 또는 `## Verification` · `/opt/cursor/artifacts/e2e/` 또는 `results.json` 또는 `e2e/report/` · `![` 또는 `<img ` 스크린샷 · `agent-browser` 또는 `Computer Use` |
-| **[PR-02]** | `rules.ts`의 `paths`와 diff 교차 (예: `supabase/migrations/**`, adapter schema) | `## Invariant 사유` · 본문에 **문자열 그대로** 각 ID (`GRAPH-02`, `SEC-01` 등) — "불변식 변경 없음"만 쓰면 실패 |
-| **[GIT-01]** | PR 커밋 전체 | 제목 접두사 `[core\|adapter\|mcp\|web\|e2e\|infra\|dogfood]` |
-
-템플릿: `.github/pull_request_template.md`. Cloud Agent는 PR 생성·업데이트 직후 `pnpm harness:pr-forensics`로 본문을 한 번 더 확인한다.
+- 템플릿: `.github/pull_request_template.md`.
 
 ### `main` 직접 커밋·푸시 금지 (에이전트 필수)
 
@@ -477,7 +455,7 @@ pnpm harness:pr-forensics -- --body-file /tmp/pr-body.md
 |---|---|---|
 | **Tier 0** — 문서/지침 | AGENTS.md·CLAUDE.md·DESIGN.md·`packages/contracts/src/*/instructions/*.md`·주석·카피 | `pnpm harness:docs` |
 | **Tier 1** — UI 컴포넌트 | `packages/ui`·`apps/web` 개별 컴포넌트의 표시 상태 (도메인 로직·스키마 불변) | `pnpm verify:quick` + `pnpm --filter <pkg> test` |
-| **Tier 2** — page spec / L2 catalog / contracts | `pages-tree.json`·`ui-catalog`·`packages/contracts` 스키마·시드 | `pnpm verify:quick && pnpm --filter @ssota/contracts test` + 관련 e2e spec (`pnpm e2e -- --grep <키워드>`) |
+| **Tier 2** — page spec / L2 catalog / contracts | `pages-tree.json`·`ui-catalog`·`packages/contracts` 스키마·시드 | `pnpm verify:quick && pnpm --filter @ssota/contracts test` + `pnpm e2e:changed` |
 | **Tier 3** — ports / adapter / schema / migrations | `packages/core` 포트·use-case, `packages/adapter-postgres`, `supabase/migrations/` | `pnpm verify:quick && pnpm test && pnpm e2e:ci` + 마이그레이션 up/down 확인 |
 | **Tier 4** — 머지/최종 납품 | PR 머지 전, 의존성 변경, 광범위 리팩토링 | `pnpm verify:final` + [PR-03] 완료 증거 |
 
@@ -489,7 +467,7 @@ pnpm harness:pr-forensics -- --body-file /tmp/pr-body.md
 이 저장소의 규범은 산문이 아니라 **typed 계약**으로 관리된다.
 
 - **계약 SSOT**: `packages/contracts/src/invariants/rules.ts` — 모든 `[AREA-NN]` 룰의 정의·레벨·강제 수단. 이 문서의 태그와 계약의 ID는 `pnpm harness:docs`가 동기화를 강제한다 (드리프트 = 모든 테스트 차단).
-- **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness:pr-forensics`(PR 본문·커밋 — CI `pr-forensics`와 동일) / `pnpm harness`(전부).
+- **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness`(전부).
 - **allowlist 정책**: 룰 예외는 코드에 몰래 두지 않는다 — `scripts/harness/allowlists/*.json` 또는 `packages/config/eslint/allowlists.js`에 **경로 + 룰 ID + 사유**로 등록한다. 죽은 예외(존재하지 않는 경로)는 `harness:docs`가 실패시킨다.
 - **[ENV-02] 스킬 미러**: 스킬 정본은 `.agents/skills/`이며 `.claude/skills/`·`.cursor/skills/` 미러와 `skills-lock.json`은 정합해야 한다. 드리프트는 `pnpm harness:mirrors`가 잡는다 — 미러를 직접 수정하지 말고 정본을 고친 뒤 복사한다.
 - **에러 메시지 = 지시문**: 하네스 체크의 실패 출력은 "무엇이 왜 실패했고, 다음에 뭘 해야 하는지"를 담는다. 실패를 우회하지 말고 출력의 Next steps를 따른다.
@@ -533,7 +511,7 @@ pnpm cloud:prepare
 | `package.json` / lockfile / Supabase CLI pin | 유지 |
 | Docker daemon·컨테이너·DB 볼륨 | **재생성 필요** (`pnpm cloud:prepare`) |
 | `pnpm dev` tmux 세션 | **재기동 필요** |
-| E2E 스크린샷·비디오 (`e2e/report/`) | **없음** — 실행 시 다시 생성 |
+| E2E 리포트 (`e2e/report/`) | **없음** — 실행 시 다시 생성 |
 
 ### Node.js
 
@@ -580,7 +558,7 @@ tmux -f /exec-daemon/tmux.portal.conf new-session -d -s ssota-dev -c /workspace 
 pnpm dev   # web :3000, mcp :3001
 ```
 
-`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t ssota-dev`로 dev 서버를 내린다.
+Playwright는 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t ssota-dev`로 내린다.
 
 ### emulate (선택 — provider API 로컬)
 
@@ -602,7 +580,8 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 | 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
 | 코어 유닛 | `pnpm test --filter @ssota/core` | 없음 |
 | 어댑터 통합 | `pnpm test --filter @ssota/adapter-postgres` | `cloud:prepare` |
-| E2E + artifacts | `pnpm e2e:ci` | `cloud:prepare` |
+| E2E (변경 스펙) | `pnpm e2e:changed` | `cloud:prepare` |
+| E2E (전체) | `pnpm e2e:ci` | `cloud:prepare` · `verify:final` |
 
 스모크 계정: `smoke@ssota.ai` / `1234` (시드 생성).
 

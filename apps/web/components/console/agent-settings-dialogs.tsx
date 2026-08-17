@@ -35,7 +35,7 @@ import {
   WorkerScriptEditorSkeleton,
 } from "@/components/console/worker-script-editor";
 import { getWorkerAction } from "@/app/[orgSlug]/[teamspaceSlug]/workers/actions";
-import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
+import { provisionSlackAgentMentionTriggerAction } from "@/app/[orgSlug]/[teamspaceSlug]/agents/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
 import { E2E_STRIPE_WEBHOOK_SECRET } from "./helpers/billing";
+import { playwrightMediaUse } from "./playwright-media";
 import { withWebDeps } from "./web-server-command";
 
 const webPort = process.env.WEB_PORT ?? "3100";
@@ -52,9 +53,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: webUrl,
-    trace: "on",
-    screenshot: "on",
-    video: "on",
+    ...playwrightMediaUse,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { playwrightMediaUse } from "./playwright-media";
 import { withWebDeps } from "./web-server-command";
 
 // Emulate OAuth E2E: real Slack OAuth picker via vercel-labs/emulate, no CONNECT_STUB.
@@ -53,7 +54,7 @@ export default defineConfig({
   timeout: 90_000,
   outputDir: "./report/emulate-results",
   reporter: [["list"]],
-  use: { baseURL: webUrl, trace: "on", screenshot: "only-on-failure" },
+  use: { baseURL: webUrl, ...playwrightMediaUse },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {

@@ -65,18 +65,17 @@ export async function completeTemplateOnboarding(
 
   await page.getByRole("button", { name: "Open project" }).click();
 
-  await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
-  await expect(page.getByText("No graph nodes yet")).toBeVisible({
-    timeout: 15_000,
+  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({
+    timeout: 30_000,
   });
 
   const url = new URL(page.url());
-  const [, orgSlug, teamspaceSlug] = url.pathname.split("/");
-  if (!orgSlug || !teamspaceSlug) {
-    throw new Error(`Expected /{org}/{project} URL, got ${url.pathname}`);
+  const orgSlug = url.pathname.split("/").filter(Boolean)[0];
+  if (!orgSlug) {
+    throw new Error(`Expected /{org} URL, got ${url.pathname}`);
   }
 
-  return { orgSlug, teamspaceSlug };
+  return { orgSlug, teamspaceSlug: orgSlug };
 }
 
 export async function completeProjectOnboarding(

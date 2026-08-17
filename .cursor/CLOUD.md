@@ -9,13 +9,13 @@
 
 ## UI 검증 스택 (Cloud 포함)
 
-프론트 작업은 [AGENTS.md — Frontend 작업 완료 정의](../AGENTS.md)의 4단계를 따른다.
+프론트 작업은 [AGENTS.md — Frontend 작업 완료 정의](../AGENTS.md)를 따른다.
 
 | 순위 | 도구 | Cloud |
 |------|------|-------|
-| **1** | Playwright `pnpm e2e:ci` | ✅ 기능·회귀 SSOT. artifacts 자동 복사 |
-| **2** | agent-browser | ✅ E2E 후 탐색·스크린샷·녹화 |
-| **3** | Computer Use / RecordScreen | ✅ E2E 후 화면 조작·스크롤·데모 녹화 |
+| **1** | Playwright `pnpm e2e:changed` | ✅ 추가·수정된 스펙만. 전체는 `pnpm e2e:ci` / `verify:final` |
+| **2** | agent-browser | 필요할 때만 |
+| **3** | Computer Use / RecordScreen | 사용자가 데모를 요청한 경우만 |
 
 E2E를 건너뛰고 agent-browser/Computer Use만으로 “테스트 완료”로 표시하지 않는다.
 
@@ -25,18 +25,19 @@ E2E를 건너뛰고 agent-browser/Computer Use만으로 “테스트 완료”�
 
 | 목적 | 명령 |
 |------|------|
-| 기능·회귀 | `pnpm e2e:ci` 또는 `pnpm e2e -- --grep '<키워드>'` |
-| 산출물 | `/opt/cursor/artifacts/e2e/latest/` (스크립트가 자동 복사) |
-| HTML 리포트 | `e2e/report/html/index.html` — 필요 시 `pnpm --filter e2e exec playwright show-report report/html` |
+| PR 전 | `pnpm e2e:changed` |
+| 전체 스위트 | `pnpm e2e:ci` (`verify:final`) |
+| HTML 리포트 | `e2e/report/html/index.html` |
 
-E2E 전에 `pnpm dev` tmux가 **3000/3101**을 쓰면 `tmux kill-session -t ssota-dev`로 내린다 (`pnpm e2e`는 3100/3101).
+로컬·Cloud 기본은 비디오·트레이스·스크린샷 **off**. `CI=1`일 때만 실패 시 남긴다.
+
+E2E 전에 `pnpm dev` tmux가 **3000/3101**을 쓰면 `tmux kill-session -t ssota-dev`로 내린다 (Playwright는 3100/3101).
 
 ---
 
 ## agent-browser
 
-- E2E **통과 후** 변경 플로우를 dev 서버(:3000)에서 다시 연다.
-- 스크린샷·녹화를 `/opt/cursor/artifacts/screenshots/`, `videos/`에 저장.
+- E2E가 못 덮는 탐색이 필요할 때만. 사용자가 데모를 요청하지 않으면 녹화하지 않는다.
 - 스킬: `.agents/skills/agent-browser/SKILL.md`
 
 ```bash
@@ -50,10 +51,9 @@ agent-browser screenshot --full /opt/cursor/artifacts/screenshots/<name>.png
 
 ## Computer Use
 
-- `Task` + `subagent_type=computerUse`로 E2E 이후 **탐색적** UI 검증.
-- 스크롤·사이드바·모달·멀티 스텝 플로우 등 Playwright assertion 밖 UX 확인.
-- 움직이는 데모는 `RecordScreen` → `/opt/cursor/artifacts/`.
-- E2E 실패 원인을 GUI 루프만으로 반복 디버깅하기보다, 먼저 Playwright 로그·artifacts를 본다.
+- `Task` + `subagent_type=computerUse`는 E2E assertion 밖 UX가 필요할 때만.
+- 사용자가 데모를 요청한 경우에만 `RecordScreen` → `/opt/cursor/artifacts/`.
+- E2E 실패는 Playwright 로그를 먼저 본다.
 
 ---
 
@@ -86,5 +86,5 @@ Cloud 부팅 시 `pnpm cloud:prepare`가 `sync-supabase-env.sh` 후 `materialize
 |------|------|-----------|
 | 부트스트랩 | `pnpm cloud:prepare` | Node 24 |
 | 린트·타입 | `pnpm lint && pnpm typecheck` | — |
-| E2E + artifacts | `pnpm e2e:ci` | `cloud:prepare` |
-| E2E (grep) | `pnpm e2e -- --grep '<키워드>'` | `cloud:prepare` |
+| E2E (변경 스펙) | `pnpm e2e:changed` | `cloud:prepare` |
+| E2E (전체) | `pnpm e2e:ci` | `cloud:prepare` · `verify:final` |

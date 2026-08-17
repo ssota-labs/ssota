@@ -15,9 +15,13 @@ import { useProjectContext } from "./project-context";
 
 type ConsoleOrgSwitcherProps = {
   organizations: Organization[];
+  sectionLabelKey?: string;
 };
 
-export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
+export function ConsoleOrgSwitcher({
+  organizations,
+  sectionLabelKey = "nav.organization",
+}: ConsoleOrgSwitcherProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
   const { t } = useLocale();
@@ -31,13 +35,13 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
     <div className="flex h-12 shrink-0 items-center border-b px-2">
       <WorkspaceSwitcher
         currentLabel={ctx.org.name}
-        sectionLabel={t("nav.organization")}
+        sectionLabel={t(sectionLabelKey)}
         icon={<UsersThreeIcon />}
         options={options}
         activeOptionId={ctx.org.id}
         fullWidth
         side="bottom"
-        aria-label={t("nav.organization")}
+        aria-label={t(sectionLabelKey)}
         renderOption={(option, { active }) => {
           const org = organizations.find((item) => item.id === option.id);
           if (!org) return <></>;

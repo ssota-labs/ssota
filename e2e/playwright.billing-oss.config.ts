@@ -1,7 +1,7 @@
 import baseConfig from "./playwright.config";
 
 /**
- * OSS billing specs only (BILLING=none). Inherits video/trace/screenshot from base config.
+ * OSS billing specs only (BILLING=none). Inherits media settings from base config.
  */
 export default {
   ...baseConfig,

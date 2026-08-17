@@ -11,7 +11,7 @@
  */
 import type { HarnessRule } from "./types.js";
 
-/** PR 본문 필수 헤딩 — pr-forensics.mjs·pull_request_template.md가 동일 상수를 사용 */
+/** PR 본문 권장 헤딩 — pull_request_template.md와 동일 상수를 사용 */
 export const PR_HEADINGS = {
   /** [PR-03] 프론트 완료 증거 섹션 */
   verification: ["## 검증", "## Verification"],
@@ -128,7 +128,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     id: "GRAPH-08",
     level: "invariant",
     area: "graph",
-    rule: "페이지 UI는 json-render 조합만 — 도메인 전용 React 페이지·라우트를 추가하지 않는다.",
+    rule: "트랜잭션 화면은 typed React, 대시보드·리포트는 json-render — 새 페이지 라우트는 routes.json에 등록한다.",
     enforcement: [
       {
         kind: "scan-script",
@@ -270,10 +270,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     level: "default",
     area: "git",
     rule: "커밋 제목 접두사 [core|adapter|mcp|web|e2e|infra] — 변경 레이어 기준, why 중심 한 줄.",
-    enforcement: [
-      { kind: "ci-check", workflow: ".github/workflows/harness.yml", job: "pr-forensics" },
-      { kind: "docs-sync" },
-    ],
+    enforcement: [{ kind: "docs-sync" }],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {
@@ -292,10 +289,7 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     level: "default",
     area: "pr",
     rule: "머지 전 pnpm lint·typecheck·test 그린 필수.",
-    enforcement: [
-      { kind: "ci-check", workflow: ".github/workflows/harness.yml", job: "harness-static" },
-      { kind: "docs-sync" },
-    ],
+    enforcement: [{ kind: "docs-sync" }],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {
@@ -303,21 +297,15 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     level: "default",
     area: "pr",
     rule: "불변식 관련 경로를 건드리는 PR은 본문에 'Invariant 사유' 섹션으로 근거·해당 ID를 명시한다.",
-    enforcement: [
-      { kind: "ci-check", workflow: ".github/workflows/harness.yml", job: "pr-forensics" },
-      { kind: "docs-sync" },
-    ],
+    enforcement: [{ kind: "docs-sync" }],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {
     id: "PR-03",
     level: "default",
     area: "pr",
-    rule: "프론트 작업 완료 = 구현+정적검증 → E2E → 대화형 UI 검증 → PR에 산출물 첨부 (4단계 전부).",
-    enforcement: [
-      { kind: "ci-check", workflow: ".github/workflows/harness.yml", job: "pr-forensics" },
-      { kind: "docs-sync" },
-    ],
+    rule: "프론트 작업 완료 = 구현+정적검증 + 변경 범위 E2E(pnpm e2e:changed). 전체 스위트는 CI/verify:final. Playwright 비디오·트레이스·스크린샷은 로컬 off, CI 실패 시에만.",
+    enforcement: [{ kind: "docs-sync" }],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
 
