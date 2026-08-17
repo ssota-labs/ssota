@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="omd:id" content="ADR-relational-domain-cores-with-graph-projections" />
   <meta name="omd:kind" content="adr" />
-  <meta name="omd:stage" content="accepted" />
+  <meta name="omd:stage" content="superseded" />
   <title>ADR-relational-domain-cores-with-graph-projections · Relational Domain Cores with Graph Projections</title>
   <link rel="stylesheet" href="../../assets/omd-doc.css" />
 </head>
@@ -20,12 +20,17 @@
     <h1 data-omd-field="title">Relational Domain Cores with Graph Projections</h1>
     <dl class="omd-props">
       <dt>stage</dt>
-      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dd data-omd-field="stage" data-omd-value="superseded">superseded</dd>
       <dt>summary</dt>
       <dd data-omd-field="summary">핵심 비즈니스 데이터와 불변식은 도메인별 관계형 모델이 소유하고 그래프는 재생성 가능한 projection으로 사용한다.</dd>
+      <dt>superseded by</dt>
+      <dd><a href="./ADR-runtime-ontology-with-closed-edit-vocabulary.html">ADR-runtime-ontology-with-closed-edit-vocabulary</a></dd>
     </dl>
   </header>
   <main class="omd-doc-body">
+    <h2>Superseded</h2>
+    <p>이 결정은 <a href="./ADR-runtime-ontology-with-closed-edit-vocabulary.html">ADR-runtime-ontology-with-closed-edit-vocabulary</a>로 대체되었다. 도메인별 관계형 정본은 DB 제약을 얻는 대신 타입 추가를 릴리즈에 묶는데, 이는 회사가 자기 도메인을 런타임에 정의한다는 제품 목표와 충돌한다. 아래 내용은 그 판단의 기록으로 남긴다 — 특히 “각 사실은 한 번만 저장한다”와 “이중 정본을 만들지 않는다”는 원칙은 후속 결정에서도 유지된다.</p>
+
     <h2>Context</h2>
     <p>범용 node/edge + JSONB 모델은 새로운 타입을 빠르게 추가할 수 있지만 실제 회사 업무의 관계는 대부분 Finance, Legal, HR, Equity 등 한 bounded context 안에서 반복된다. 핵심 제약, 조인, 정합성 검사를 동적 schema와 edge에 맡기면 도메인 로직이 분산되고 이중 정본이 생긴다.</p>
 
