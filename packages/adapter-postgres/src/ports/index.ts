@@ -40,7 +40,7 @@ export {
   BUILTIN_TEMPLATES,
   getTemplateBundleById,
   SOFTWARE_DEV_TEMPLATE,
-} from "./shared/templates.js";
+} from "./templates.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {

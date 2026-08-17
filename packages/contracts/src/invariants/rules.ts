@@ -165,6 +165,29 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {
+    id: "ARCH-04",
+    level: "invariant",
+    area: "arch",
+    rule: "패키지 내부 버티컬 의존 방향: platform ← ontology ← agents. shared는 버티컬을 import하지 않는다.",
+    enforcement: [
+      { kind: "scan-script", script: "scripts/harness/check-boundaries.mjs", checkId: "vertical-boundaries" },
+      { kind: "docs-sync" },
+    ],
+    allowlist: [
+      {
+        path: "packages/core/src/ontology/gate/evaluate-gate-policies.ts",
+        reason:
+          "gate onPass effect(spawn_task)가 agents spawn-task·task-errors를 호출 — P1 액션 봉투에서 포트 역전 예정 (ADR-runtime-ontology)",
+      },
+      {
+        path: "packages/core/src/ontology/use-cases/graph/update-node.ts",
+        reason:
+          "update-node가 gate spawn effect를 직접 실행 — P1 runAction 단일 커밋 경로로 이관 예정",
+      },
+    ],
+    docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
+  },
+  {
     id: "ARCH-03",
     level: "invariant",
     area: "arch",

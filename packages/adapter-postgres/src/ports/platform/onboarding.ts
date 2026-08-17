@@ -1,5 +1,5 @@
 import { toRouteSlug } from "@ssota/core";
-import { applyTemplate, getTemplateBundleById } from "../shared/templates.js";
+import { applyTemplate, getTemplateBundleById } from "../templates.js";
 import {
   DEFAULT_LOCALE,
   LOCALES,

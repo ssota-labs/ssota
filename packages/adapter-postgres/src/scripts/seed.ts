@@ -20,7 +20,7 @@ import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
 import { seedSwdlSkillsAndBindings } from "./seed/swdl-skills.js";
-import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/shared/templates.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 

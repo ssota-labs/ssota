@@ -35,6 +35,8 @@ e2e/
 
 **의존 방향 [ARCH-01]:** `apps/* → core ← adapter-postgres/adapter-supabase`. `packages/core`는 IO 의존 0. apps는 adapter 내부 경로(deep import)를 참조하지 않는다 [ARCH-02].
 
+**버티컬 방향 [ARCH-04]:** contracts·core·adapter 내부는 `ontology`·`agents`·`platform`·`shared` 버티컬 폴더로 나뉜다 (ADR-vertical-package-structure). 의존 방향은 `platform ← ontology ← agents`이며 `shared`는 버티컬을 import하지 않는다 — `pnpm harness:boundaries`(vertical-boundaries)가 강제한다.
+
 **Adapter 진입점 (active):** `createGraphPorts(db, { organizationId, teamspaceId, accountId? })` → `{ catalog, graphRead, graphWrite }`. Catalog read는 `organizationId`, instance read/write는 `teamspaceId`(+ org-shared `teamspace_id IS NULL`). `accountId`가 있으면 end-user scope(shared `account_id IS NULL` + own rows). `createDbAccountReadPort(db)` → `provisionForUser`, `assertAccountAccess`, `getOrCreateWorkspaceAccount`.
 
 ## Console v2.7 Graph Invariants — 협상 불가 (active)

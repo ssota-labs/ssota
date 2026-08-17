@@ -9,6 +9,7 @@
  *  - raw-hex                : [DS-01] 컴포넌트 내 임의 hex 컬러
  *  - raw-palette            : [DS-02] raw Tailwind palette 클래스
  *  - legacy-runtime-guard   : [ARCH-03] generic runtime 식별자 복원
+ *  - vertical-boundaries    : [ARCH-04] 버티컬(ontology·agents·platform·shared) 역방향 import
  *  - disable-audit          : boundary 룰 eslint-disable에 [ID] 사유 누락
  */
 import path from "node:path";
@@ -130,6 +131,51 @@ const allowedPaths = (name) => new Set(loadAllowlist(name).map((entry) => entry.
           "executeAction/ActionCommitPort/action_log 패턴은 active product에 적용하지 않습니다 (AGENTS.md Legacy Runtime 절)",
           "그래프 쓰기는 core graph use-case + GraphWritePort로 구현하세요 [GRAPH-02]",
         ]);
+      }
+    }
+  }
+}
+
+// ── vertical-boundaries [ARCH-04] ───────────────────────────────────────────
+// 허용 방향: platform ← ontology ← agents, shared는 어느 버티컬도 import하지 않음.
+{
+  const VERTICALS = new Set(["ontology", "agents", "platform", "shared"]);
+  const ALLOWED = {
+    ontology: new Set(["ontology", "platform", "shared"]),
+    agents: new Set(["agents", "ontology", "platform", "shared"]),
+    platform: new Set(["platform", "shared"]),
+    shared: new Set(["shared"]),
+  };
+  const scanRoots = [
+    "packages/contracts/src",
+    "packages/core/src",
+    "packages/adapter-postgres/src",
+  ];
+  const allowed = contractAllowedPaths("ARCH-04");
+  const SPEC = /(?:from|import)\s*\(?\s*"(\.[^"]+)"/g;
+  for (const root of scanRoots) {
+    for (const file of walkFiles(root, { exts: [".ts"] })) {
+      if (/\.(test|spec)\.tsx?$/.test(file)) continue;
+      const rel = path.relative(root, file).split(path.sep);
+      // adapter는 ports/<버티컬>·db/schema/<버티컬> 2단 구조도 지원
+      const fromVertical = rel.find((seg) => VERTICALS.has(seg));
+      if (!fromVertical) continue; // 루트 파일(index.ts·invariants 등)은 제약 없음
+      if (allowed.has(file)) continue;
+      const source = stripComments(readText(file));
+      const fileDir = path.dirname(file);
+      for (const m of source.matchAll(SPEC)) {
+        const target = path.normalize(path.join(fileDir, m[1]));
+        const targetRel = path.relative(root, target);
+        if (targetRel.startsWith("..")) continue; // 패키지 밖(seed-packs 등)
+        const toVertical = targetRel.split(path.sep).find((seg) => VERTICALS.has(seg));
+        if (!toVertical) continue; // 루트 파일 참조는 허용
+        if (!ALLOWED[fromVertical].has(toVertical)) {
+          reporter.fail("ARCH-04", `${file}: ${fromVertical} → ${toVertical} import 금지 — ${m[1]}`, [
+            "허용 방향: platform ← ontology ← agents. shared는 버티컬을 import하지 않습니다 (ADR-vertical-package-structure)",
+            "역방향 의존이 정당하면 포트 역전(ontology가 포트 정의, agents가 구현)을 검토하세요",
+            `불가피하면 rules.ts ARCH-04 allowlist에 {path, reason}으로 등록하세요`,
+          ]);
+        }
       }
     }
   }

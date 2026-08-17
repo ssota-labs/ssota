@@ -1,4 +1,4 @@
-import type { AgentDefinitionSeed } from "../../agents/agent-definition.js";
+import type { AgentDefinitionSeed } from "../agent-definition.js";
 
 /**
  * A project template: a self-contained bundle that seeds a new project's
