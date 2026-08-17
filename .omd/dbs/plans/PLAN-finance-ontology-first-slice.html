@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="plan" data-omd-id="PLAN-finance-ontology-first-slice">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="PLAN-finance-ontology-first-slice" />
+  <meta name="omd:kind" content="plan" />
+  <meta name="omd:stage" content="draft" />
+  <meta name="omd:changeType" content="product" />
+  <title>PLAN-finance-ontology-first-slice · Finance Ontology First Slice</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">PLAN-finance-ontology-first-slice</p>
+    <h1 data-omd-field="title">Finance Ontology First Slice</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage">draft</dd>
+      <dt>changeType</dt>
+      <dd data-omd-field="changeType">product</dd>
+      <dt>codeAreas</dt>
+      <dd data-omd-field="codeAreas">packages/contracts, packages/core, packages/adapter-postgres, supabase/migrations, apps/web</dd>
+      <dt>ADRs</dt>
+      <dd data-omd-rel="adrs"><a href="../adr/ADR-runtime-ontology-with-closed-edit-vocabulary.html">ADR-runtime-ontology-with-closed-edit-vocabulary</a></dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Goal</h2>
+    <p><a href="../adr/ADR-runtime-ontology-with-closed-edit-vocabulary.html">3층 구조</a>의 <strong>비어 있는 부분만</strong> 채워 회계 액션 3개로 수직 관통한다. 저장소 감사 결과 L1 저장·저작과 L3 실행은 이미 있고, 실제 갭은 <strong>(a) 카탈로그 검증 층, (b) Gate 위의 쓰기 봉투, (c) 워커 커밋 모델</strong> 세 가지다. 이 슬라이스의 산출물은 회계 기능이 아니라 <em>그 세 갭이 닫혔다는 증거와 L2/L3 경계 판정</em>이다.</p>
+
+    <h2>실측 기준선</h2>
+    <p>ADR의 “현행 구현 실측” 절이 근거다. 이 PLAN은 이미 있는 것을 다시 만들지 않는다.</p>
+    <ul>
+      <li><strong>이미 있다 — 만들지 않는다:</strong> <code>node_catalog</code>/<code>edge_catalog</code>의 스키마 컬럼, <code>CatalogWritePort</code>, agent-runtime <code>create_node_type</code>/<code>create_edge_type</code>, Gate Policy 엔진(<code>when</code>·<code>match</code>·<code>require[]</code>·<code>onFail</code>·<code>onPass.effects</code> + <code>parseGatePath</code>), <code>workers</code> 테이블과 <code>executeWorker</code>(inputSchema 검증·<code>dryRun</code>·permissions·SDK 브리지·<code>runEphemeralSandbox</code>), <code>agent_runs</code> 로그.</li>
+      <li><strong>비어 있다 — 이 슬라이스가 채운다:</strong> 런타임 정의 타입의 properties 검증, 엣지 domain/range 검증, <code>validateEdgeProperties</code>, 액션 파라미터 스키마·편집 op 어휘·권한·감사·단일 트랜잭션, 워커 SDK의 편집 서술 전환.</li>
+    </ul>
+
+    <h2>Approach</h2>
+    <p><strong>검증 층을 먼저 닫는다.</strong> 현재 런타임 정의 타입은 무검증 통과하므로 “앱이 유일 방어선”이라는 ADR 전제가 성립하지 않는다. 액션 봉투를 먼저 만들면 방어선 없는 경로 위에 봉투를 씌우는 셈이다.</p>
+    <p>그 다음 <strong>Gate를 criteria로 재사용</strong>해 액션 봉투를 얹는다. criteria 어휘를 새로 만들지 않는다 — <code>require[]</code>의 경로 표현식이 이미 그래프 순회 + <code>count{min,max}</code>를 지원한다. 회계에 필요한 것이 이 문법으로 표현되는지가 시험대이며, 표현되지 않으면 <strong>문법을 늘리지 말고</strong> L3 필요로 기록한다.</p>
+    <p>액션 3개는 난이도 순이 아니라 <strong>L2 경계를 가로지르는 순</strong>으로 고른다.</p>
+    <ul>
+      <li><code>finance.post_journal_entry</code> — <strong>L2로 되어야 한다.</strong> 차대 균형은 Gate <code>require</code>의 <code>count</code>/경로로 표현되거나, 안 되면 <code>node_catalog.invariants</code>의 <code>sum_balance</code>로 간다.</li>
+      <li><code>finance.close_fiscal_period</code> — <strong>L2 경계 시험.</strong> 시산표 검증이 Gate 문법으로 표현되는가. 여기서 문법을 늘리고 싶은 압력이 처음 발생하며, 굴복하는지가 이 슬라이스의 진짜 시험이다.</li>
+      <li><code>finance.void_journal_entry</code> — <strong>L3 예상.</strong> 기존 엣지를 읽어 차·대를 뒤집으므로 편집이 파라미터에서 파생되지 않는다. 워커 커밋 모델 전환의 첫 실사용례가 된다.</li>
+    </ul>
+    <p>Aggregate 경계는 전표를 root로 둔다. <strong>분개행은 노드가 아니라 전표 → 계정 엣지</strong>이고 금액은 엣지 properties에 산다. 원장은 append-only이며 취소는 역분개로 처리한다.</p>
+    <p>거부 케이스를 먼저 작성한다(<code>[TEST-01]</code>). 통과 케이스만으로는 이 설계가 진짜인지 판명되지 않는다.</p>
+
+    <h2>Steps</h2>
+    <p><strong>P0 — 검증 층 (갭 a)</strong></p>
+    <ol>
+      <li><code>property_schema</code>를 실제 validator로 쓴다. <code>validateNodeProperties</code>가 <code>isKnownNodeType</code>이 아닐 때 무검증 통과하는 경로를 없애고, 카탈로그 행의 <code>property_schema</code>로 검증한다. 스키마 표현은 기존 하드코딩 Zod와 상호 변환 가능한 형태로 고정한다.</li>
+      <li><code>validateEdgeProperties</code>를 구현한다(현재 전 타입 no-op).</li>
+      <li><code>create-edge</code>에서 <code>domain_catalog_ids</code>/<code>range_catalog_ids</code>를 강제한다. <code>[GRAPH-05]</code>의 미구현 항목이며 문서-구현 불일치를 닫는다.</li>
+      <li>거부 케이스: 스키마 위반 properties · domain 위반 엣지 · range 위반 엣지 · 런타임 정의 타입의 잘못된 properties.</li>
+    </ol>
+    <p><strong>P1 — 액션 봉투 (갭 b)</strong></p>
+    <ol start="5">
+      <li><code>GraphEdits</code> 닫힌 op 집합(<code>create_node</code>·<code>update_properties</code>·<code>create_edge</code>·<code>delete_edge</code>·<code>set_status</code>)을 <code>packages/contracts</code>에 Zod로 정의한다. criteria는 정의하지 않고 Gate를 참조한다.</li>
+      <li>액션 선언 계약 — <code>key</code>·<code>parameters</code>(Zod)·<code>writes</code>·<code>requires</code>(권한)·<code>criteria</code>(Gate 정책 키 참조)·<code>gate</code>(승인 필요 여부).</li>
+      <li><code>runAction</code> 커밋 경로 — 파라미터 파싱 → Gate 평가(<code>evaluateGatePolicies</code> 재사용) → 권한 확인 → aggregate root <code>SELECT … FOR UPDATE</code> → 편집 적용 → 감사 기록. <strong>한 트랜잭션.</strong></li>
+      <li><code>finance.*</code> 카탈로그 시드 — <code>finance.account</code>·<code>finance.fiscal_period</code>·<code>finance.journal_entry</code> 노드 타입과 <code>posts_to</code>·<code>in_period</code>·<code>reverses</code> 엣지 타입. <code>property_schema</code>와 domain/range 포함.</li>
+      <li><strong>액션 1</strong> — <code>post_journal_entry</code>를 L2만으로 구현.</li>
+      <li><strong>액션 2</strong> — <code>close_fiscal_period</code>. Gate 문법으로 표현되는지 판정하고, 안 되면 문법을 늘리지 말고 L3 필요로 기록.</li>
+    </ol>
+    <p><strong>P2 — DB 불변식 + 워커 커밋 모델 (갭 c)</strong></p>
+    <ol start="11">
+      <li><code>node_catalog.invariants</code> 컬럼 + <code>nodes</code>의 범용 deferred constraint trigger. <code>WHEN</code> 절이 아니라 함수 본문에서 카탈로그를 조회해 org별 uuid 하드코딩을 피한다. 평가기는 <code>sum_balance</code>만 지원한다.</li>
+      <li>워커 SDK를 편집 서술 반환으로 전환한다 — <code>graph.write.*</code> 직접 커밋을 <code>GraphEdits</code> 반환으로 바꾸고 <code>runAction</code>이 커밋한다. <code>[ACTION-03]</code> 위반 해소.</li>
+      <li><strong>액션 3</strong> — <code>void_journal_entry</code>. 전환된 워커 경로의 첫 사용례.</li>
+      <li>거부 케이스 추가: 불균형 전표가 <strong>COMMIT 시점에</strong> 거부 · 동시 쓰기 2건 중 하나 거부 · 마감 기간 쓰기 거부 · <strong>Action 우회 직접 INSERT가 trigger에 걸림</strong>.</li>
+      <li>파생 조회 — <code>account_balances</code> 뷰. 액션이 잔액을 갱신하지 않음을 확인.</li>
+      <li>reconciliation 스켈레톤 — 전 노드 <code>property_schema</code> 재검증 + 집계 대조 리포트.</li>
+      <li>판정 기록 — L2/L3 경계 결과를 ADR에 반영한다. 항목별 판정 없이 슬라이스를 닫지 않는다.</li>
+    </ol>
+    <p><strong>비범위:</strong> sandbox 부팅 최적화, 프로젝트별 함수 버전 관리(카탈로그가 <code>sandbox_sources</code> 버전을 참조하는 설계), <code>[ACTION-04]</code>의 생성 테스트 게이트, 회계 도메인 완성. P0가 닫히기 전에는 <strong>런타임 타입 저작을 사용자에게 개방하지 않는다.</strong></p>
+
+    <h2>Risks</h2>
+    <ul>
+      <li><strong>P0를 건너뛰려는 유혹</strong> — 액션 봉투가 더 눈에 보이는 진전이라 먼저 하고 싶어진다. 그러면 방어선 없는 경로 위에 봉투를 씌우는 것이고, ADR이 하중 구조물이라 부른 것이 비어 있는 상태로 남는다.</li>
+      <li><strong>Gate 문법 확장 압력</strong> — 가장 큰 위험이며 과거 <code>executeAction</code>이 죽은 경로다. 10단계에서 <code>require</code> 문법을 늘리고 싶어지면 그 자체를 신호로 취급하고 L3으로 넘긴다. plpgsql 평가기가 30줄을 넘으면 경고(<code>[ACTION-02]</code>).</li>
+      <li><strong><code>property_schema</code> 표현 형식 결정</strong> — 기존 하드코딩 Zod와 DB jsonb 스키마의 상호 변환이 P0의 실질 난점이다. 여기서 형식을 잘못 고르면 출하 타입과 런타임 타입이 두 갈래로 갈린다.</li>
+      <li><strong>워커 SDK 전환의 파급</strong> — 기존 워커 스크립트가 <code>graph.write.*</code>를 직접 호출하고 있으면 호환이 깨진다. 전환 범위와 마이그레이션 경로를 12단계에서 먼저 조사한다.</li>
+      <li><strong>Aggregate 경계 오판</strong> — 분개행을 노드로 만들면 균형 검증이 aggregate를 벗어나 락 범위가 무너진다. 8단계 시드에서 이 경계를 고정한다.</li>
+      <li><strong>집계 성능</strong> — 엣지 properties의 JSONB 합산. 필요 시 <code>edges</code>에 stored generated column 승격 + 부분 인덱스. 측정 후 대응한다.</li>
+      <li><strong>슬라이스 비대</strong> — 회계 도메인을 완성하려는 유혹. 산출물은 갭 3개가 닫혔다는 증거와 경계 판정이다.</li>
+    </ul>
+
+    <h2>Verification</h2>
+    <ul>
+      <li><code>pnpm test --filter @ssota/contracts</code> — 닫힌 op 스키마, <code>property_schema</code> 표현 형식.</li>
+      <li><code>pnpm test --filter @ssota/core</code> — 순수 회계 함수(차대 균형·기간 판정·역분개 생성)와 Gate 평가. DB 없이 통과해야 한다.</li>
+      <li><code>pnpm test --filter @ssota/adapter-postgres</code> — <strong>거부 케이스 8종</strong>(P0의 4종 + P2의 4종). 통과 케이스보다 먼저 그린이 되어야 한다.</li>
+      <li>마이그레이션 up/down 확인 — Tier 3.</li>
+      <li><strong><code>[GRAPH-05]</code> 문서-구현 일치 확인</strong> — edge domain/range 검증이 실제로 동작하는 테스트가 있는지.</li>
+      <li>L2/L3 경계 판정이 ADR에 반영되었는지 확인. 이 항목 없이 슬라이스를 닫지 않는다.</li>
+    </ul>
+  </main>
+</body>
+</html>
