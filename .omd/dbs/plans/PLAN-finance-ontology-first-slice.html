@@ -79,7 +79,8 @@
       <li><strong>액션 1</strong> — <code>post_journal_entry</code>를 L2만으로 구현.</li>
       <li><strong>액션 2</strong> — <code>close_fiscal_period</code>. Gate 문법으로 표현되는지 판정하고, 안 되면 문법을 늘리지 말고 L3 필요로 기록.</li>
     </ol>
-    <p><strong>P2 — 워커 커밋 모델 전환 = L3 불변식 (갭 c)</strong></p>
+    <p><strong>P2 — 워커 커밋 모델 전환 = L3 불변식 (갭 c) — ⏳ 핵심 완료 (2026-08-18), 잔여 2건</strong></p>
+    <p class="omd-note"><strong>판정 (12번 결정 = B).</strong> 워커 SDK에서 <code>graph.write.*</code>를 제거하고 <code>sdk.edits.*</code> 빌더로 바꿨다(<code>[ACTION-03]</code> 해소, 시드 스크립트 영향 0). <code>GraphEdits</code>에 <code>assert</code>·<code>assert_count</code> 가드를 더했다(op 7). <code>FunctionEditsPlanner</code> 어댑터가 워커를 실행해 편집을 받고, <code>runAction</code>이 락 이후 가드를 선평가한다. <strong><code>close_fiscal_period</code>가 L3로 실제로 돌았다</strong> — 워커가 시산표 sum을 계산해 불일치면 throw, 균형이면 가드+<code>set_status</code>를 반환, 호스트 쓰기 호출 0. P1에서 “Gate에 sum이 없어 넘긴” 항목이 여기서 풀렸다. <strong>잔여:</strong> gate=true 승인 태스크(<code>onPass</code> 포트 역전)·<code>action_catalog</code> 승격은 별도 슬라이스.</p>
     <p class="omd-note"><strong>범위 축소 (2026-08-18).</strong> 초안의 “DB 불변식(<code>node_catalog.invariants</code> + deferred trigger)”을 <strong>철회</strong>한다. (1) Action 우회 경로는 <code>[ACTION-01]</code> 정책 + harness로 닫으므로 트리거가 지킬 대상이 없다. (2) 사용자가 액션을 직접 만들면 불변식 <code>kind</code>가 도메인마다 늘어나 plpgsql 안에서 <code>executeAction</code>이 부활한다. 여러 행에 걸친 업무 불변식은 <strong>L3 함수</strong>가 담당한다 — 그래서 P2의 중심은 워커 커밋 모델 전환이다.</p>
     <ol start="11">
       <li>워커 SDK를 편집 서술 반환으로 전환한다 — <code>graph.write.*</code> 직접 커밋을 제거하고 함수가 <code>GraphEdits</code>를 <strong>반환</strong>하도록. <code>runAction</code>의 <code>FunctionEditsPlanner</code> 어댑터가 워커를 실행해 결과를 받는다. <code>[ACTION-03]</code> 위반 해소. 기존 워커 스크립트의 <code>graph.write.*</code> 사용처를 먼저 조사하고 마이그레이션 경로를 정한다.</li>
