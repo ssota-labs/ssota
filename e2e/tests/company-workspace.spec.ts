@@ -2,6 +2,12 @@ import { test, expect } from "@playwright/test";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 import { applySmokeSession } from "../helpers/session";
 
+// Company Workspace는 기본 숨김 (NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED=1로 켬).
+// 꺼져 있으면 (company) 라우트가 404라 이 스펙은 skip — 켤 때 그대로 되살아난다.
+test.skip(
+  !/^(1|true)$/i.test(process.env.NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED ?? ""),
+  "Company Workspace disabled (NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED)",
+);
 test.describe("Company Workspace", () => {
   test.describe.configure({ timeout: 300_000 });
   test.beforeEach(async ({ page }) => {
