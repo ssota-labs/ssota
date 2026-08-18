@@ -25,8 +25,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     eventId,
-    note: eventId
-      ? "Event sent — check Sentry Issues."
-      : "No event id — is NEXT_PUBLIC_SENTRY_DSN set?",
+    note:
+      process.env.NEXT_PUBLIC_SENTRY_ENABLED !== "1"
+        ? "Sentry is disabled (NEXT_PUBLIC_SENTRY_ENABLED != 1) — event dropped."
+        : eventId
+          ? "Event sent — check Sentry Issues."
+          : "No event id — is NEXT_PUBLIC_SENTRY_DSN set?",
   });
 }

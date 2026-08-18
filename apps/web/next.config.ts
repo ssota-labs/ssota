@@ -11,6 +11,17 @@ const configDir = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(configDir, "../..");
 
 /**
+ * Sentry는 opt-in이다. `NEXT_PUBLIC_SENTRY_ENABLED=1`일 때만 빌드 플러그인
+ * (`withSentryConfig`)과 런타임 `Sentry.init`(instrumentation.ts →
+ * sentry.server/edge.config.ts, instrumentation-client.ts)을 켠다.
+ * 기본은 완전 비활성 — 패키지·설정 파일은 그대로 두고 플래그 하나로 다시 켠다.
+ * `NEXT_PUBLIC_` 접두사인 이유: 브라우저 번들(instrumentation-client.ts)에서도
+ * 같은 값을 읽어야 하기 때문. 값은 정확히 `"1"`만 인정한다 (클라이언트에서
+ * `=== "1"` 비교가 상수 접기 → dead-code 제거되도록).
+ */
+const sentryEnabled = process.env.NEXT_PUBLIC_SENTRY_ENABLED === "1";
+
+/**
  * Sentry CLI expects org/project **slugs**; numeric ids (dashboard URL에서 복사한
  * `45116307…` 류)를 넣으면 "Project not found"로 업로드가 실패한다. 숫자값은
  * 미설정으로 취급하고, org·project·auth token 셋이 모두 유효할 때만 소스맵
@@ -91,9 +102,12 @@ export default async function config(
     result = withEmulate(result);
   }
 
-  // Sentry: wraps the build to upload source maps and instrument the runtime.
-  // No-op for events at runtime unless NEXT_PUBLIC_SENTRY_DSN is set; source
-  // maps upload only when SENTRY_AUTH_TOKEN/ORG/PROJECT are present (CI/Vercel).
+  // Sentry off (default): no build plugin, no sentry-cli, no source-map upload.
+  if (!sentryEnabled) return result;
+
+  // Sentry on: wraps the build to upload source maps and instrument the runtime.
+  // Runtime events still require NEXT_PUBLIC_SENTRY_DSN; source maps upload only
+  // when SENTRY_AUTH_TOKEN/ORG/PROJECT are all valid slugs (CI/Vercel).
   const sentryOrg = resolveSentrySlug(process.env.SENTRY_ORG);
   const sentryProject = resolveSentrySlug(process.env.SENTRY_PROJECT);
   const sentryUploadReady = Boolean(
@@ -101,10 +115,15 @@ export default async function config(
   );
 
   return withSentryConfig(result, {
-    org: sentryOrg,
-    project: sentryProject,
-    authToken: sentryUploadReady ? process.env.SENTRY_AUTH_TOKEN : undefined,
+    // The bundler plugin falls back to SENTRY_ORG/SENTRY_PROJECT/SENTRY_AUTH_TOKEN
+    // env vars whenever an option is `undefined` (`??`), so an incomplete env
+    // would still run `sentry-cli releases new` and fail. Pass empty strings
+    // (not undefined) to opt out explicitly when the config is incomplete.
+    org: sentryOrg ?? "",
+    project: sentryProject ?? "",
+    authToken: sentryUploadReady ? process.env.SENTRY_AUTH_TOKEN : "",
     sourcemaps: { disable: !sentryUploadReady },
+    release: { create: sentryUploadReady, finalize: sentryUploadReady },
     silent: !process.env.CI,
     // Upload a wider set of client files for better stack traces.
     widenClientFileUpload: true,
