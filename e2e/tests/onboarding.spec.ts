@@ -14,8 +14,8 @@ test.describe("Console onboarding", () => {
       await completeOnboardingFlow(page);
 
     expect(orgSlug).toMatch(/^e2e-organization-/);
-    expect(teamspaceSlug).toMatch(/^e2e-project-/);
-    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${teamspaceSlug}/overview$`));
+    void teamspaceSlug; // flat URL — proxy가 overview로 rewrite (URL은 /{org})
+    await expect(page).toHaveURL(new RegExp(`/${orgSlug}$`));
     await expect(page.getByText("No graph nodes yet")).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
   });

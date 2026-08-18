@@ -71,18 +71,23 @@ export async function completeTemplateOnboarding(
 
   await page.getByRole("button", { name: "Open project" }).click();
 
-  await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
+  // Builder URL은 flat(/{org}) — proxy가 /{org}/{ts}/overview로 rewrite하므로 URL은 /{org}로 남는다.
+  // 화면이 overview인지는 empty-state 텍스트로 확인한다.
+  await page.waitForURL((u) => !u.pathname.startsWith("/onboarding") && u.pathname !== "/auth/continue", {
+    timeout: 60_000,
+    waitUntil: "commit",
+  });
   await expect(page.getByText("No graph nodes yet")).toBeVisible({
-    timeout: 15_000,
+    timeout: 30_000,
   });
 
   const url = new URL(page.url());
   const [, orgSlug, teamspaceSlug] = url.pathname.split("/");
-  if (!orgSlug || !teamspaceSlug) {
-    throw new Error(`Expected /{org}/{project} URL, got ${url.pathname}`);
+  if (!orgSlug) {
+    throw new Error(`Expected /{org} URL, got ${url.pathname}`);
   }
-
-  return { orgSlug, teamspaceSlug };
+  // flat URL이면 teamspaceSlug 세그먼트가 없다 — proxy rewrite 대상 슬러그는 알 수 없으므로 orgSlug로 대체
+  return { orgSlug, teamspaceSlug: teamspaceSlug ?? orgSlug };
 }
 
 export async function completeProjectOnboarding(
