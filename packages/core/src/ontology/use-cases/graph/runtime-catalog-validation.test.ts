@@ -7,6 +7,7 @@ import {
   createInMemoryGraphStore,
   createInMemoryGraphWritePort,
 } from "../../testing/in-memory-graph.js";
+import { createInMemoryGraphCommitPort } from "../../testing/in-memory-action.js";
 import { createEdge, createNode, updateNode } from "./index.js";
 
 /**
@@ -121,7 +122,8 @@ function setup() {
   const store = createInMemoryGraphStore();
   const graphRead = createInMemoryGraphReadPort(store);
   const graphWrite = createInMemoryGraphWritePort(store);
-  const deps = { catalog, graphRead, graphWrite };
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
+  const deps = { catalog, graphRead, graphWrite, commit };
   const mk = (catalogKey: string, nodeCatalogId: string, properties: Record<string, unknown>) =>
     graphWrite.createNode({
       teamspaceId: TS,

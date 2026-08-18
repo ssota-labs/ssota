@@ -5,6 +5,7 @@ import {
   createInMemoryGraphStore,
   createInMemoryGraphWritePort,
 } from "../../testing/in-memory-graph.js";
+import { createInMemoryGraphCommitPort } from "../../testing/in-memory-action.js";
 import { createEdge, createInitiativeBundle, createNode } from "./index.js";
 
 describe("v2.7 graph use cases", () => {
@@ -14,9 +15,10 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     await expect(
       createNode(
-        { catalog, graphRead, graphWrite },
+        { catalog, graphRead, graphWrite, commit },
         {
           teamspaceId: "00000000-0000-4000-8000-000000000001",
           catalogKey: "not_real" as "task",
@@ -30,9 +32,10 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     await expect(
       createNode(
-        { catalog, graphRead, graphWrite },
+        { catalog, graphRead, graphWrite, commit },
         {
           teamspaceId: "00000000-0000-4000-8000-000000000001",
           catalogKey: "hypothesis",
@@ -47,6 +50,7 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const teamspaceA = "00000000-0000-4000-8000-000000000001";
     const teamspaceB = "00000000-0000-4000-8000-000000000002";
 
@@ -68,7 +72,7 @@ describe("v2.7 graph use cases", () => {
     });
 
     const edge = await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: teamspaceA,
         catalogKey: "paired_with",
@@ -84,10 +88,11 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const teamspaceId = "00000000-0000-4000-8000-000000000099";
 
     const result = await createInitiativeBundle(
-      { catalog, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId,
         initiativeTitle: "Bundle initiative",
@@ -120,6 +125,7 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const teamspaceId = "00000000-0000-4000-8000-000000000010";
     const base = {
       teamspaceId,
@@ -133,11 +139,11 @@ describe("v2.7 graph use cases", () => {
       },
     };
 
-    await createNode({ catalog, graphRead, graphWrite }, base);
+    await createNode({ catalog, graphRead, graphWrite, commit }, base);
 
     await expect(
       createNode(
-        { catalog, graphRead, graphWrite },
+        { catalog, graphRead, graphWrite, commit },
         { ...base, title: "Duplicate annual" },
       ),
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
@@ -147,10 +153,11 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
 
     await expect(
       createNode(
-        { catalog, graphRead, graphWrite },
+        { catalog, graphRead, graphWrite, commit },
         {
           teamspaceId: "00000000-0000-4000-8000-000000000011",
           catalogKey: "roadmap",
@@ -165,6 +172,7 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const teamspaceId = "00000000-0000-4000-8000-000000000012";
     const base = {
       teamspaceId,
@@ -179,11 +187,11 @@ describe("v2.7 graph use cases", () => {
       },
     };
 
-    await createNode({ catalog, graphRead, graphWrite }, base);
+    await createNode({ catalog, graphRead, graphWrite, commit }, base);
 
     await expect(
       createNode(
-        { catalog, graphRead, graphWrite },
+        { catalog, graphRead, graphWrite, commit },
         { ...base, title: "Duplicate Q1" },
       ),
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
@@ -193,8 +201,9 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const node = await createNode(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: "00000000-0000-4000-8000-000000000023",
         catalogKey: "ui_component",

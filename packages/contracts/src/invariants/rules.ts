@@ -175,16 +175,6 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
       { kind: "docs-sync" },
     ],
     paths: ["packages/core/src/ontology/use-cases/action/**", "packages/core/src/ontology/ports/action-port.ts", "packages/adapter-postgres/src/ports/ontology/graph-commit-port.ts"],
-    allowlist: [
-      // 아래 6개 use-case는 runAction 이전 시절의 직접 GraphWritePort 경로 — 후속 PR에서 runAction 경유로 이관한다.
-      // 이관 전까지 예외를 데이터로 드러낸다 (숨기지 않음). 이관되면 이 항목들이 사라져야 한다.
-      { path: "packages/core/src/ontology/use-cases/graph/create-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-      { path: "packages/core/src/ontology/use-cases/graph/create-edge.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-      { path: "packages/core/src/ontology/use-cases/graph/update-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-      { path: "packages/core/src/ontology/use-cases/graph/delete-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-      { path: "packages/core/src/ontology/use-cases/graph/delete-edge.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-      { path: "packages/core/src/ontology/use-cases/graph/create-initiative-bundle.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
-    ],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {

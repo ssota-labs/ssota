@@ -2,10 +2,11 @@ import type { UpdateNodeInput } from "@ssota/contracts/graph";
 import { normalizeNodeContentForWrite } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import {
-  evaluateGatePolicies,
   runGateOnPassEffects,
   type GatePolicySource,
 } from "../../gate/evaluate-gate-policies.js";
+import type { GraphCommitPort } from "../../ports/action-port.js";
+import { commitSystemEdits } from "./system-actions.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphWritePort } from "../../ports/graph-write-port.js";
@@ -16,7 +17,9 @@ export async function updateNode(
   deps: {
     catalog: CatalogReadPort;
     graphRead: GraphReadPort;
-    graphWrite: GraphWritePort;
+    /** @deprecated runAction 경유로 커밋한다 */
+    graphWrite?: GraphWritePort;
+    commit: GraphCommitPort;
     gatePolicies?: GatePolicySource;
     /** Required for onPass spawn_task effects */
     spawn?: SpawnTaskDeps;
@@ -51,24 +54,21 @@ export async function updateNode(
       : input;
 
   const nextProperties = persisted.properties ?? existing.properties;
-  const nextTitle = persisted.title ?? existing.title;
 
-  if (deps.gatePolicies) {
-    await evaluateGatePolicies(
-      { graphRead: deps.graphRead, gatePolicies: deps.gatePolicies },
-      {
-        hook: "before_update_node",
-        teamspaceId: input.teamspaceId,
-        catalogKey: existing.catalogKey,
-        subjectNodeId: existing.id,
-        properties: nextProperties,
-        previousProperties: existing.properties,
-        title: nextTitle,
-      },
-    );
-  }
-
-  const updated = await deps.graphWrite.updateNode(persisted);
+  // [ACTION-01] runAction 경유. Gate(before_update_node)는 applyEdits가 락 이후 평가한다.
+  // update_properties는 얕은 병합이므로 nextProperties 전체를 넘겨 기존 replace 의미를 유지한다.
+  await commitSystemEdits(deps, {
+    key: "graph.update_node",
+    teamspaceId: input.teamspaceId,
+    edits: { edits: [{
+      op: "update_properties", node: { id: input.nodeId },
+      properties: nextProperties,
+      ...(persisted.title !== undefined ? { title: persisted.title } : {}),
+    }] },
+    lockNodeId: input.nodeId,
+  });
+  const updated = await deps.graphRead.getNode({ teamspaceId: input.teamspaceId, nodeId: input.nodeId });
+  if (!updated) throw new GraphError("NOT_FOUND", `updated node ${input.nodeId} not readable`);
 
   if (deps.gatePolicies && deps.spawn) {
     await runGateOnPassEffects(
