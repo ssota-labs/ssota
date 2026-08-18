@@ -4,9 +4,11 @@
  * 이 플래그 하나로 다시 켠다 (ADR-keep-tenant-platform "숨긴 뒤 삭제" — 삭제 PR은 별도).
  * 켜기: NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED=1
  */
-export const COMPANY_WORKSPACE_ENABLED = /^(1|true)$/i.test(
-  process.env.NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED?.trim() ?? "",
-);
+export function isCompanyWorkspaceEnabled(): boolean {
+  return /^(1|true)$/i.test(process.env.NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED?.trim() ?? "");
+}
+/** 모듈 로드 시점 스냅샷 — 랜딩 세그먼트 등 정적 결정에 쓴다. 런타임 판정은 isCompanyWorkspaceEnabled(). */
+export const COMPANY_WORKSPACE_ENABLED = isCompanyWorkspaceEnabled();
 
 /** 원래 콘솔의 기본 랜딩 세그먼트. 플래그가 켜지면 Company Home. */
 export const DEFAULT_LANDING_SEGMENT = COMPANY_WORKSPACE_ENABLED ? "home" : "overview";
@@ -116,7 +118,7 @@ export function companyWorkspacePageIdFromSlug(
 }
 
 export function isCompanyWorkspaceRelativePath(relativePath: string): boolean {
-  if (!COMPANY_WORKSPACE_ENABLED) return false;
+  if (!isCompanyWorkspaceEnabled()) return false;
   const first = relativePath.split("/")[0] ?? "";
   return (COMPANY_WORKSPACE_ROUTE_SEGMENTS as readonly string[]).includes(first);
 }
