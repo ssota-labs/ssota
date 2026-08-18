@@ -10,6 +10,7 @@ import {
   TreeStructureIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { buttonVariants } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -20,7 +21,6 @@ import { getConnectors } from "@/lib/connect/connectors";
 import { getLandingTranslations } from "@/lib/i18n/server";
 import type { createTranslator } from "@/lib/i18n";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
-import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
 import { LandingBlurredBackground } from "@/components/landing/landing-blurred-background";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingFaq } from "@/components/landing/landing-faq";
@@ -225,7 +225,12 @@ export default async function HomePage() {
                 >
                   {t("landing.hero.badge")}
                 </Badge>
-                <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+                <Link
+                  href="/login"
+                  className={buttonVariants({ size: "lg", className: "h-11 px-6 text-sm" })}
+                >
+                  {t("landing.cta.login")}
+                </Link>
               </div>
             </div>
           </div>
@@ -299,7 +304,12 @@ export default async function HomePage() {
               {t("landing.cta.heading")}
             </h2>
             <div className="mt-8 flex justify-center">
-              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+              <Link
+                  href="/login"
+                  className={buttonVariants({ size: "lg", className: "h-11 px-6 text-sm" })}
+                >
+                  {t("landing.cta.login")}
+                </Link>
             </div>
           </div>
         </div>

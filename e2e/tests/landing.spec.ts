@@ -15,14 +15,15 @@ test.describe("landing page", () => {
     ).toBeVisible();
     await expect(page.getByText("7월 중 오픈 예정")).toBeVisible();
     await expect(page.getByLabel("SSOTA prompt preview")).toBeVisible();
+    // GitHub 링크는 헤더·모바일 nav·푸터에 여러 개 — 첫 번째(헤더)만 검사 (strict mode 회피)
     await expect(
-      page.getByRole("link", { name: /GitHub/i }),
+      page.getByRole("link", { name: /GitHub/i }).first(),
     ).toHaveAttribute("href", "https://github.com/ssota-labs/loopos");
     await expect(
       page
         .locator("section")
         .first()
-        .getByRole("button", { name: "베타 신청하기" }),
+        .getByRole("link", { name: "로그인으로 들어가기" }),
     ).toBeVisible();
 
     await expect(
@@ -84,15 +85,27 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
-  test("landing: beta signup dialog saves email", async ({ page }) => {
+  test("landing: hero CTA is a login link (not beta signup)", async ({ page }) => {
+    await page.goto("/home");
+    const hero = page.locator("section").first();
+    const cta = hero.getByRole("link", { name: "로그인으로 들어가기" });
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", "/login");
+    await expect(hero.getByRole("button", { name: "베타 신청하기" })).toHaveCount(0);
+    await cta.click();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("landing: beta signup dialog saves email (pricing trigger)", async ({ page }) => {
     await page.goto("/home");
 
     const uniqueEmail = `beta-e2e-${Date.now()}@ssota.test`;
 
+    // 히어로/하단 CTA는 로그인 링크로 바뀌었다 — 베타 알림 신청은 가격 섹션 트리거로 연다.
     await page
-      .locator("section")
-      .first()
+      .locator("#pricing")
       .getByRole("button", { name: "베타 신청하기" })
+      .first()
       .click();
     await expect(
       page.getByRole("heading", { name: "베타 오픈 알림 받기" }),
@@ -144,19 +157,18 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
-  test("landing: bottom CTA opens beta signup dialog", async ({ page }) => {
+  test("landing: bottom CTA is a login link", async ({ page }) => {
     await page.goto("/home");
 
-    await page
+    const bottom = page
       .locator("section")
       .filter({
         hasText:
           "코딩 에이전트에 AI CPO를 연결하고 24시간 믿고 맡기세요.",
-      })
-      .getByRole("button", { name: "베타 신청하기" })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "베타 오픈 알림 받기" }),
-    ).toBeVisible();
+      });
+    const cta = bottom.getByRole("link", { name: "로그인으로 들어가기" });
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", "/login");
+    await expect(bottom.getByRole("button", { name: "베타 신청하기" })).toHaveCount(0);
   });
 });

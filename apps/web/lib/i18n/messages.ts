@@ -890,6 +890,7 @@ export const en = {
       badge: "SaaS + partner setup",
       heading:
         "Connect an AI CPO to your coding agents and trust it around the clock.",
+      login: "Sign in",
     },
     faq: {
       heading: "Got more questions?",
@@ -1856,6 +1857,7 @@ export const ko = {
       badge: "SaaS + partner setup",
       heading:
         "코딩 에이전트에 AI CPO를 연결하고 24시간 믿고 맡기세요.",
+      login: "로그인으로 들어가기",
     },
     faq: {
       heading: "궁금한 점들이 더 있나요?",
