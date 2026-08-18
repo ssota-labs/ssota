@@ -148,7 +148,7 @@ describe("task port integration", () => {
 
   it("spawnTask links targetNodeId in same project", async () => {
     const node = await createNode(
-      { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
+      { catalog: graphPorts.catalog, graphRead: graphPorts.graphRead, graphWrite: graphPorts.graphWrite, commit: graphPorts.commit },
       {
         teamspaceId,
         catalogKey: "feature",
@@ -192,7 +192,7 @@ describe("task port integration", () => {
 
   it("queryTasks filters by targetNodeId", async () => {
     const node = await createNode(
-      { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
+      { catalog: graphPorts.catalog, graphRead: graphPorts.graphRead, graphWrite: graphPorts.graphWrite, commit: graphPorts.commit },
       {
         teamspaceId,
         catalogKey: "initiative",

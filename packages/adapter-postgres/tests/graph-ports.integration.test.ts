@@ -72,7 +72,7 @@ describe("graph ports integration", () => {
 
   it("creates node with catalog validation", async () => {
     const node = await createNode(
-      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         catalogKey: "feature",
@@ -87,7 +87,7 @@ describe("graph ports integration", () => {
   it("rejects unknown node_type", async () => {
     await expect(
       createNode(
-        { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+        { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
         {
           teamspaceId,
           catalogKey: "not_real" as "task",
@@ -129,7 +129,7 @@ describe("graph ports integration", () => {
     expect(restored?.key).toBe("design_theme");
 
     const node = await createNode(
-      { catalog: otherPorts.catalog, graphRead: otherPorts.graphRead, graphWrite: otherPorts.graphWrite },
+      { catalog: otherPorts.catalog, graphRead: otherPorts.graphRead, graphWrite: otherPorts.graphWrite, commit: otherPorts.commit },
       {
         teamspaceId: otherProjectId,
         catalogKey: "design_theme",
@@ -169,7 +169,7 @@ describe("graph ports integration", () => {
     });
 
     const edge = await createEdge(
-      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         catalogKey: "paired_with",
@@ -182,7 +182,7 @@ describe("graph ports integration", () => {
 
   it("creates initiative bundle atomically", async () => {
     const result = await createInitiativeBundle(
-      { catalog: ports.catalog, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         initiativeTitle: `Bundle ${randomUUID()}`,
@@ -212,7 +212,7 @@ describe("graph ports integration", () => {
 
   it("creates composed_of edges between ui_component nodes", async () => {
     const composite = await createNode(
-      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         catalogKey: "ui_component",
@@ -230,7 +230,7 @@ describe("graph ports integration", () => {
       },
     );
     const child = await createNode(
-      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         catalogKey: "ui_component",
@@ -249,7 +249,7 @@ describe("graph ports integration", () => {
     );
 
     const edge = await createEdge(
-      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite, commit: ports.commit },
       {
         teamspaceId,
         catalogKey: "composed_of",
