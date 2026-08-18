@@ -14,6 +14,7 @@ import {
 } from "./node-types.js";
 
 export * from "./db-catalog.js";
+export * from "./property-schema.js";
 export * from "./catalog-search.js";
 export * from "./common.js";
 export * from "./content-parsers.js";
