@@ -119,16 +119,14 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
   const [orgSlug, second, ...rest] = parts;
 
   if (parts.length === 1) {
-    const url = request.nextUrl.clone();
     if (COMPANY_WORKSPACE_ENABLED) {
+      const url = request.nextUrl.clone();
       url.pathname = `/${orgSlug}/home`;
       return NextResponse.redirect(url);
     }
-    // 원래 콘솔: /{org} → /{org}/{teamspace}/overview (teamspace는 쿠키, rewrite)
-    const teamspaceSlug =
-      request.cookies.get(TEAMSPACE_COOKIE)?.value ?? DEFAULT_TEAMSPACE_SLUG;
-    url.pathname = `/${orgSlug}/${teamspaceSlug}/overview`;
-    return NextResponse.rewrite(url);
+    // 원래 콘솔: /{org}는 app/[orgSlug]/page.tsx가 처리 — DB에서 첫 teamspace를 찾아
+    // 활성 teamspace 쿠키를 심고 overview로 redirect한다 (proxy는 DB를 못 봄).
+    return null;
   }
 
   if (!second) {
