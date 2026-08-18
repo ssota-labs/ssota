@@ -41,7 +41,7 @@ const enforcementSchema = z.discriminatedUnion("kind", [
 const ruleSchema = z.object({
   id: z.string().regex(/^[A-Z]+-\d{2}$/),
   level: z.enum(["invariant", "default", "heuristic"]),
-  area: z.enum(["graph", "arch", "security", "design", "git", "pr", "env", "test"]),
+  area: z.enum(["graph", "action", "arch", "security", "design", "git", "pr", "env", "test"]),
   rule: z.string().min(1),
   enforcement: z.array(enforcementSchema).min(1),
   docs: z.object({

@@ -165,6 +165,54 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
   },
   {
+    id: "ACTION-01",
+    level: "invariant",
+    area: "action",
+    rule: "모든 그래프 쓰기는 runAction(Action 커밋 경로)을 지난다 — seed·admin script·MCP·에이전트에 예외를 두지 않는다.",
+    enforcement: [
+      { kind: "scan-script", script: "scripts/harness/check-boundaries.mjs", checkId: "action-commit-path" },
+      { kind: "integration-test", testPath: "packages/adapter-postgres/tests/action-commit.integration.test.ts" },
+      { kind: "docs-sync" },
+    ],
+    paths: ["packages/core/src/ontology/use-cases/action/**", "packages/core/src/ontology/ports/action-port.ts", "packages/adapter-postgres/src/ports/ontology/graph-commit-port.ts"],
+    allowlist: [
+      // 아래 6개 use-case는 runAction 이전 시절의 직접 GraphWritePort 경로 — 후속 PR에서 runAction 경유로 이관한다.
+      // 이관 전까지 예외를 데이터로 드러낸다 (숨기지 않음). 이관되면 이 항목들이 사라져야 한다.
+      { path: "packages/core/src/ontology/use-cases/graph/create-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+      { path: "packages/core/src/ontology/use-cases/graph/create-edge.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+      { path: "packages/core/src/ontology/use-cases/graph/update-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+      { path: "packages/core/src/ontology/use-cases/graph/delete-node.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+      { path: "packages/core/src/ontology/use-cases/graph/delete-edge.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+      { path: "packages/core/src/ontology/use-cases/graph/create-initiative-bundle.ts", reason: "runAction 이전 직접 쓰기 경로 — runAction 경유로 이관 예정" },
+    ],
+    docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
+  },
+  {
+    id: "ACTION-02",
+    level: "invariant",
+    area: "action",
+    rule: "GraphEdits op는 닫힌 집합(편집 5 + 가드 2)이다. criteria는 Gate 문법을 재사용하며 검증 어휘(criteria kind·DB 불변식 kind)를 새로 만들지 않는다 — 어휘 밖 검증은 L3 코드다.",
+    enforcement: [
+      { kind: "unit-test", testPath: "packages/contracts/src/ontology/graph/edits.test.ts" },
+      { kind: "docs-sync" },
+    ],
+    paths: ["packages/contracts/src/ontology/graph/edits.ts", "packages/contracts/src/ontology/action/**"],
+    docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
+  },
+  {
+    id: "ACTION-03",
+    level: "invariant",
+    area: "action",
+    rule: "L3 함수(worker)는 커밋하지 않고 GraphEdits를 서술해 반환한다 — 워커 SDK에 graph.write가 없고 sandbox 코드는 DB에 접근하지 않는다.",
+    enforcement: [
+      { kind: "scan-script", script: "scripts/harness/check-boundaries.mjs", checkId: "worker-no-commit" },
+      { kind: "unit-test", testPath: "packages/agent-runtime/src/__tests__/create-worker-sdk.test.ts" },
+      { kind: "docs-sync" },
+    ],
+    paths: ["packages/agent-runtime/src/workers/**", "apps/web/lib/workers/**"],
+    docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },
+  },
+  {
     id: "ARCH-04",
     level: "invariant",
     area: "arch",
@@ -177,12 +225,12 @@ export const HARNESS_RULES: readonly HarnessRule[] = [
       {
         path: "packages/core/src/ontology/gate/evaluate-gate-policies.ts",
         reason:
-          "gate onPass effect(spawn_task)가 agents spawn-task·task-errors를 호출 — P1 액션 봉투에서 포트 역전 예정 (ADR-runtime-ontology)",
+          "gate onPass effect(spawn_task)가 agents spawn-task·task-errors를 호출 — onPass 포트 역전(P2 잔여)으로 해소 예정 (ADR-runtime-ontology)",
       },
       {
         path: "packages/core/src/ontology/use-cases/graph/update-node.ts",
         reason:
-          "update-node가 gate spawn effect를 직접 실행 — P1 runAction 단일 커밋 경로로 이관 예정",
+          "update-node가 gate spawn effect를 직접 실행 — runAction 경유 이관 + onPass 포트 역전으로 해소 예정",
       },
     ],
     docs: { requiredIn: ["AGENTS.md", "CLAUDE.md"] },

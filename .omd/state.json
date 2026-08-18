@@ -185,11 +185,11 @@
     },
     "AGENTS.md": {
       "ownership": "omd-managed",
-      "digest": "d109375fb86dbec8eace810d7151a04963c0f09b0a563e1ae90e4be1019eb681"
+      "digest": "cb83c6e5291dc622194a3b400fe0f9df1c54d004a7910d388004f69f4c61317e"
     },
     "CLAUDE.md": {
       "ownership": "omd-managed",
-      "digest": "41fbde2b6e1fd409d2973ff87e18fe061056766c075c6bfb2a0912421594b344"
+      "digest": "790b2f9da1853eaf18716af56a712d63cf86b33739fae1b514022ad5a96f6f1b"
     }
   }
 }

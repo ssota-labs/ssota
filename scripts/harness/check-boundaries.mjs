@@ -10,6 +10,8 @@
  *  - raw-palette            : [DS-02] raw Tailwind palette 클래스
  *  - legacy-runtime-guard   : [ARCH-03] generic runtime 식별자 복원
  *  - vertical-boundaries    : [ARCH-04] 버티컬(ontology·agents·platform·shared) 역방향 import
+ *  - action-commit-path     : [ACTION-01] runAction 밖에서 GraphWritePort 직접 호출
+ *  - worker-no-commit       : [ACTION-03] 워커 SDK·브리지에 graph.write / graph.createNode 등 커밋 표면
  *  - disable-audit          : boundary 룰 eslint-disable에 [ID] 사유 누락
  */
 import path from "node:path";
@@ -178,6 +180,64 @@ const allowedPaths = (name) => new Set(loadAllowlist(name).map((entry) => entry.
         }
       }
     }
+  }
+}
+
+// ── action-commit-path [ACTION-01] ───────────────────────────────────────────
+// runAction/applyEdits(use-cases/action)·GraphCommitPort 구현·테스트 헬퍼 밖에서
+// graphWrite.createNode|createEdge|updateNode|deleteNode|deleteEdge|createInitiativeBundle 를 직접 부르면 실패.
+{
+  const scanRoots = ["apps/web", "apps/mcp", "packages/core/src", "packages/adapter-postgres/src", "packages/agent-runtime/src"];
+  const DIRECT_WRITE = /\bgraphWrite\.(createNode|createEdge|updateNode|deleteNode|deleteEdge|createInitiativeBundle)\s*\(/;
+  const OWN = [
+    "packages/core/src/ontology/use-cases/action/",           // runAction·applyEdits — 유일 커밋 경로
+    "packages/adapter-postgres/src/ports/ontology/graph-commit-port.ts", // 트랜잭션 구현
+    "packages/core/src/ontology/testing/",                     // 인메모리 픽스처
+  ];
+  const allowed = contractAllowedPaths("ACTION-01");
+  for (const root of scanRoots) {
+    for (const file of walkFiles(root, { exts: [".ts", ".tsx"] })) {
+      if (/\.(test|spec)\.tsx?$/.test(file)) continue;
+      if (OWN.some((o) => file.startsWith(o))) continue;
+      if (allowed.has(file)) continue;
+      const source = stripComments(readText(file));
+      for (const hit of findLines(source, DIRECT_WRITE)) {
+        reporter.fail("ACTION-01", `${file}:${hit.line} runAction 밖에서 GraphWritePort 직접 쓰기 — ${hit.text}`, [
+          "그래프 쓰기는 runAction(ActionType + GraphEdits)을 경유합니다 — 검증·락·감사·멱등이 한 트랜잭션에 묶입니다",
+          "기존 use-case를 이관 중이면 rules.ts ACTION-01 allowlist에 {path, reason}으로 등록하세요 (이관 완료 시 제거)",
+        ]);
+      }
+    }
+  }
+}
+
+// ── worker-no-commit [ACTION-03] ─────────────────────────────────────────────
+// 워커 SDK(create-worker-sdk·generate-sdk-bridge-module)와 웹 SDK 호스트에 커밋 표면이 다시 생기면 실패.
+{
+  const files = [
+    "packages/agent-runtime/src/workers/create-worker-sdk.ts",
+    "packages/agent-runtime/src/workers/generate-sdk-bridge-module.ts",
+    "apps/web/lib/workers/create-worker-sdk-host.ts",
+  ];
+  // 정의/디스패치 표면: `write:` 블록, 또는 graph.createNode|updateNode|createEdge 를 실제 호출/처리하는 줄
+  const COMMIT_SURFACE = /(\bwrite\s*:\s*\{)|(call\(\s*["']graph\.(createNode|updateNode|createEdge)["'])|(wrapHostCall\([^)]*["']graph\.(createNode|updateNode|createEdge)["'])/;
+  const REJECT_MARK = /throw new Error\(/;
+  const allowed = contractAllowedPaths("ACTION-03");
+  for (const file of files) {
+    if (allowed.has(file)) continue;
+    let source;
+    try { source = stripComments(readText(file)); } catch { continue; }
+    const lines = source.split("\n");
+    lines.forEach((line, idx) => {
+      if (!COMMIT_SURFACE.test(line)) return;
+      // 웹 호스트의 case "graph.createNode": … throw new Error(...) 거부 분기는 허용 — 다음 5줄 안에 throw가 있으면 통과
+      const window = lines.slice(idx, idx + 6).join("\n");
+      if (/case\s+["']graph\.(createNode|updateNode|createEdge)["']/.test(line) && REJECT_MARK.test(window)) return;
+      reporter.fail("ACTION-03", `${file}:${idx + 1} 워커 커밋 표면 재도입 — ${line.trim().slice(0, 120)}`, [
+        "워커는 커밋하지 않습니다 — sdk.edits.* 로 GraphEdits를 조립해 return { edits } 하세요",
+        "커밋은 runAction의 FunctionEditsPlanner 경유로만 일어납니다 [ACTION-03]",
+      ]);
+    });
   }
 }
 
