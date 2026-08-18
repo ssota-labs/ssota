@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { graphEditsSchema } from "../graph/edits.js";
+import { graphEditsResultSchema, graphEditsSchema } from "../graph/edits.js";
 import { propertySchemaDefinitionSchema } from "../catalog/property-schema.js";
 
 /**
@@ -123,13 +123,7 @@ export const actionAuditRecordSchema = z.object({
   actorKind: z.enum(["user", "agent", "system"]),
   parameters: z.record(z.unknown()),
   edits: graphEditsSchema,
-  result: z.object({
-    refs: z.record(z.string().uuid()),
-    createdNodeIds: z.array(z.string().uuid()),
-    createdEdgeIds: z.array(z.string().uuid()),
-    updatedNodeIds: z.array(z.string().uuid()),
-    deletedEdgeIds: z.array(z.string().uuid()),
-  }),
+  result: graphEditsResultSchema,
   idempotencyKey: z.string().nullable(),
   createdAt: z.string().datetime(),
 });

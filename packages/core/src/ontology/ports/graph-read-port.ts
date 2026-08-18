@@ -20,6 +20,7 @@ export interface GraphReadPort {
   getNode(params: GetNodeInput): Promise<GraphNode | null>;
   /** Load by id only — for edge validation before project scope checks. */
   getNodeById(nodeId: string): Promise<GraphNode | null>;
+  getEdgeById(edgeId: string): Promise<GraphEdge | null>;
   traverseEdges(params: TraverseEdgesInput): Promise<GraphEdge[]>;
 }
 

@@ -69,13 +69,19 @@ export function createDbGraphCommitPort(db: Db, scope: GraphPortsScope): GraphCo
           }
         }
 
-        // 2) aggregate root 락 — 이후 read는 락 획득 후 상태
+        // 2) aggregate root 락 — 이후 read는 락 획득 후 상태.
+        // 스코프는 teamspace가 아니라 **organization**이다 — [GRAPH-03] 같은 org면 teamspace가 달라도
+        // 엣지를 걸 수 있으므로, cross-teamspace 소스 노드(또는 org-shared, teamspace_id IS NULL)도 잠글 수 있어야 한다.
         if (ctx.lockNodeId) {
           const locked = await tx.execute(
-            sql`select id from ${schema.nodes} where id = ${ctx.lockNodeId} and teamspace_id = ${teamspaceId} for update`,
+            sql`select n.id from ${schema.nodes} n
+                left join ${schema.teamspaces} t on t.id = n.teamspace_id
+                where n.id = ${ctx.lockNodeId}
+                  and (n.teamspace_id is null or t.organization_id = ${scope.organizationId})
+                for update of n`,
           );
           if (locked.length === 0) {
-            throw new Error(`lock target node ${ctx.lockNodeId} not found in teamspace`);
+            throw new Error(`lock target node ${ctx.lockNodeId} not found in organization`);
           }
         }
 
@@ -89,6 +95,7 @@ export function createDbGraphCommitPort(db: Db, scope: GraphPortsScope): GraphCo
           updateNode: (i) => graphWrite.updateNode(i),
           createEdge: (i) => graphWrite.createEdge(i),
           deleteEdge: (i) => graphWrite.deleteEdge(i),
+          deleteNode: (i) => graphWrite.deleteNode(i),
         };
         const result = await apply(writer);
 

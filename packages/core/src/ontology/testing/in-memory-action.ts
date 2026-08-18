@@ -93,5 +93,6 @@ function adaptWriter(
     updateNode: (i) => w.updateNode(i),
     createEdge: (i) => w.createEdge(i),
     deleteEdge: (i) => w.deleteEdge(i),
+    deleteNode: (i) => w.deleteNode(i),
   };
 }

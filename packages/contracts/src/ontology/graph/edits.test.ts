@@ -101,12 +101,13 @@ describe("GraphEdits — 통과", () => {
     if (op?.op === "set_status") expect(op.field).toBe("status");
   });
 
-  it("op 목록이 7개로 닫혀 있다 (5 편집 + 2 가드)", () => {
+  it("op 목록이 8개로 닫혀 있다 (6 편집 + 2 가드)", () => {
     expect(GRAPH_EDIT_OPS).toEqual([
       "create_node",
       "update_properties",
       "create_edge",
       "delete_edge",
+      "delete_node",
       "set_status",
       "assert",
       "assert_count",

@@ -50,6 +50,8 @@ export interface TxGraphWriter {
     properties: Record<string, unknown>;
   }): Promise<GraphEdge>;
   deleteEdge(input: { teamspaceId: string; edgeId: string }): Promise<void>;
+  /** 노드 + 부속 엣지 삭제 (어댑터 cascade). */
+  deleteNode(input: { teamspaceId: string; nodeId: string }): Promise<void>;
 }
 
 /**

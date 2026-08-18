@@ -7,7 +7,7 @@ import { z } from "zod";
  * 서술되어 `runAction`이 **한 트랜잭션**에서 커밋한다 (ADR-runtime-ontology).
  * 함수는 커밋하지 않는다 [ACTION-03] — 이 구조체를 반환할 뿐이다.
  *
- * op는 7개다: create_node · update_properties · create_edge · delete_edge · set_status
+ * op는 8개다: create_node · update_properties · create_edge · delete_edge · delete_node · set_status
  *   + 낙관적 가드 2개: assert · assert_count.
  * 분기·루프·산술식은 없다. 새 op는 ADR을 요구한다.
  *
@@ -39,6 +39,12 @@ export const createNodeEditSchema = z
     catalogKey: z.string().min(1),
     title: z.string().min(1),
     properties: z.record(z.unknown()).default({}),
+    /**
+     * Gate 평가의 subject 노드 (선택). before_create_node 정책의 경로 표현식은 "생성될 노드"가
+     * 아직 없으므로 이 노드에서 출발한다 — 예: 태스크 생성 시 initiative → PRD 승인 여부.
+     * 쓰기가 아니라 검증 힌트다.
+     */
+    gateSubject: nodeRefSchema.optional(),
   })
   .strict();
 
@@ -67,6 +73,14 @@ export const deleteEdgeEditSchema = z
   .object({
     op: z.literal("delete_edge"),
     edgeId: uuid,
+  })
+  .strict();
+
+/** 노드 삭제 — 부속 엣지는 어댑터가 cascade. 옛 deleteNode use-case를 [ACTION-01] 경로로 올리기 위한 op. */
+export const deleteNodeEditSchema = z
+  .object({
+    op: z.literal("delete_node"),
+    node: nodeRefSchema,
   })
   .strict();
 
@@ -123,6 +137,7 @@ export const graphEditSchema = z.discriminatedUnion("op", [
   updatePropertiesEditSchema,
   createEdgeEditSchema,
   deleteEdgeEditSchema,
+  deleteNodeEditSchema,
   setStatusEditSchema,
   assertEditSchema,
   assertCountEditSchema,
@@ -135,6 +150,7 @@ export const GRAPH_EDIT_OPS = [
   "update_properties",
   "create_edge",
   "delete_edge",
+  "delete_node",
   "set_status",
   "assert",
   "assert_count",
@@ -166,6 +182,7 @@ export const graphEditsSchema = z
       if (
         edit.op === "update_properties" ||
         edit.op === "set_status" ||
+        edit.op === "delete_node" ||
         edit.op === "assert" ||
         edit.op === "assert_count"
       ) {
@@ -173,6 +190,8 @@ export const graphEditsSchema = z
       } else if (edit.op === "create_edge") {
         if ("ref" in edit.from) uses.push(edit.from.ref);
         if ("ref" in edit.to) uses.push(edit.to.ref);
+      } else if (edit.op === "create_node" && edit.gateSubject && "ref" in edit.gateSubject) {
+        uses.push(edit.gateSubject.ref);
       }
       for (const r of uses) {
         if (!declared.has(r)) {
@@ -208,5 +227,6 @@ export const graphEditsResultSchema = z.object({
   createdEdgeIds: z.array(uuid),
   updatedNodeIds: z.array(uuid),
   deletedEdgeIds: z.array(uuid),
+  deletedNodeIds: z.array(uuid).default([]),
 });
 export type GraphEditsResult = z.infer<typeof graphEditsResultSchema>;

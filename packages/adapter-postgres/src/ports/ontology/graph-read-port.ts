@@ -199,6 +199,13 @@ export function createGraphReadPort(
       return rows[0] ? mapNode(rows[0]) : null;
     },
 
+    async getEdgeById(edgeId: string) {
+      const rows = await edgeSelect(db)
+        .where(eq(schema.edges.id, edgeId))
+        .limit(1);
+      return rows[0] ? mapEdge(rows[0]) : null;
+    },
+
     async traverseEdges(params: TraverseEdgesInput) {
       const direction = params.direction ?? "both";
       const conditions = [edgeTeamspaceScopeCond(), ...edgeAccountConds()];

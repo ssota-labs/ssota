@@ -258,6 +258,7 @@ async function applyEdits(
     createdEdgeIds: [],
     updatedNodeIds: [],
     deletedEdgeIds: [],
+    deletedNodeIds: [],
   };
 
   const gate = async (
@@ -308,7 +309,12 @@ async function applyEdits(
         } catch (err) {
           throw validationFailed(at, err);
         }
-        await gate("before_create_node", { catalogKey: edit.catalogKey, properties, title: edit.title });
+        await gate("before_create_node", {
+          catalogKey: edit.catalogKey,
+          subjectNodeId: edit.gateSubject ? resolveRef(edit.gateSubject, refs) : null,
+          properties,
+          title: edit.title,
+        });
         const node = await tx.createNode({
           teamspaceId,
           nodeCatalogId: entry.id,
@@ -407,6 +413,14 @@ async function applyEdits(
       case "delete_edge": {
         await tx.deleteEdge({ teamspaceId, edgeId: edit.edgeId });
         result.deletedEdgeIds.push(edit.edgeId);
+        break;
+      }
+      case "delete_node": {
+        const nodeId = resolveRef(edit.node, refs);
+        const existing = await graphRead.getNodeById(nodeId);
+        if (!existing) throw new GraphError("NOT_FOUND", `${at}: node ${nodeId}`);
+        await tx.deleteNode({ teamspaceId, nodeId });
+        result.deletedNodeIds.push(nodeId);
         break;
       }
       default: {
