@@ -52,7 +52,7 @@ export async function createNode(
 
   let validatedProperties: Record<string, unknown>;
   try {
-    validatedProperties = deps.catalog.validateNodeProperties(
+    validatedProperties = await deps.catalog.validateNodeProperties(
       catalogRef.key,
       input.properties,
     );

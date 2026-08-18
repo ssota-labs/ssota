@@ -5,6 +5,7 @@ import edgeCatalogSeed from "@ssota/contracts/seed-packs/software-development-wo
 import {
   getEdgeTypeEntry,
   getNodeTypeEntry,
+  compilePropertySchemaCached,
   isKnownNodeType,
   listEdgeTypes,
   listNodeTypes,
@@ -123,7 +124,7 @@ export function createDbCatalogReadPort(
 ): CatalogReadPort {
   const { organizationId } = scope;
 
-  return {
+  const port: CatalogReadPort = {
     async listNodeCatalog() {
       const rows = await db
         .select()
@@ -220,16 +221,23 @@ export function createDbCatalogReadPort(
         .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
         .slice(0, input.limit);
     },
-    validateNodeProperties(catalogKey, properties) {
-      if (isKnownNodeType(catalogKey)) {
-        return parseNodeProperties(catalogKey, properties);
-      }
-      return (properties ?? {}) as Record<string, unknown>;
+    async validateNodeProperties(catalogKey, properties) {
+      // [GRAPH-05] 항상 카탈로그 행의 property_schema가 기준 — 런타임 정의 타입도 검증된다.
+      // 출하 타입의 하드코딩 Zod(parseNodeProperties)는 시드가 property_schema를 채우기
+      // 전까지의 보강 검증으로 함께 적용한다 (둘 다 통과해야 함).
+      const row = await port.getNodeCatalogByKey(catalogKey);
+      if (!row) throw new Error(`UNKNOWN_NODE_TYPE:${catalogKey}`);
+      const bySchema = compilePropertySchemaCached(row.propertySchema)(properties);
+      return isKnownNodeType(catalogKey) ? parseNodeProperties(catalogKey, bySchema) : bySchema;
     },
-    validateEdgeProperties(_catalogKey, properties) {
-      return (properties ?? {}) as Record<string, unknown>;
+    async validateEdgeProperties(catalogKey, properties) {
+      const row = await port.getEdgeCatalogByKey(catalogKey);
+      if (!row) throw new Error(`UNKNOWN_EDGE_TYPE:${catalogKey}`);
+      if (!row.propertySchema) return (properties ?? {}) as Record<string, unknown>;
+      return compilePropertySchemaCached(row.propertySchema)(properties);
     },
   };
+  return port;
 }
 
 /**
@@ -274,6 +282,10 @@ export async function seedDomainCatalog(
         label: entry.label,
         description: entry.description,
         keywords: entry.keywords,
+        // 출하 타입의 정본 스키마는 contracts의 하드코딩 Zod(superRefine·union 포함)라
+        // 닫힌 JSON Schema 서브셋으로 손실 없이 내릴 수 없다. 여기서는 빈 스키마를 두고
+        // validateNodeProperties가 Zod를 함께 적용한다. 런타임 정의 타입은 반대로
+        // property_schema가 유일 방어선이다 — PLAN-finance-ontology-first-slice P0.
         propertySchema: { type: "object" },
       })
       .returning({ id: schema.nodeCatalog.id });

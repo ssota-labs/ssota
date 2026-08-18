@@ -1,6 +1,7 @@
 import {
   getEdgeTypeEntry,
   getNodeTypeEntry,
+  isKnownEdgeType,
   isKnownNodeType,
   listEdgeTypes,
   listNodeTypes,
@@ -80,13 +81,17 @@ export function createContractsCatalogReadPort(): CatalogReadPort {
       }
       return rankCatalogCandidates(input.query, candidates, input.limit);
     },
-    validateNodeProperties(catalogKey, properties) {
+    async validateNodeProperties(catalogKey, properties) {
       if (!isKnownNodeType(catalogKey)) {
         throw new Error(`UNKNOWN_NODE_TYPE:${catalogKey}`);
       }
       return parseNodeProperties(catalogKey, properties);
     },
-    validateEdgeProperties(_catalogKey, properties) {
+    async validateEdgeProperties(catalogKey, properties) {
+      // contracts 기반 포트는 출하 엣지 타입만 안다 — 존재 확인 후 통과.
+      if (!isKnownEdgeType(catalogKey)) {
+        throw new Error(`UNKNOWN_EDGE_TYPE:${catalogKey}`);
+      }
       return (properties ?? {}) as Record<string, unknown>;
     },
   };

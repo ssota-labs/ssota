@@ -75,24 +75,24 @@ describe("createContractsCatalogReadPort", () => {
     });
   });
 
-  it("validates known node properties", () => {
-    const parsed = catalog.validateNodeProperties("hypothesis", {
+  it("validates known node properties", async () => {
+    const parsed = await catalog.validateNodeProperties("hypothesis", {
       status: "validated",
       summary: "Test",
     });
     expect(parsed.status).toBe("validated");
   });
 
-  it("rejects invalid properties for known catalog key", () => {
-    expect(() =>
+  it("rejects invalid properties for known catalog key", async () => {
+    await expect(
       catalog.validateNodeProperties("hypothesis", { status: "invalid" }),
-    ).toThrow();
+    ).rejects.toThrow();
   });
 
-  it("rejects unknown catalog key on validate", () => {
-    expect(() =>
+  it("rejects unknown catalog key on validate", async () => {
+    await expect(
       catalog.validateNodeProperties("unknown_type", { foo: "bar" }),
-    ).toThrow(/UNKNOWN_NODE_TYPE/);
+    ).rejects.toThrow(/UNKNOWN_NODE_TYPE/);
   });
 
   it("parses ui_component v2 from properties.files", () => {

@@ -31,7 +31,7 @@ export async function updateNode(
 
   if (input.properties !== undefined) {
     try {
-      deps.catalog.validateNodeProperties(existing.catalogKey, input.properties);
+      await deps.catalog.validateNodeProperties(existing.catalogKey, input.properties);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid properties";
       throw new GraphError("VALIDATION_FAILED", message);

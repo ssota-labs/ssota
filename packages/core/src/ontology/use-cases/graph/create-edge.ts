@@ -7,7 +7,13 @@ import type { GraphWritePort } from "../../ports/graph-write-port.js";
 async function resolveEdgeCatalog(
   catalog: CatalogReadPort,
   input: CreateEdgeInput,
-): Promise<{ id: string; key: string }> {
+): Promise<{ id: string; key: string; domainCatalogIds: string[]; rangeCatalogIds: string[] }> {
+  const pick = (entry: { id: string; key: string; domainCatalogIds: string[]; rangeCatalogIds: string[] }) => ({
+    id: entry.id,
+    key: entry.key,
+    domainCatalogIds: entry.domainCatalogIds,
+    rangeCatalogIds: entry.rangeCatalogIds,
+  });
   if (input.edgeCatalogId) {
     const entry = await catalog.getEdgeCatalogById(input.edgeCatalogId);
     if (!entry) {
@@ -16,7 +22,7 @@ async function resolveEdgeCatalog(
         `Edge catalog id '${input.edgeCatalogId}' not found`,
       );
     }
-    return { id: entry.id, key: entry.key };
+    return pick(entry);
   }
   if (input.catalogKey) {
     const entry = await catalog.getEdgeCatalogByKey(input.catalogKey);
@@ -26,7 +32,7 @@ async function resolveEdgeCatalog(
         `Edge catalog key '${input.catalogKey}' not found`,
       );
     }
-    return { id: entry.id, key: entry.key };
+    return pick(entry);
   }
   throw new GraphError(
     "VALIDATION_FAILED",
@@ -56,9 +62,29 @@ export async function createEdge(
     throw new GraphError("NOT_FOUND", "Target node not found");
   }
 
+  // [GRAPH-05] edge domain/range — 카탈로그가 비어 있으면(빈 배열) 무제약, 아니면 강제.
+  if (
+    catalogRef.domainCatalogIds.length > 0 &&
+    !catalogRef.domainCatalogIds.includes(source.nodeCatalogId)
+  ) {
+    throw new GraphError(
+      "VALIDATION_FAILED",
+      `Edge '${catalogRef.key}' domain violation: source type '${source.catalogKey}' is not allowed`,
+    );
+  }
+  if (
+    catalogRef.rangeCatalogIds.length > 0 &&
+    !catalogRef.rangeCatalogIds.includes(target.nodeCatalogId)
+  ) {
+    throw new GraphError(
+      "VALIDATION_FAILED",
+      `Edge '${catalogRef.key}' range violation: target type '${target.catalogKey}' is not allowed`,
+    );
+  }
+
   let validatedProperties: Record<string, unknown>;
   try {
-    validatedProperties = deps.catalog.validateEdgeProperties(
+    validatedProperties = await deps.catalog.validateEdgeProperties(
       catalogRef.key,
       input.properties,
     );
