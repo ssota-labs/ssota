@@ -1,7 +1,10 @@
 "use server";
 
 import { isDisplayName, isEnglishDisplayName } from "@ssota/core";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { setActiveTeamspace } from "@/lib/console/active-teamspace";
+import { DEFAULT_LANDING_SEGMENT } from "@/lib/company-workspace/navigation";
 import { orgPath } from "@/lib/console/paths";
 import { getOnboardingPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -75,10 +78,14 @@ export async function completeTemplateOnboardingAction(formData: FormData) {
     templateId,
   });
 
+  // flat 콘솔 URL은 proxy가 활성 teamspace 쿠키로 rewrite한다 — 새 teamspace를 여기서 활성화하고
+  // /{org}가 아니라 랜딩(/{org}/overview)으로 직접 보낸다. (/{org} 라우트 핸들러는 서버 액션
+  // redirect의 대상이 되면 headless soft-nav 스톨 — /auth/continue 교훈)
+  setActiveTeamspace(await cookies(), project.slug);
   redirect(
-    orgPath({
-      orgSlug: organization.slug,
-      teamspaceSlug: project.slug,
-    }),
+    orgPath(
+      { orgSlug: organization.slug, teamspaceSlug: project.slug },
+      DEFAULT_LANDING_SEGMENT,
+    ),
   );
 }
