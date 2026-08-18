@@ -300,3 +300,77 @@ describe("runAction — 통과와 감사·멱등", () => {
     expect(out.result.createdNodeIds).toHaveLength(1);
   });
 });
+
+/** L3(B 모델) — 함수가 락 전 상태로 계산한 편집을 가드와 함께 반환한다고 가정. */
+const closePeriodL3: ActionType = parseActionType({
+  key: "finance.close_fiscal_period_l3",
+  label: "기간 마감 (L3 planner)",
+  parameters: { type: "object", properties: { periodId: { type: "string", format: "uuid" }, seenEntries: { type: "integer", minimum: 0 } }, required: ["periodId", "seenEntries"] },
+  writes: ["finance.fiscal_period"],
+  aggregateRootParam: "periodId",
+  edits: { kind: "function", workerKey: "finance.close_period" },
+});
+
+describe("runAction — 낙관적 가드 (B 모델)", () => {
+  /** planner 스텁: 함수가 "내가 본 상태"를 가드로 반환한다고 흉내낸다. */
+  const plannerReturning = (edits: unknown[]) => ({
+    async plan() { return { edits } as never; },
+  });
+
+  it("assert 위반(이미 closed)은 PRECONDITION_FAILED이고 아무것도 바뀌지 않는다", async () => {
+    const { deps, graph, graphWrite, store } = setup();
+    const p = await graphWrite.createNode({ teamspaceId: TS, nodeCatalogId: ID.period, catalogKey: "finance.fiscal_period", title: "p", properties: { status: "closed" }, schemaVersion: 1 });
+    const d = { ...deps, actions: createInMemoryActionReadPort([closePeriodL3]), planner: plannerReturning([
+      { op: "assert", node: { id: p.id }, field: "status", in: ["open"] },
+      { op: "set_status", node: { id: p.id }, field: "status", to: "closed" },
+    ]) };
+    await expectGraphError(
+      runAction(d, { teamspaceId: TS, actionKey: "finance.close_fiscal_period_l3", parameters: { periodId: p.id, seenEntries: 0 } }, owner),
+      "PRECONDITION_FAILED", /expected one of open/,
+    );
+    expect(graph.nodes.get(p.id)?.properties.status).toBe("closed");
+    expect(store.audits).toHaveLength(0);
+  });
+
+  it("assert_count 위반(함수가 본 뒤 전표가 추가됨)은 PRECONDITION_FAILED로 롤백된다", async () => {
+    const { deps, graph, graphWrite, store, mkAccount } = setup();
+    const p = await graphWrite.createNode({ teamspaceId: TS, nodeCatalogId: ID.period, catalogKey: "finance.fiscal_period", title: "p", properties: { status: "open" }, schemaVersion: 1 });
+    // 함수는 in_period 엣지 0개를 봤다고 가정. 그 사이 전표 1건이 기간에 귀속됨.
+    const je = await graphWrite.createNode({ teamspaceId: TS, nodeCatalogId: ID.entry, catalogKey: "finance.journal_entry", title: "JE", properties: { entryNo: "1", postedAt: "2026-08-01", status: "posted" }, schemaVersion: 1 });
+    await graphWrite.createEdge({ teamspaceId: TS, edgeCatalogId: "00000000-0000-4000-8000-000000000202", catalogKey: "finance.journal_entry.in_period", sourceNodeId: je.id, targetNodeId: p.id, properties: {} });
+    void mkAccount;
+    const d = { ...deps, actions: createInMemoryActionReadPort([closePeriodL3]), planner: plannerReturning([
+      { op: "assert_count", node: { id: p.id }, edgeCatalogKey: "finance.journal_entry.in_period", direction: "in", equals: 0 },
+      { op: "set_status", node: { id: p.id }, field: "status", to: "closed" },
+    ]) };
+    await expectGraphError(
+      runAction(d, { teamspaceId: TS, actionKey: "finance.close_fiscal_period_l3", parameters: { periodId: p.id, seenEntries: 0 } }, owner),
+      "PRECONDITION_FAILED", /expected 0 .* found 1/,
+    );
+    expect(graph.nodes.get(p.id)?.properties.status).toBe("open");
+    expect(store.audits).toHaveLength(0);
+  });
+
+  it("가드가 모두 성립하면 커밋된다", async () => {
+    const { deps, graph, graphWrite } = setup();
+    const p = await graphWrite.createNode({ teamspaceId: TS, nodeCatalogId: ID.period, catalogKey: "finance.fiscal_period", title: "p", properties: { status: "open" }, schemaVersion: 1 });
+    const d = { ...deps, actions: createInMemoryActionReadPort([closePeriodL3]), planner: plannerReturning([
+      { op: "assert", node: { id: p.id }, field: "status", in: ["open"] },
+      { op: "assert_count", node: { id: p.id }, edgeCatalogKey: "finance.journal_entry.in_period", direction: "in", equals: 0 },
+      { op: "set_status", node: { id: p.id }, field: "status", to: "closed" },
+    ]) };
+    const out = await runAction(d, { teamspaceId: TS, actionKey: "finance.close_fiscal_period_l3", parameters: { periodId: p.id, seenEntries: 0 } }, owner);
+    expect(out.result.updatedNodeIds).toEqual([p.id]);
+    expect(graph.nodes.get(p.id)?.properties.status).toBe("closed");
+  });
+
+  it("function 액션인데 planner가 없으면 PRECONDITION_FAILED", async () => {
+    const { deps, graphWrite } = setup();
+    const p = await graphWrite.createNode({ teamspaceId: TS, nodeCatalogId: ID.period, catalogKey: "finance.fiscal_period", title: "p", properties: {}, schemaVersion: 1 });
+    const d = { ...deps, actions: createInMemoryActionReadPort([closePeriodL3]) };
+    await expectGraphError(
+      runAction(d, { teamspaceId: TS, actionKey: "finance.close_fiscal_period_l3", parameters: { periodId: p.id, seenEntries: 0 } }, owner),
+      "PRECONDITION_FAILED", /no planner/,
+    );
+  });
+});
