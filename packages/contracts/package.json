@@ -9,20 +9,20 @@
       "default": "./dist/index.js"
     },
     "./catalog": {
-      "types": "./dist/catalog/index.d.ts",
-      "default": "./dist/catalog/index.js"
+      "types": "./dist/ontology/catalog/index.d.ts",
+      "default": "./dist/ontology/catalog/index.js"
     },
     "./graph": {
-      "types": "./dist/graph/index.d.ts",
-      "default": "./dist/graph/index.js"
+      "types": "./dist/ontology/graph/index.d.ts",
+      "default": "./dist/ontology/graph/index.js"
     },
     "./agents": {
-      "types": "./dist/agents/index.d.ts",
-      "default": "./dist/agents/index.js"
+      "types": "./dist/agents/builtin/index.d.ts",
+      "default": "./dist/agents/builtin/index.js"
     },
     "./page": {
-      "types": "./dist/page/index.d.ts",
-      "default": "./dist/page/index.js"
+      "types": "./dist/ontology/page/index.d.ts",
+      "default": "./dist/ontology/page/index.js"
     },
     "./invariants": {
       "types": "./dist/invariants/index.d.ts",

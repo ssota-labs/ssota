@@ -107,6 +107,12 @@
               <td class="p-4 align-middle text-muted-foreground max-w-md">타입과 선언적 액션은 런타임 데이터로 정의하고 로직은 생성된 코드로 sandbox에서 실행한다. 모든 편집은 닫힌 어휘를 거쳐 단일 커밋 경로로 모인다.</td>
               <td class="p-4 align-middle"><span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors text-foreground" data-status="accepted">accepted</span></td>
             </tr>
+            <tr class="border-b transition-colors hover:bg-muted/50">
+              <td class="p-4 align-middle whitespace-nowrap"><a class="inline-flex" href="./ADR-vertical-package-structure.html"><span class="omd-id">ADR-vertical-package-structure</span></a></td>
+              <td class="p-4 align-middle font-medium"><a class="hover:underline underline-offset-4" href="./ADR-vertical-package-structure.html">Vertical Folder Structure inside Horizontal Packages</a></td>
+              <td class="p-4 align-middle text-muted-foreground max-w-md">패키지는 수평(contracts·core·adapter)으로 유지하고, 각 패키지 내부를 ontology·agents·platform·shared 버티컬 폴더로 나눈다. 버티컬 간 의존 방향은 harness가 강제한다.</td>
+              <td class="p-4 align-middle"><span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors text-foreground" data-status="accepted">accepted</span></td>
+            </tr>
           </tbody>
         </table>
       </div>

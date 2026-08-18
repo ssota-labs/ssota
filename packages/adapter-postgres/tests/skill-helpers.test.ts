@@ -5,7 +5,7 @@ import {
   parseGithubRepo,
   resolveGithubDefaultRef,
   skillDirFromPath,
-} from "../src/ports/skill-helpers.js";
+} from "../src/ports/agents/skill-helpers.js";
 
 describe("skill-helpers", () => {
   it("hashes files deterministically", () => {

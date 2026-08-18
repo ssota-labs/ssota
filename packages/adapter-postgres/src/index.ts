@@ -34,7 +34,7 @@ export {
   type AgentRunMessageRecord,
   type ListAgentRunsInput,
   type TranscriptMessageInput,
-} from "./ports/agent-runs-port.js";
+} from "./ports/agents/agent-runs-port.js";
 export {
   createSchedulePort,
   type SchedulePort,
@@ -42,13 +42,13 @@ export {
   type ScheduleRecord,
   type CreateScheduleInput,
   type UpdateScheduleInput,
-} from "./ports/schedule-port.js";
-export { createDbAccountReadPort } from "./ports/account-read-port.js";
+} from "./ports/agents/schedule-port.js";
+export { createDbAccountReadPort } from "./ports/platform/account-read-port.js";
 export {
   createBetaSignupPort,
   type BetaSignupPort,
   type BetaSignupRecord,
-} from "./ports/beta-signup-port.js";
+} from "./ports/platform/beta-signup-port.js";
 export {
   createDbBillingPort,
   createDbBillingReadPort,
@@ -57,17 +57,17 @@ export {
   ensureOrganizationBillingRow,
   getOrganizationIdByStripeCustomerId,
   BILLABLE_ROLES,
-} from "./ports/billing-port.js";
+} from "./ports/platform/billing-port.js";
 export {
   createConnectorToolSettingsPort,
   type ConnectorToolSettingsPort,
-} from "./ports/connector-tool-settings-port.js";
+} from "./ports/agents/connector-tool-settings-port.js";
 export {
   createOrgMembershipPort,
   type OrgMembershipPort,
-} from "./ports/org-membership-port.js";
-export { createOrganizationSettingsPort } from "./ports/organization-settings-port.js";
-export { createOrganizationMembersPort } from "./ports/organization-members-port.js";
+} from "./ports/platform/org-membership-port.js";
+export { createOrganizationSettingsPort } from "./ports/platform/organization-settings-port.js";
+export { createOrganizationMembersPort } from "./ports/platform/organization-members-port.js";
 export {
   createAccountPort,
   createAccountConnectionPort,
@@ -77,31 +77,31 @@ export {
   type AccountConnectionRecord,
   type ConnectCredentialScope,
   type ConnectCredentialScopeRecord,
-} from "./ports/account-port.js";
+} from "./ports/platform/account-port.js";
 export {
   createChatPort,
   type ChatScope,
   type ChatThreadRecord,
   type ChatMessageRecord,
   type AppendChatMessageInput,
-} from "./ports/chat-port.js";
+} from "./ports/agents/chat-port.js";
 export {
   createChatWorkspacePort,
   type ChatWorkspaceTarget,
   type ChatWorkspaceRow,
   type LinkChatWorkspaceInput,
-} from "./ports/chat-workspace-port.js";
+} from "./ports/agents/chat-workspace-port.js";
 export {
   seedDomainCatalog,
   createDbCatalogReadPort,
-} from "./ports/db-catalog-read-port.js";
+} from "./ports/ontology/db-catalog-read-port.js";
 export {
   registerTeamspaceOrganization,
   getCachedOrganizationIdForTeamspace,
   requireCachedOrganizationIdForTeamspace,
   resolveOrganizationIdForTeamspace,
 } from "./teamspace-org-scope.js";
-export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";
+export { createDbCatalogWritePort } from "./ports/ontology/db-catalog-write-port.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,

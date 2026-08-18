@@ -93,7 +93,7 @@
     },
     ".omd/dbs/adr/index.html": {
       "ownership": "omd-managed",
-      "digest": "1bb420e48ab930decda8fdcb25100c74db01c18de0a55e49e89c1dbd786642d2"
+      "digest": "fdd278648dc86e46a13c500cb30bc300cd7ed1fc46c18c919e24c6718111a2af"
     },
     ".omd/dbs/specs/index.html": {
       "ownership": "omd-managed",
@@ -185,11 +185,11 @@
     },
     "AGENTS.md": {
       "ownership": "omd-managed",
-      "digest": "7bb42ddc373e4b93ce0dd5f2a9d848630ad5315855feb11b415a8bb23fdb818e"
+      "digest": "d109375fb86dbec8eace810d7151a04963c0f09b0a563e1ae90e4be1019eb681"
     },
     "CLAUDE.md": {
       "ownership": "omd-managed",
-      "digest": "adc64b6c3d38349363320c648e9189f592af3de75b1334cbb910fc7977a1ced1"
+      "digest": "41fbde2b6e1fd409d2973ff87e18fe061056766c075c6bfb2a0912421594b344"
     }
   }
 }

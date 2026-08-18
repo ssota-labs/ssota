@@ -3,8 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const instructionsDir = join(root, "src/workflows/instructions");
-const outFile = join(root, "src/workflows/instruction-bodies.ts");
+const instructionsDir = join(root, "src/agents/workflows/instructions");
+const outFile = join(root, "src/agents/workflows/instruction-bodies.ts");
 
 const files = readdirSync(instructionsDir).filter((name) => name.endsWith(".md"));
 const entries = files.map((filename) => {

@@ -1,7 +1,7 @@
 import type { Db } from "../../db/client.js";
-import { createDbAccountReadPort } from "../../ports/account-read-port.js";
-import { createAccountConnectionPort } from "../../ports/account-port.js";
-import { createChatWorkspacePort } from "../../ports/chat-workspace-port.js";
+import { createDbAccountReadPort } from "../../ports/platform/account-read-port.js";
+import { createAccountConnectionPort } from "../../ports/platform/account-port.js";
+import { createChatWorkspacePort } from "../../ports/agents/chat-workspace-port.js";
 
 const SEED_SLACK_WORKSPACES = [
   { workspaceKey: "T01SSOTA-SEED", name: "SSOTA Labs" },

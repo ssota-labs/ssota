@@ -6,7 +6,7 @@ import {
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "../src/index.js";
-import { createSkillPort } from "../src/ports/skill-port.js";
+import { createSkillPort } from "../src/ports/agents/skill-port.js";
 import { seedBuiltinSkills } from "../src/scripts/seed/builtin-skills.js";
 import { seedCommunitySkills } from "../src/scripts/seed/community-skills.js";
 import * as schema from "../src/db/schema.js";

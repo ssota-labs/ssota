@@ -9,7 +9,7 @@ import {
 import { and, eq, sql } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { seedDomainCatalog } from "../../ports/db-catalog-read-port.js";
+import { seedDomainCatalog } from "../../ports/ontology/db-catalog-read-port.js";
 import { resolveOrganizationIdForTeamspace } from "../../teamspace-org-scope.js";
 
 /** One evergreen container per project — dev track (Console v2.7). */

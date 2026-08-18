@@ -6,11 +6,11 @@ import {
 import { SWDL_AGENT_DEFINITION_SEEDS } from "@ssota/contracts/agents";
 import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
-import { seedDomainCatalog } from "./db-catalog-read-port.js";
+import { seedDomainCatalog } from "./ontology/db-catalog-read-port.js";
 import { resolveOrganizationIdForTeamspace } from "../teamspace-org-scope.js";
-import { seedAgentDefinitions } from "./agent-definition-port.js";
-import { seedPages } from "./page-port.js";
-import { seedWorkCycleAndGatePolicies } from "./seed-work-cycles.js";
+import { seedAgentDefinitions } from "./agents/agent-definition-port.js";
+import { seedPages } from "./ontology/page-port.js";
+import { seedWorkCycleAndGatePolicies } from "./ontology/seed-work-cycles.js";
 
 export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
   meta: {

@@ -11,30 +11,30 @@ import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 export type { PortScope };
-export { createConsolePort } from "./console.js";
-export { createOnboardingPort } from "./onboarding.js";
-export { createGraphPorts } from "./create-graph-ports.js";
-export { createGraphReadPort } from "./graph-read-port.js";
-export { createGraphWritePort } from "./graph-write-port.js";
+export { createConsolePort } from "./platform/console.js";
+export { createOnboardingPort } from "./platform/onboarding.js";
+export { createGraphPorts } from "./ontology/create-graph-ports.js";
+export { createGraphReadPort } from "./ontology/graph-read-port.js";
+export { createGraphWritePort } from "./ontology/graph-write-port.js";
 export {
   createAgentDefinitionPort,
   seedAgentDefinitions,
   createWorkflowInstructionPort,
   seedWorkflowInstructions,
-} from "./agent-definition-port.js";
+} from "./agents/agent-definition-port.js";
 export {
   createTeamspaceMainConfigPort,
   seedTeamspaceMainConfig,
-} from "./teamspace-main-config-port.js";
-export { createWorkerPort, createScriptToolPort, listBuilderWorkersByKind } from "./worker-port.js";
-export { createSkillPort } from "./skill-port.js";
+} from "./agents/teamspace-main-config-port.js";
+export { createWorkerPort, createScriptToolPort, listBuilderWorkersByKind } from "./ontology/worker-port.js";
+export { createSkillPort } from "./agents/skill-port.js";
 export {
   createSandboxEnvironmentPort,
   createSandboxSessionRecordPort,
-} from "./sandbox-environment-port.js";
-export { createPagePort, seedPages } from "./page-port.js";
-export { createPageViewStatePort } from "./page-view-state-port.js";
-export { seedWorkCycleAndGatePolicies } from "./seed-work-cycles.js";
+} from "./shared/sandbox-environment-port.js";
+export { createPagePort, seedPages } from "./ontology/page-port.js";
+export { createPageViewStatePort } from "./ontology/page-view-state-port.js";
+export { seedWorkCycleAndGatePolicies } from "./ontology/seed-work-cycles.js";
 export {
   applyTemplate,
   BUILTIN_TEMPLATES,
