@@ -29,7 +29,26 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
   pages: pagesTreeSeed as unknown as TemplateBundle["pages"],
 };
 
-export const BUILTIN_TEMPLATES: TemplateBundle[] = [SOFTWARE_DEV_TEMPLATE];
+/**
+ * 빈 워크스페이스 — **기본 템플릿**. 카탈로그·에이전트·페이지를 아무것도 심지 않는다.
+ * 도메인(finance 등)은 Ontology 페이지·에이전트·템플릿으로 사용자가 정의한다 (AIP식 IA).
+ * SWDL은 선택 템플릿으로 남긴다 — 코드 삭제는 finance 검증 후 (ADR-aip-console-concepts).
+ */
+export const EMPTY_TEMPLATE: TemplateBundle = {
+  meta: {
+    id: "empty",
+    name: "Empty workspace",
+    description:
+      "Start from a blank ontology. Define object types, links, actions and pages yourself or with an agent.",
+    category: "General",
+  },
+  catalog: { nodeTypeKeys: [], edgeTypeKeys: [] },
+  agentDefinitions: [],
+  pages: [],
+};
+
+/** 첫 항목이 온보딩 기본 선택이다. */
+export const BUILTIN_TEMPLATES: TemplateBundle[] = [EMPTY_TEMPLATE, SOFTWARE_DEV_TEMPLATE];
 
 export function getTemplateBundleById(templateId: string): TemplateBundle | null {
   return BUILTIN_TEMPLATES.find((template) => template.meta.id === templateId) ?? null;

@@ -39,6 +39,7 @@ export {
   applyTemplate,
   BUILTIN_TEMPLATES,
   getTemplateBundleById,
+  EMPTY_TEMPLATE,
   SOFTWARE_DEV_TEMPLATE,
 } from "./templates.js";
 
