@@ -1,6 +1,8 @@
 import type { WorkerPermissions } from "@ssota/contracts";
 import type { WorkerSdkHost } from "./worker-sdk-host.js";
 
+type NodeRefLike = { id: string } | { ref: string };
+
 export type WorkerSdk = {
   dryRun: boolean;
   log: (...args: unknown[]) => void;
@@ -10,11 +12,17 @@ export type WorkerSdk = {
       getNode: (input: unknown) => Promise<unknown>;
       traverseEdges: (input: unknown) => Promise<unknown>;
     };
-    write: {
-      createNode: (input: unknown) => Promise<unknown>;
-      updateNode: (input: unknown) => Promise<unknown>;
-      createEdge: (input: unknown) => Promise<unknown>;
-    };
+    // [ACTION-03] 워커는 커밋하지 않는다 — graph.write.* 없음. 편집은 GraphEdits로 반환.
+  };
+  /** GraphEdits 빌더 (순수 — 호스트 호출 없음). return { edits: [...] }에 쓴다. */
+  edits: {
+    createNode: (catalogKey: string, title: string, properties?: Record<string, unknown>, ref?: string) => Record<string, unknown>;
+    updateProperties: (node: NodeRefLike, properties: Record<string, unknown>, title?: string) => Record<string, unknown>;
+    createEdge: (catalogKey: string, from: NodeRefLike, to: NodeRefLike, properties?: Record<string, unknown>, ref?: string) => Record<string, unknown>;
+    deleteEdge: (edgeId: string) => Record<string, unknown>;
+    setStatus: (node: NodeRefLike, to: string, from?: string[], field?: string) => Record<string, unknown>;
+    assert: (node: NodeRefLike, field: string, cond: { in?: unknown[]; notIn?: unknown[]; ifMissing?: "fail" | "pass" }) => Record<string, unknown>;
+    assertCount: (node: NodeRefLike, edgeCatalogKey: string, cond: { equals?: number; min?: number; max?: number }, direction?: "out" | "in") => Record<string, unknown>;
   };
   tasks: {
     query: (input: unknown) => Promise<unknown>;
@@ -48,7 +56,6 @@ export function createWorkerSdk(
   dryRun: boolean,
 ): WorkerSdk {
   const canRead = permissions.graphRead;
-  const canWrite = permissions.graphWrite && permissions.canMutate;
   const canTasks = permissions.canMutate;
   const connectorScopes = new Set(permissions.connectorScopes);
 
@@ -73,14 +80,15 @@ export function createWorkerSdk(
             "graphRead",
           ),
       },
-      write: {
-        createNode: (input) =>
-          wrapHostCall(host, "graph.createNode", input, dryRun, canWrite, "graphWrite"),
-        updateNode: (input) =>
-          wrapHostCall(host, "graph.updateNode", input, dryRun, canWrite, "graphWrite"),
-        createEdge: (input) =>
-          wrapHostCall(host, "graph.createEdge", input, dryRun, canWrite, "graphWrite"),
-      },
+    },
+    edits: {
+      createNode: (catalogKey, title, properties, ref) => ({ op: "create_node", catalogKey, title, properties: properties ?? {}, ...(ref ? { ref } : {}) }),
+      updateProperties: (node, properties, title) => ({ op: "update_properties", node, properties, ...(title ? { title } : {}) }),
+      createEdge: (catalogKey, from, to, properties, ref) => ({ op: "create_edge", catalogKey, from, to, properties: properties ?? {}, ...(ref ? { ref } : {}) }),
+      deleteEdge: (edgeId) => ({ op: "delete_edge", edgeId }),
+      setStatus: (node, to, from, field) => ({ op: "set_status", node, to, ...(from ? { from } : {}), ...(field ? { field } : {}) }),
+      assert: (node, field, cond) => ({ op: "assert", node, field, ...cond }),
+      assertCount: (node, edgeCatalogKey, cond, direction) => ({ op: "assert_count", node, edgeCatalogKey, ...cond, ...(direction ? { direction } : {}) }),
     },
     tasks: {
       query: (input) =>

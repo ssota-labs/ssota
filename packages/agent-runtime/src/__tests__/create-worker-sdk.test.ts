@@ -41,19 +41,18 @@ describe("createWorkerSdk", () => {
     expect(invoke).toHaveBeenCalledWith("graph.queryNodes", { catalogKey: "task" });
   });
 
-  it("denies graph write without permission", async () => {
+  it("[ACTION-03] 워커 SDK에 graph.write가 없다 — 편집은 edits 빌더로 서술한다", () => {
     const host: WorkerSdkHost = { invoke: vi.fn() };
     const sdk = createWorkerSdk(
       host,
-      {
-        graphRead: true,
-        graphWrite: false,
-        connectorScopes: [],
-        canMutate: false,
-      },
+      { graphRead: true, graphWrite: true, connectorScopes: [], canMutate: true },
       false,
     );
-
-    await expect(sdk.graph.write.createNode({})).rejects.toThrow("graphWrite");
+    expect((sdk.graph as Record<string, unknown>).write).toBeUndefined();
+    // 빌더는 순수 — 호스트 호출 0
+    const edit = sdk.edits.createNode("finance.journal_entry", "JE-1", { entryNo: "JE-1" }, "entry");
+    expect(edit).toEqual({ op: "create_node", catalogKey: "finance.journal_entry", title: "JE-1", properties: { entryNo: "JE-1" }, ref: "entry" });
+    expect(sdk.edits.assert({ ref: "entry" }, "status", { in: ["posted"] })).toEqual({ op: "assert", node: { ref: "entry" }, field: "status", in: ["posted"] });
+    expect(host.invoke).not.toHaveBeenCalled();
   });
 });
