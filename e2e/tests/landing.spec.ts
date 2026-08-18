@@ -23,7 +23,7 @@ test.describe("landing page", () => {
       page
         .locator("section")
         .first()
-        .getByRole("button", { name: "베타 신청하기" }),
+        .getByRole("link", { name: "로그인으로 들어가기" }),
     ).toBeVisible();
 
     await expect(
