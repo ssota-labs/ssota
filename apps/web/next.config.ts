@@ -10,11 +10,16 @@ import traceManifest from "../../packages/studio-build/studio-trace-manifest.jso
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(configDir, "../..");
 
-/** Sentry CLI expects an org slug; numeric SENTRY_ORG values mismatch auth tokens. */
-function resolveSentryBuildOrg(): string | undefined {
-  const org = process.env.SENTRY_ORG?.trim();
-  if (!org || /^\d+$/.test(org)) return undefined;
-  return org;
+/**
+ * Sentry CLI expects org/project **slugs**; numeric ids (dashboard URL에서 복사한
+ * `45116307…` 류)를 넣으면 "Project not found"로 업로드가 실패한다. 숫자값은
+ * 미설정으로 취급하고, org·project·auth token 셋이 모두 유효할 때만 소스맵
+ * 업로드를 켠다 — 불완전하면 릴리즈 생성/업로드 자체를 건너뛴다 (빌드는 진행).
+ */
+function resolveSentrySlug(value: string | undefined): string | undefined {
+  const slug = value?.trim();
+  if (!slug || /^\d+$/.test(slug)) return undefined;
+  return slug;
 }
 
 /** Package-level globs derived from esbuild metafile (studio-build generate:trace-manifest). */
@@ -89,10 +94,17 @@ export default async function config(
   // Sentry: wraps the build to upload source maps and instrument the runtime.
   // No-op for events at runtime unless NEXT_PUBLIC_SENTRY_DSN is set; source
   // maps upload only when SENTRY_AUTH_TOKEN/ORG/PROJECT are present (CI/Vercel).
+  const sentryOrg = resolveSentrySlug(process.env.SENTRY_ORG);
+  const sentryProject = resolveSentrySlug(process.env.SENTRY_PROJECT);
+  const sentryUploadReady = Boolean(
+    process.env.SENTRY_AUTH_TOKEN && sentryOrg && sentryProject,
+  );
+
   return withSentryConfig(result, {
-    org: resolveSentryBuildOrg(),
-    project: process.env.SENTRY_PROJECT,
-    authToken: process.env.SENTRY_AUTH_TOKEN,
+    org: sentryOrg,
+    project: sentryProject,
+    authToken: sentryUploadReady ? process.env.SENTRY_AUTH_TOKEN : undefined,
+    sourcemaps: { disable: !sentryUploadReady },
     silent: !process.env.CI,
     // Upload a wider set of client files for better stack traces.
     widenClientFileUpload: true,

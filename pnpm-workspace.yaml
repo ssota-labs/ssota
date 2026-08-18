@@ -30,3 +30,11 @@ minimumReleaseAgeExclude:
   - '@ai-sdk/workflow@1.0.2'
   - ai@7.0.2
   - '@composio/vercel@0.11.0'
+packageExtensions:
+  # streamdown@2.5.0은 d.ts에서 `from "shiki"`를 쓰면서 shiki를 선언하지 않는다
+  # (phantom dep) — pnpm 숨은 hoist가 잡는 버전에 따라 타입이 갈려, fumadocs가
+  # shiki 4를 들여온 뒤 Vercel에서 4.4.3이 hoist되며 web build가 깨졌다.
+  # @streamdown/code와 같은 ^3.19.0을 명시해 항상 shiki 3을 nested resolve한다.
+  streamdown:
+    dependencies:
+      shiki: "^3.19.0"
