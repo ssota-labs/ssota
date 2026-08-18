@@ -54,7 +54,8 @@
     <p>거부 케이스를 먼저 작성한다(<code>[TEST-01]</code>). 통과 케이스만으로는 이 설계가 진짜인지 판명되지 않는다.</p>
 
     <h2>Steps</h2>
-    <p><strong>P0 — 검증 층 (갭 a)</strong></p>
+    <p><strong>P0 — 검증 층 (갭 a) — ✅ 완료 (2026-08-18)</strong></p>
+    <p class="omd-note"><strong>판정.</strong> <code>property_schema</code> 저장 형식은 <strong>닫힌 JSON Schema 서브셋 → Zod 컴파일</strong>로 확정했다(<code>ajv</code> 미도입, contracts는 zod 단일 의존 유지). 런타임 정의 타입은 이제 <code>property_schema</code>가 유일 방어선으로 <strong>실제 강제</strong>되고, edge domain/range도 <code>create-edge</code>에서 강제된다(<code>[GRAPH-05]</code> 문서-구현 불일치 해소). <strong>남긴 판단:</strong> 출하 타입의 하드코딩 Zod(<code>superRefine</code>·<code>union</code> 포함)는 서브셋으로 손실 없이 내릴 수 없어 시드는 여전히 빈 스키마를 쓰고 Zod가 보강 검증한다 — 출하 타입을 카탈로그 스키마로 단일화할지는 별도 결정.</p>
     <ol>
       <li><code>property_schema</code>를 실제 validator로 쓴다. <code>validateNodeProperties</code>가 <code>isKnownNodeType</code>이 아닐 때 무검증 통과하는 경로를 없애고, 카탈로그 행의 <code>property_schema</code>로 검증한다. 스키마 표현은 기존 하드코딩 Zod와 상호 변환 가능한 형태로 고정한다.</li>
       <li><code>validateEdgeProperties</code>를 구현한다(현재 전 타입 no-op).</li>
