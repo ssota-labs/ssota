@@ -9,7 +9,7 @@ import type { NodeType } from "@ssota/contracts";
 import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 
 export async function getGraphDeps(teamspaceId: string, accountId?: string) {
-  const { catalog, graphRead, graphWrite } = await getGraphPorts(
+  const { catalog, graphRead, graphWrite, commit } = await getGraphPorts(
     teamspaceId,
     accountId,
   );
@@ -24,6 +24,8 @@ export async function getGraphDeps(teamspaceId: string, accountId?: string) {
     catalog,
     graphRead,
     graphWrite,
+    /** [ACTION-01] runAction 커밋 경로 — graph use-case가 이걸로 커밋한다 */
+    commit,
     gatePolicies,
     spawn,
     teamspaceId,

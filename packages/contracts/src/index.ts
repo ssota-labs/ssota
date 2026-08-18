@@ -19,5 +19,6 @@ export * from "./agents/schedule.js";
 export * from "./agents/markdown-blocknote.js";
 export { AgentRuntimeKindSchema, type AgentRuntimeKind } from "./agents/workflow-instruction.js";
 export * from "./ontology/catalog/index.js";
+export * from "./ontology/action/index.js";
 export * from "./ontology/page/index.js";
 export * from "./agents/template/index.js";

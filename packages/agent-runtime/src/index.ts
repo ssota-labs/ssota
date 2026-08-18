@@ -3,6 +3,7 @@ export { buildRunPrompt, resolveRunAgent, resolveRunAgentDefinition } from "./ru
 export type { RunAgentInput, RunAgentResult, ResolvedRunAgent } from "./run.js";
 
 export { executeWorker } from "./workers/execute-worker.js";
+export { createWorkerEditsPlanner, WorkerPlanError } from "./workers/worker-edits-planner.js";
 export type { ExecuteWorkerOptions, WorkerExecuteTrigger } from "./workers/execute-worker.js";
 export {
   createSsotaTools,

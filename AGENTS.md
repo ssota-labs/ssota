@@ -54,7 +54,15 @@ e2e/
 
 ## Legacy Runtime — 복원 금지
 
-**[ARCH-03]** 과거 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드·패턴을 복원하거나 의존하지 말 것. 필요하면 git 히스토리에서 참고만 한다.
+**[ARCH-03]** 과거 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드·패턴을 복원하거나 의존하지 말 것. 필요하면 git 히스토리에서 참고만 한다. 금지 대상은 **"액션의 행동을 데이터로 두고 런타임에 해석하는 인터프리터"**이지 액션 봉투 자체가 아니다 — 아래 Action 절이 그 경계다.
+
+## Action — 유일한 쓰기 경로 (ADR-runtime-ontology-with-closed-edit-vocabulary)
+
+온톨로지는 3층이다: **L1 타입**(`node_catalog`/`edge_catalog`, 런타임 데이터) · **L2 선언적 액션**(`ActionType` — 파라미터·권한·criteria·`{$param}` 치환 템플릿, 런타임 데이터) · **L3 함수**(`workers`, 생성된 코드, sandbox 실행). 인터페이스는 데이터, 행동은 코드.
+
+1. **[ACTION-01] 모든 그래프 쓰기는 `runAction`(Action 커밋 경로)을 지난다.** seed·admin script·MCP·에이전트에 예외를 두지 않는다. `runAction`은 파라미터 검증 → 권한 → 편집 계산(커밋 없음) → writes 선언 강제 → gate → `GraphCommitPort.commit`(한 트랜잭션: idempotency replay · aggregate root `FOR UPDATE` · 편집마다 catalog/domain-range/Gate 검증 · `action_audits` 기록 · COMMIT). DB 제약이 없으므로 **이 경로가 실질 방어선**이다 — `harness:boundaries`(action-commit-path)가 `runAction` 밖 `GraphWritePort` 직접 호출을 잡는다. 이관 중인 옛 use-case는 `rules.ts` allowlist에 사유와 함께 둔다.
+2. **[ACTION-02] `GraphEdits` op는 닫힌 집합이다** — 편집 5(`create_node`·`update_properties`·`create_edge`·`delete_edge`·`set_status`) + 낙관적 가드 2(`assert`·`assert_count`). criteria는 Gate Policy 문법(`parseGatePath`)을 재사용하며 **검증 어휘(criteria kind·DB 불변식 kind)를 새로 만들지 않는다** — 어휘로 표현되지 않는 검증은 L3 코드다. 확장은 ADR을 요구한다.
+3. **[ACTION-03] L3 함수(worker)는 커밋하지 않는다.** 트랜잭션 **밖**(락 전)에서 상태를 읽고 `GraphEdits`를 계산해 반환하되, "내가 본 상태"를 `assert`/`assert_count` 가드로 함께 반환한다(B 모델). `runAction`이 락 이후 가드를 먼저 재평가하고 위반이면 `PRECONDITION_FAILED`로 롤백한다. 워커 SDK에 `graph.write`가 없고 `sdk.edits.*` 빌더만 있다 — `harness:boundaries`(worker-no-commit)가 커밋 표면 재도입을 잡는다.
 
 ## Tenancy & Security — Builder / End-user + `teamspace_id`
 

@@ -70,6 +70,9 @@ export function createInMemoryGraphReadPort(
     async getNodeById(nodeId: string) {
       return store.nodes.get(nodeId) ?? null;
     },
+    async getEdgeById(edgeId: string) {
+      return store.edges.get(edgeId) ?? null;
+    },
     async traverseEdges(params: TraverseEdgesInput) {
       const edges = [...store.edges.values()].filter(
         (edge) => edge.teamspaceId === params.teamspaceId,

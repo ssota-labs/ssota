@@ -201,7 +201,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         teamspaceId: args.teamspaceId,
         edgeId: asString(resolveParam(descriptor.edgeId, scopes)),
       });
-      await deleteEdge(deps.graphWrite, parsed);
+      await deleteEdge(deps, parsed);
       break;
     }
     case "set_node_property": {
@@ -238,7 +238,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         teamspaceId: args.teamspaceId,
         nodeId: asString(resolveParam(descriptor.nodeId, scopes)),
       });
-      await deleteNode(deps.graphWrite, parsed);
+      await deleteNode(deps, parsed);
       break;
     }
     case "create_initiative_bundle": {

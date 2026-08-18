@@ -1,6 +1,9 @@
 import type { CreateEdgeInput } from "@ssota/contracts/graph";
 import { GraphError } from "../../domain/graph-errors.js";
+import type { GatePolicySource } from "../../gate/evaluate-gate-policies.js";
+import type { GraphCommitPort } from "../../ports/action-port.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
+import { commitSystemEdits } from "./system-actions.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphWritePort } from "../../ports/graph-write-port.js";
 
@@ -44,7 +47,10 @@ export async function createEdge(
   deps: {
     catalog: CatalogReadPort;
     graphRead: GraphReadPort;
-    graphWrite: GraphWritePort;
+    /** @deprecated runAction 경유로 커밋한다 */
+    graphWrite?: GraphWritePort;
+    commit: GraphCommitPort;
+    gatePolicies?: GatePolicySource;
   },
   input: CreateEdgeInput,
 ) {
@@ -93,12 +99,20 @@ export async function createEdge(
     throw new GraphError("VALIDATION_FAILED", message);
   }
 
-  return deps.graphWrite.createEdge({
+  // [ACTION-01] runAction 경유. (domain/range·properties 검증은 applyEdits가 트랜잭션 안에서 다시 한다 —
+  // 위 사전 검증은 락 전에 빠른 실패를 위한 것.)
+  const out = await commitSystemEdits(deps, {
+    key: "graph.create_edge",
     teamspaceId: input.teamspaceId,
-    edgeCatalogId: catalogRef.id,
-    catalogKey: catalogRef.key,
-    sourceNodeId: input.sourceNodeId,
-    targetNodeId: input.targetNodeId,
-    properties: validatedProperties,
+    edits: { edits: [{
+      op: "create_edge", ref: "edge", catalogKey: catalogRef.key,
+      from: { id: input.sourceNodeId }, to: { id: input.targetNodeId }, properties: validatedProperties,
+    }] },
+    lockNodeId: input.sourceNodeId,
   });
+  const edgeId = out.result.refs.edge;
+  if (!edgeId) throw new GraphError("PRECONDITION_FAILED", "create_edge did not yield an edge id");
+  const edge = await deps.graphRead.getEdgeById(edgeId);
+  if (!edge) throw new GraphError("NOT_FOUND", `created edge ${edgeId} not readable`);
+  return edge;
 }

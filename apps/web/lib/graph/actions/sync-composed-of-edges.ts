@@ -24,7 +24,7 @@ export async function syncComposedOfEdges(input: {
   for (const targetNodeId of toDelete) {
     const edge = existing.find((item) => item.targetNodeId === targetNodeId);
     if (!edge) continue;
-    await deleteEdge(deps.graphWrite, {
+    await deleteEdge(deps, {
       teamspaceId: input.teamspaceId,
       edgeId: edge.id,
     });

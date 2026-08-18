@@ -9,6 +9,7 @@ export type HarnessRuleLevel = "invariant" | "default" | "heuristic";
 
 export type HarnessRuleArea =
   | "graph"
+  | "action"
   | "arch"
   | "security"
   | "design"
