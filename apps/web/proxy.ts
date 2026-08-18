@@ -1,3 +1,4 @@
+import { COMPANY_WORKSPACE_ENABLED } from "@/lib/company-workspace/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/auth/provider";
 
@@ -118,9 +119,14 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
   const [orgSlug, second, ...rest] = parts;
 
   if (parts.length === 1) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${orgSlug}/home`;
-    return NextResponse.redirect(url);
+    if (COMPANY_WORKSPACE_ENABLED) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${orgSlug}/home`;
+      return NextResponse.redirect(url);
+    }
+    // 원래 콘솔: /{org}는 app/[orgSlug]/page.tsx가 처리 — DB에서 첫 teamspace를 찾아
+    // 활성 teamspace 쿠키를 심고 overview로 redirect한다 (proxy는 DB를 못 봄).
+    return null;
   }
 
   if (!second) {

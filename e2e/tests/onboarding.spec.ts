@@ -9,16 +9,15 @@ import {
 } from "../helpers/onboarding";
 
 test.describe("Console onboarding", () => {
-  test("신규 로그인(자동 가입) → profile → project → Company Home", async ({ page }) => {
-    const { orgSlug, organizationName } =
+  test("신규 로그인(자동 가입) → profile → project → Overview", async ({ page }) => {
+    const { orgSlug, teamspaceSlug, organizationName, projectName } =
       await completeOnboardingFlow(page);
 
     expect(orgSlug).toMatch(/^e2e-organization-/);
-    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
-    await expect(page.getByText(organizationName).first()).toBeVisible();
-    await expect(
-      page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Requests" }),
-    ).toBeVisible();
+    void teamspaceSlug; // flat URL — teamspace는 활성 쿠키로 전달, URL엔 없다
+    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/overview$`));
+    await expect(page.getByText("No graph nodes yet")).toBeVisible();
+    await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
   test("template 스텝에서 project로 돌아가기", async ({ page }) => {

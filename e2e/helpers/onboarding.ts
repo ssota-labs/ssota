@@ -21,6 +21,12 @@ export async function signInOnLoginPage(
   await form.getByLabel("Email").fill(email);
   await form.getByLabel("Password").fill(password);
   await form.locator('button[type="submit"]').click();
+  // 로그인 액션 → /auth/continue → 목적지. /auth/continue가 onboarding 포트를 콜드 컴파일하면
+  // dev 서버에서 15s를 넘길 수 있다 (loginAsSmoke와 같은 이유·같은 예산).
+  await page.waitForURL((url) => !url.pathname.startsWith("/login") && url.pathname !== "/auth/continue", {
+    timeout: 180_000,
+    waitUntil: "commit",
+  });
   await expect(page).toHaveURL(/\/onboarding\/profile/, { timeout: 15_000 });
 }
 
@@ -65,17 +71,23 @@ export async function completeTemplateOnboarding(
 
   await page.getByRole("button", { name: "Open project" }).click();
 
-  await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({
+  // Builder URL은 flat(/{org}/overview) — teamspace는 활성 쿠키로 전달되고 URL에는 없다.
+  // 화면이 overview인지는 empty-state 텍스트로 확인한다.
+  await page.waitForURL((u) => !u.pathname.startsWith("/onboarding") && u.pathname !== "/auth/continue", {
+    timeout: 60_000,
+    waitUntil: "commit",
+  });
+  await expect(page.getByText("No graph nodes yet")).toBeVisible({
     timeout: 30_000,
   });
 
   const url = new URL(page.url());
-  const orgSlug = url.pathname.split("/").filter(Boolean)[0];
+  const [, orgSlug, teamspaceSlug] = url.pathname.split("/");
   if (!orgSlug) {
     throw new Error(`Expected /{org} URL, got ${url.pathname}`);
   }
-
-  return { orgSlug, teamspaceSlug: orgSlug };
+  // flat URL이면 teamspaceSlug 세그먼트가 없다 — proxy rewrite 대상 슬러그는 알 수 없으므로 orgSlug로 대체
+  return { orgSlug, teamspaceSlug: teamspaceSlug ?? orgSlug };
 }
 
 export async function completeProjectOnboarding(

@@ -40,8 +40,9 @@ test.describe("Console onboarding screenshots", () => {
     });
 
     await page.getByRole("button", { name: "Open project" }).click();
-    await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({
-      timeout: 30_000,
+    // flat URL(/{org}) + proxy rewrite → overview. 화면 텍스트로 확인.
+    await expect(page.getByText("No graph nodes yet")).toBeVisible({
+      timeout: 60_000,
     });
     await page.screenshot({
       path: "report/screenshots/onboarding-04-home.png",

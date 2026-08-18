@@ -1,3 +1,16 @@
+/**
+ * Company Workspace(customer/expert 셸) 노출 스위치.
+ * 기본 **꺼짐** — 원래 SWDL 콘솔(overview 등)이 기본 진입이다. 셸·라우트·i18n은 그대로 두고
+ * 이 플래그 하나로 다시 켠다 (ADR-keep-tenant-platform "숨긴 뒤 삭제" — 삭제 PR은 별도).
+ * 켜기: NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED=1
+ */
+export const COMPANY_WORKSPACE_ENABLED = /^(1|true)$/i.test(
+  process.env.NEXT_PUBLIC_COMPANY_WORKSPACE_ENABLED?.trim() ?? "",
+);
+
+/** 원래 콘솔의 기본 랜딩 세그먼트. 플래그가 켜지면 Company Home. */
+export const DEFAULT_LANDING_SEGMENT = COMPANY_WORKSPACE_ENABLED ? "home" : "overview";
+
 export const COMPANY_WORKSPACE_ROUTE_SEGMENTS = [
   "home",
   "requests",
@@ -103,6 +116,7 @@ export function companyWorkspacePageIdFromSlug(
 }
 
 export function isCompanyWorkspaceRelativePath(relativePath: string): boolean {
+  if (!COMPANY_WORKSPACE_ENABLED) return false;
   const first = relativePath.split("/")[0] ?? "";
   return (COMPANY_WORKSPACE_ROUTE_SEGMENTS as readonly string[]).includes(first);
 }
