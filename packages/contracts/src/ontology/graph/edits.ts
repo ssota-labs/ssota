@@ -7,8 +7,14 @@ import { z } from "zod";
  * 서술되어 `runAction`이 **한 트랜잭션**에서 커밋한다 (ADR-runtime-ontology).
  * 함수는 커밋하지 않는다 [ACTION-03] — 이 구조체를 반환할 뿐이다.
  *
- * op는 5개다: create_node · update_properties · create_edge · delete_edge · set_status.
+ * op는 7개다: create_node · update_properties · create_edge · delete_edge · set_status
+ *   + 낙관적 가드 2개: assert · assert_count.
  * 분기·루프·산술식은 없다. 새 op는 ADR을 요구한다.
+ *
+ * 가드(assert*)는 **B 모델**(ADR "L3 실행 모델")의 핵심이다 — L3 함수는 트랜잭션 **밖**에서
+ * (락 전) 상태를 읽고 편집을 계산한다. "내가 본 상태가 커밋 시에도 유효한가"를 가드로 함께
+ * 반환하면 runAction이 락을 잡은 뒤 가드를 **먼저** 재평가하고, 하나라도 틀리면
+ * PRECONDITION_FAILED로 전부 롤백한다. 가드는 계산이 아니라 단언이라 도메인마다 늘지 않는다.
  *
  * `ref` — 같은 배치 안에서 방금 만든 노드를 가리키는 로컬 핸들.
  * `{ ref: "entry" }`로 create_node하고 이어서 `from: { ref: "entry" }`로 엣지를 건다.
@@ -81,12 +87,45 @@ export const setStatusEditSchema = z
   })
   .strict();
 
+/**
+ * 낙관적 가드 — 노드의 필드 값이 기대 범위인지 (락 이후 재평가).
+ * `in`/`notIn` 중 하나 이상. 필드가 없으면 `ifMissing`.
+ */
+export const assertEditSchema = z
+  .object({
+    op: z.literal("assert"),
+    node: nodeRefSchema,
+    field: z.string().min(1),
+    in: z.array(z.union([z.string(), z.number(), z.boolean()])).min(1).optional(),
+    notIn: z.array(z.union([z.string(), z.number(), z.boolean()])).min(1).optional(),
+    ifMissing: z.enum(["fail", "pass"]).default("fail"),
+  })
+  .strict();
+
+/**
+ * 낙관적 가드 — 노드에서 나가는(또는 들어오는) 특정 타입 엣지 개수가 기대값인지.
+ * L3 함수가 "내가 읽은 N개"를 반환하면, 그 사이 누가 추가·삭제했는지 커밋 시 잡힌다.
+ */
+export const assertCountEditSchema = z
+  .object({
+    op: z.literal("assert_count"),
+    node: nodeRefSchema,
+    edgeCatalogKey: z.string().min(1),
+    direction: z.enum(["out", "in"]).default("out"),
+    equals: z.number().int().nonnegative().optional(),
+    min: z.number().int().nonnegative().optional(),
+    max: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
 export const graphEditSchema = z.discriminatedUnion("op", [
   createNodeEditSchema,
   updatePropertiesEditSchema,
   createEdgeEditSchema,
   deleteEdgeEditSchema,
   setStatusEditSchema,
+  assertEditSchema,
+  assertCountEditSchema,
 ]);
 export type GraphEdit = z.infer<typeof graphEditSchema>;
 export type GraphEditOp = GraphEdit["op"];
@@ -97,6 +136,8 @@ export const GRAPH_EDIT_OPS = [
   "create_edge",
   "delete_edge",
   "set_status",
+  "assert",
+  "assert_count",
 ] as const satisfies readonly GraphEditOp[];
 
 /**
@@ -111,8 +152,23 @@ export const graphEditsSchema = z
   .superRefine((value, ctx) => {
     const declared = new Set<string>();
     value.edits.forEach((edit, i) => {
+      // 가드 op의 조건 필수 — discriminatedUnion 멤버에 refine을 못 붙이므로 배치 단계에서 검사
+      if (edit.op === "assert" && edit.in === undefined && edit.notIn === undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "assert requires `in` or `notIn`", path: ["edits", i] });
+      }
+      if (
+        edit.op === "assert_count" &&
+        edit.equals === undefined && edit.min === undefined && edit.max === undefined
+      ) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "assert_count requires equals, min or max", path: ["edits", i] });
+      }
       const uses: string[] = [];
-      if (edit.op === "update_properties" || edit.op === "set_status") {
+      if (
+        edit.op === "update_properties" ||
+        edit.op === "set_status" ||
+        edit.op === "assert" ||
+        edit.op === "assert_count"
+      ) {
         if ("ref" in edit.node) uses.push(edit.node.ref);
       } else if (edit.op === "create_edge") {
         if ("ref" in edit.from) uses.push(edit.from.ref);

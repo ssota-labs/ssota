@@ -189,6 +189,56 @@ export async function runAction(
   return { actionKey: action.key, result, auditId: audit.id, replayed };
 }
 
+/** 낙관적 가드 평가 — 락 이후 상태 기준. 실패는 PRECONDITION_FAILED (재시도 가능). */
+async function evaluateGuard(
+  graphRead: GraphReadPort,
+  teamspaceId: string,
+  edit: Extract<GraphEdits["edits"][number], { op: "assert" | "assert_count" }>,
+  at: string,
+  refs: Record<string, string>,
+): Promise<void> {
+  const nodeId = resolveRef(edit.node, refs);
+  if (edit.op === "assert") {
+    const node = await graphRead.getNodeById(nodeId);
+    if (!node) throw new GraphError("PRECONDITION_FAILED", `${at}: node ${nodeId} not found`);
+    const value = node.properties[edit.field];
+    if (value === undefined) {
+      if (edit.ifMissing === "fail") {
+        throw new GraphError("PRECONDITION_FAILED", `${at}: field '${edit.field}' is missing`);
+      }
+      return;
+    }
+    const v = value as string | number | boolean;
+    if (edit.in && !edit.in.includes(v)) {
+      throw new GraphError(
+        "PRECONDITION_FAILED",
+        `${at}: ${edit.field} is '${String(v)}', expected one of ${edit.in.map(String).join("|")}`,
+      );
+    }
+    if (edit.notIn && edit.notIn.includes(v)) {
+      throw new GraphError("PRECONDITION_FAILED", `${at}: ${edit.field} must not be '${String(v)}'`);
+    }
+    return;
+  }
+  // assert_count
+  const edges = await graphRead.traverseEdges({
+    teamspaceId,
+    nodeId,
+    direction: edit.direction === "out" ? "outgoing" : "incoming",
+    catalogKey: edit.edgeCatalogKey,
+  });
+  const n = edges.length;
+  if (edit.equals !== undefined && n !== edit.equals) {
+    throw new GraphError("PRECONDITION_FAILED", `${at}: expected ${edit.equals} '${edit.edgeCatalogKey}' edges, found ${n}`);
+  }
+  if (edit.min !== undefined && n < edit.min) {
+    throw new GraphError("PRECONDITION_FAILED", `${at}: expected ≥${edit.min} '${edit.edgeCatalogKey}' edges, found ${n}`);
+  }
+  if (edit.max !== undefined && n > edit.max) {
+    throw new GraphError("PRECONDITION_FAILED", `${at}: expected ≤${edit.max} '${edit.edgeCatalogKey}' edges, found ${n}`);
+  }
+}
+
 /**
  * 편집을 순서대로 적용한다 — **트랜잭션 안**. 편집마다:
  *   catalog 해석 → properties 검증(property_schema) → domain/range → Gate → 적용
@@ -230,9 +280,25 @@ async function applyEdits(
       `${what}: ${err instanceof Error ? err.message : String(err)}`,
     );
 
+  // ── 가드 선평가 (B 모델) ──────────────────────────────────────────────
+  // L3 함수는 락 *전* 상태를 읽고 계산했다. 락을 잡은 지금, 함수가 본 전제가 아직
+  // 유효한지 assert*를 **어떤 변경보다 먼저** 재평가한다. 하나라도 틀리면 롤백.
+  // create_node ref를 가리키는 가드는 그 노드가 아직 없으므로 적용 루프에서 평가한다.
+  for (const [i, edit] of edits.edits.entries()) {
+    if (edit.op !== "assert" && edit.op !== "assert_count") continue;
+    if ("ref" in edit.node) continue; // 배치 내 생성 노드 — 루프에서 평가
+    await evaluateGuard(graphRead, teamspaceId, edit, `edits[${i}] ${edit.op}`, refs);
+  }
+
   for (const [i, edit] of edits.edits.entries()) {
     const at = `edits[${i}] ${edit.op}`;
     switch (edit.op) {
+      case "assert":
+      case "assert_count": {
+        // id 참조는 위에서 이미 평가됨. ref 참조만 여기서 (생성 이후 시점).
+        if ("ref" in edit.node) await evaluateGuard(graphRead, teamspaceId, edit, at, refs);
+        break;
+      }
       case "create_node": {
         const entry = await catalog.getNodeCatalogByKey(edit.catalogKey);
         if (!entry) throw new GraphError("UNKNOWN_NODE_TYPE", `${at}: '${edit.catalogKey}'`);

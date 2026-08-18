@@ -101,13 +101,53 @@ describe("GraphEdits — 통과", () => {
     if (op?.op === "set_status") expect(op.field).toBe("status");
   });
 
-  it("op 목록이 5개로 닫혀 있다", () => {
+  it("op 목록이 7개로 닫혀 있다 (5 편집 + 2 가드)", () => {
     expect(GRAPH_EDIT_OPS).toEqual([
       "create_node",
       "update_properties",
       "create_edge",
       "delete_edge",
       "set_status",
+      "assert",
+      "assert_count",
     ]);
+  });
+});
+
+
+describe("낙관적 가드 op — 거부", () => {
+  it("assert에 in/notIn 둘 다 없으면 거부한다", () => {
+    expect(() =>
+      parseGraphEdits({ edits: [{ op: "assert", node: { id: A }, field: "status" }] }),
+    ).toThrow(/in.*notIn/);
+  });
+
+  it("assert_count에 equals/min/max 전부 없으면 거부한다", () => {
+    expect(() =>
+      parseGraphEdits({ edits: [{ op: "assert_count", node: { id: A }, edgeCatalogKey: "e" }] }),
+    ).toThrow(/equals, min or max/);
+  });
+
+  it("assert가 선언 전 ref를 쓰면 거부한다", () => {
+    expect(() =>
+      parseGraphEdits({ edits: [{ op: "assert", node: { ref: "x" }, field: "s", in: ["a"] }] }),
+    ).toThrow(/used before it is declared/);
+  });
+});
+
+describe("낙관적 가드 op — 통과", () => {
+  it("L3 함수가 반환하는 close_fiscal_period 배치를 파싱한다", () => {
+    const e = parseGraphEdits({
+      edits: [
+        { op: "assert", node: { id: A }, field: "status", in: ["open"] },
+        { op: "assert_count", node: { id: A }, edgeCatalogKey: "finance.journal_entry.in_period", direction: "in", equals: 12 },
+        { op: "set_status", node: { id: A }, to: "closed", from: ["open"] },
+      ],
+    });
+    expect(e.edits.map((x) => x.op)).toEqual(["assert", "assert_count", "set_status"]);
+    const g = e.edits[0];
+    if (g?.op === "assert") expect(g.ifMissing).toBe("fail");
+    const c = e.edits[1];
+    if (c?.op === "assert_count") expect(c.direction).toBe("in");
   });
 });

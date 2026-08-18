@@ -82,23 +82,14 @@ export function createWorkerSdkHost(input: {
           if (!permissions.graphRead) throw new Error("graphRead not permitted");
           return traverseEdges(graphDeps.graphRead, traverseEdgesInputSchema.parse(params));
         }
-        case "graph.createNode": {
-          if (!permissions.graphWrite || !permissions.canMutate) {
-            throw new Error("graphWrite not permitted");
-          }
-          return createNode(graphDeps, createNodeInputSchema.parse(params));
-        }
-        case "graph.updateNode": {
-          if (!permissions.graphWrite || !permissions.canMutate) {
-            throw new Error("graphWrite not permitted");
-          }
-          return updateNode(graphDeps, updateNodeInputSchema.parse(params));
-        }
+        case "graph.createNode":
+        case "graph.updateNode":
         case "graph.createEdge": {
-          if (!permissions.graphWrite || !permissions.canMutate) {
-            throw new Error("graphWrite not permitted");
-          }
-          return createEdge(graphDeps, createEdgeInputSchema.parse(params));
+          // [ACTION-03] 워커는 커밋하지 않는다. 편집은 GraphEdits로 반환하고 runAction이 커밋한다.
+          throw new Error(
+            `${method} is not available to workers — return { edits: [...] } (GraphEdits) instead; ` +
+            "commits go through runAction [ACTION-03]",
+          );
         }
         case "tasks.query": {
           if (!permissions.graphRead) throw new Error("tasks.query not permitted");
