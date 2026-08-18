@@ -62,7 +62,15 @@
       <li><code>create-edge</code>에서 <code>domain_catalog_ids</code>/<code>range_catalog_ids</code>를 강제한다. <code>[GRAPH-05]</code>의 미구현 항목이며 문서-구현 불일치를 닫는다.</li>
       <li>거부 케이스: 스키마 위반 properties · domain 위반 엣지 · range 위반 엣지 · 런타임 정의 타입의 잘못된 properties.</li>
     </ol>
-    <p><strong>P1 — 액션 봉투 (갭 b)</strong></p>
+    <p><strong>P1 — 액션 봉투 (갭 b) — ✅ 완료 (2026-08-18)</strong></p>
+    <p class="omd-note"><strong>판정.</strong> <code>GraphEdits</code> 5 op(<code>create_node</code>·<code>update_properties</code>·<code>create_edge</code>·<code>delete_edge</code>·<code>set_status</code>) + <code>ActionType</code>(parameters는 property_schema 서브셋 재사용, criteria는 Gate 키 참조) + <code>runAction</code> 단일 커밋 경로 + <code>GraphCommitPort</code>(한 트랜잭션·<code>FOR UPDATE</code>·<code>action_audits</code>·멱등)를 구현했다. <strong>L2 유일 계산은 <code>{$param}</code> 치환뿐</strong>이며 인터프리터는 없다.</p>
+    <p class="omd-note"><strong>L2/L3 경계 — 실측:</strong></p>
+    <ul>
+      <li><code>post_journal_entry</code> — <strong>L2로 된다.</strong> declarative 3편집(전표 + 분개행 2). 차대 균형은 파라미터 구조(<code>amount</code> 하나가 양쪽에 꽂힘)로 <em>구성상</em> 보장되며 검증 어휘를 늘리지 않았다. 임의 N행 전표의 균형은 P2 <code>sum_balance</code> trigger 몫.</li>
+      <li><code>void_journal_entry</code> — <strong>예상과 달리 L2로 된다.</strong> <code>set_status(from:["posted"], to:"void")</code> + <code>aggregateRootParam</code> 락. 역분개 전표를 <em>새로 만드는</em> 회계 관행 방식은 기존 엣지를 읽어 뒤집어야 하므로 L3 — 그건 P2 워커 전환의 첫 사용례로 남긴다.</li>
+      <li><code>close_fiscal_period</code> — <strong>gate=true 경로만 검증</strong>(GATE_PENDING, 커밋 0). 시산표 검증(“이 기간의 전표 합이 0”)은 Gate <code>require</code> 경로 문법으로 <strong>표현되지 않는다</strong> — <code>count</code>는 있지만 <code>sum</code>이 없다. <strong>문법을 늘리지 않았다.</strong> 이건 P2 <code>node_catalog.invariants</code>(<code>sum_balance</code>)의 정확한 사용처이며, Gate 어휘 확장 압력을 여기서 처음 확인·거부한 기록이다.</li>
+    </ul>
+    <p class="omd-note"><strong>남긴 것:</strong> gate=true의 승인 태스크 생성(<code>onPass.effects</code> 포트 역전 — [ARCH-04] allowlist 2건 해소)과 L3 planner 어댑터는 P2. 액션 레지스트리는 P1에서 인메모리/코드 — 카탈로그 행(<code>action_catalog</code>)으로 올리는 것도 P2.</p>
     <ol start="5">
       <li><code>GraphEdits</code> 닫힌 op 집합(<code>create_node</code>·<code>update_properties</code>·<code>create_edge</code>·<code>delete_edge</code>·<code>set_status</code>)을 <code>packages/contracts</code>에 Zod로 정의한다. criteria는 정의하지 않고 Gate를 참조한다.</li>
       <li>액션 선언 계약 — <code>key</code>·<code>parameters</code>(Zod)·<code>writes</code>·<code>requires</code>(권한)·<code>criteria</code>(Gate 정책 키 참조)·<code>gate</code>(승인 필요 여부).</li>
