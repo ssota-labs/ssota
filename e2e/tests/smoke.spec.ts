@@ -38,7 +38,8 @@ test.describe("SSOTA Console", () => {
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Work cycles", exact: true })).toBeVisible();
+    // work-cycle은 삭제됨 (ADR-aip-console-concepts) — Workflows가 대체 예정
+    await expect(nav.getByRole("link", { name: "Work cycles", exact: true })).toHaveCount(0);
     // Channels는 L0 nav에 없다 (agent 설정 시트 내부). Company Home도 없다.
     await expect(nav.getByRole("link", { name: "Channels", exact: true })).toHaveCount(0);
     await expect(sidebar.getByRole("button", { name: "Signed in as" })).toBeVisible();
