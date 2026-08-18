@@ -71,7 +71,7 @@ export async function completeTemplateOnboarding(
 
   await page.getByRole("button", { name: "Open project" }).click();
 
-  // Builder URL은 flat(/{org}) — proxy가 /{org}/{ts}/overview로 rewrite하므로 URL은 /{org}로 남는다.
+  // Builder URL은 flat(/{org}/overview) — teamspace는 활성 쿠키로 전달되고 URL에는 없다.
   // 화면이 overview인지는 empty-state 텍스트로 확인한다.
   await page.waitForURL((u) => !u.pathname.startsWith("/onboarding") && u.pathname !== "/auth/continue", {
     timeout: 60_000,

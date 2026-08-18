@@ -13,7 +13,9 @@ test.describe("SSOTA Console", () => {
   test("smoke: Developer Setup route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "developer/setup");
-    await expect(page.getByRole("heading", { name: "Developer Setup" })).toBeVisible();
+    // developer/setup → settings/developer redirect. 헤딩은 t("settings.developer") = "Developer".
+    await expect(page).toHaveURL(/\/settings\/developer$/);
+    await expect(page.getByRole("heading", { name: "Developer", exact: true })).toBeVisible();
     await expect(page.getByText("Connect MCP")).toBeVisible();
     await expect(page.getByText("X-SSOTA-Teamspace-Id").first()).toBeVisible();
   });
@@ -35,7 +37,10 @@ test.describe("SSOTA Console", () => {
     await expect(nav.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Channels", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Work cycles", exact: true })).toBeVisible();
+    // Channels는 L0 nav에 없다 (agent 설정 시트 내부). Company Home도 없다.
+    await expect(nav.getByRole("link", { name: "Channels", exact: true })).toHaveCount(0);
     await expect(sidebar.getByRole("button", { name: "Signed in as" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Workflow Map", exact: true })).toHaveCount(0);
@@ -48,7 +53,8 @@ test.describe("SSOTA Console", () => {
     await sidebar.getByRole("button", { name: "Signed in as" }).click();
     await expect(page.getByText("smoke@ssota.ai").last()).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByText("Appearance")).toBeVisible();
+    // 프로필 메뉴 라벨: t("settings.appearanceTitle") = "Theme", t("settings.languageTitle") = "Language"
+    await expect(page.getByText("Theme")).toBeVisible();
     await expect(page.getByText("Language")).toBeVisible();
   });
 });
