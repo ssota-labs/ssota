@@ -46,7 +46,7 @@
     <p>그 다음 <strong>Gate를 criteria로 재사용</strong>해 액션 봉투를 얹는다. criteria 어휘를 새로 만들지 않는다 — <code>require[]</code>의 경로 표현식이 이미 그래프 순회 + <code>count{min,max}</code>를 지원한다. 회계에 필요한 것이 이 문법으로 표현되는지가 시험대이며, 표현되지 않으면 <strong>문법을 늘리지 말고</strong> L3 필요로 기록한다.</p>
     <p>액션 3개는 난이도 순이 아니라 <strong>L2 경계를 가로지르는 순</strong>으로 고른다.</p>
     <ul>
-      <li><code>finance.post_journal_entry</code> — <strong>L2로 되어야 한다.</strong> 차대 균형은 Gate <code>require</code>의 <code>count</code>/경로로 표현되거나, 안 되면 <code>node_catalog.invariants</code>의 <code>sum_balance</code>로 간다.</li>
+      <li><code>finance.post_journal_entry</code> — <strong>L2로 되어야 한다.</strong> 차대 균형은 Gate <code>require</code>의 <code>count</code>/경로로 표현되거나, 안 되면 L3 함수가 검증한다.</li>
       <li><code>finance.close_fiscal_period</code> — <strong>L2 경계 시험.</strong> 시산표 검증이 Gate 문법으로 표현되는가. 여기서 문법을 늘리고 싶은 압력이 처음 발생하며, 굴복하는지가 이 슬라이스의 진짜 시험이다.</li>
       <li><code>finance.void_journal_entry</code> — <strong>L3 예상.</strong> 기존 엣지를 읽어 차·대를 뒤집으므로 편집이 파라미터에서 파생되지 않는다. 워커 커밋 모델 전환의 첫 실사용례가 된다.</li>
     </ul>
@@ -62,7 +62,15 @@
       <li><code>create-edge</code>에서 <code>domain_catalog_ids</code>/<code>range_catalog_ids</code>를 강제한다. <code>[GRAPH-05]</code>의 미구현 항목이며 문서-구현 불일치를 닫는다.</li>
       <li>거부 케이스: 스키마 위반 properties · domain 위반 엣지 · range 위반 엣지 · 런타임 정의 타입의 잘못된 properties.</li>
     </ol>
-    <p><strong>P1 — 액션 봉투 (갭 b)</strong></p>
+    <p><strong>P1 — 액션 봉투 (갭 b) — ✅ 완료 (2026-08-18)</strong></p>
+    <p class="omd-note"><strong>판정.</strong> <code>GraphEdits</code> 5 op(<code>create_node</code>·<code>update_properties</code>·<code>create_edge</code>·<code>delete_edge</code>·<code>set_status</code>) + <code>ActionType</code>(parameters는 property_schema 서브셋 재사용, criteria는 Gate 키 참조) + <code>runAction</code> 단일 커밋 경로 + <code>GraphCommitPort</code>(한 트랜잭션·<code>FOR UPDATE</code>·<code>action_audits</code>·멱등)를 구현했다. <strong>L2 유일 계산은 <code>{$param}</code> 치환뿐</strong>이며 인터프리터는 없다.</p>
+    <p class="omd-note"><strong>L2/L3 경계 — 실측:</strong></p>
+    <ul>
+      <li><code>post_journal_entry</code> — <strong>L2로 된다.</strong> declarative 3편집(전표 + 분개행 2). 차대 균형은 파라미터 구조(<code>amount</code> 하나가 양쪽에 꽂힘)로 <em>구성상</em> 보장되며 검증 어휘를 늘리지 않았다. 임의 N행 전표의 균형은 L3 함수(P2) 몫.</li>
+      <li><code>void_journal_entry</code> — <strong>예상과 달리 L2로 된다.</strong> <code>set_status(from:["posted"], to:"void")</code> + <code>aggregateRootParam</code> 락. 역분개 전표를 <em>새로 만드는</em> 회계 관행 방식은 기존 엣지를 읽어 뒤집어야 하므로 L3 — 그건 P2 워커 전환의 첫 사용례로 남긴다.</li>
+      <li><code>close_fiscal_period</code> — <strong>gate=true 경로만 검증</strong>(GATE_PENDING, 커밋 0). 시산표 검증(“이 기간의 전표 합이 0”)은 Gate <code>require</code> 경로 문법으로 <strong>표현되지 않는다</strong> — <code>count</code>는 있지만 <code>sum</code>이 없다. <strong>문법을 늘리지 않았다.</strong> 이건 <strong>L3 함수의 정확한 사용처</strong>이며(초안의 DB 트리거는 철회 — ADR “불변식은 L3” 참조), Gate 어휘 확장 압력을 여기서 처음 확인·거부한 기록이다.</li>
+    </ul>
+    <p class="omd-note"><strong>남긴 것:</strong> gate=true의 승인 태스크 생성(<code>onPass.effects</code> 포트 역전 — [ARCH-04] allowlist 2건 해소)과 L3 planner 어댑터는 P2. 액션 레지스트리는 P1에서 인메모리/코드 — 카탈로그 행(<code>action_catalog</code>)으로 올리는 것도 P2.</p>
     <ol start="5">
       <li><code>GraphEdits</code> 닫힌 op 집합(<code>create_node</code>·<code>update_properties</code>·<code>create_edge</code>·<code>delete_edge</code>·<code>set_status</code>)을 <code>packages/contracts</code>에 Zod로 정의한다. criteria는 정의하지 않고 Gate를 참조한다.</li>
       <li>액션 선언 계약 — <code>key</code>·<code>parameters</code>(Zod)·<code>writes</code>·<code>requires</code>(권한)·<code>criteria</code>(Gate 정책 키 참조)·<code>gate</code>(승인 필요 여부).</li>
@@ -71,22 +79,26 @@
       <li><strong>액션 1</strong> — <code>post_journal_entry</code>를 L2만으로 구현.</li>
       <li><strong>액션 2</strong> — <code>close_fiscal_period</code>. Gate 문법으로 표현되는지 판정하고, 안 되면 문법을 늘리지 말고 L3 필요로 기록.</li>
     </ol>
-    <p><strong>P2 — DB 불변식 + 워커 커밋 모델 (갭 c)</strong></p>
+    <p><strong>P2 — 워커 커밋 모델 전환 = L3 불변식 (갭 c)</strong></p>
+    <p class="omd-note"><strong>범위 축소 (2026-08-18).</strong> 초안의 “DB 불변식(<code>node_catalog.invariants</code> + deferred trigger)”을 <strong>철회</strong>한다. (1) Action 우회 경로는 <code>[ACTION-01]</code> 정책 + harness로 닫으므로 트리거가 지킬 대상이 없다. (2) 사용자가 액션을 직접 만들면 불변식 <code>kind</code>가 도메인마다 늘어나 plpgsql 안에서 <code>executeAction</code>이 부활한다. 여러 행에 걸친 업무 불변식은 <strong>L3 함수</strong>가 담당한다 — 그래서 P2의 중심은 워커 커밋 모델 전환이다.</p>
     <ol start="11">
-      <li><code>node_catalog.invariants</code> 컬럼 + <code>nodes</code>의 범용 deferred constraint trigger. <code>WHEN</code> 절이 아니라 함수 본문에서 카탈로그를 조회해 org별 uuid 하드코딩을 피한다. 평가기는 <code>sum_balance</code>만 지원한다.</li>
-      <li>워커 SDK를 편집 서술 반환으로 전환한다 — <code>graph.write.*</code> 직접 커밋을 <code>GraphEdits</code> 반환으로 바꾸고 <code>runAction</code>이 커밋한다. <code>[ACTION-03]</code> 위반 해소.</li>
-      <li><strong>액션 3</strong> — <code>void_journal_entry</code>. 전환된 워커 경로의 첫 사용례.</li>
-      <li>거부 케이스 추가: 불균형 전표가 <strong>COMMIT 시점에</strong> 거부 · 동시 쓰기 2건 중 하나 거부 · 마감 기간 쓰기 거부 · <strong>Action 우회 직접 INSERT가 trigger에 걸림</strong>.</li>
+      <li>워커 SDK를 편집 서술 반환으로 전환한다 — <code>graph.write.*</code> 직접 커밋을 제거하고 함수가 <code>GraphEdits</code>를 <strong>반환</strong>하도록. <code>runAction</code>의 <code>FunctionEditsPlanner</code> 어댑터가 워커를 실행해 결과를 받는다. <code>[ACTION-03]</code> 위반 해소. 기존 워커 스크립트의 <code>graph.write.*</code> 사용처를 먼저 조사하고 마이그레이션 경로를 정한다.</li>
+      <li><strong>함수가 락 이후 상태를 읽는다</strong> — planner를 <code>GraphCommitPort.commit</code>의 apply 콜백 <em>안</em>에서 실행할지(트랜잭션 내 sandbox 호출), 밖에서 실행하고 편집 적용 시 <code>set_status.from</code> 같은 낙관적 가드로 검증할지 결정한다. 전자는 레이턴시, 후자는 표현력 제약이 대가다.</li>
+      <li><strong>액션 2 (L3)</strong> — <code>close_fiscal_period</code>. 함수가 기간 내 전표의 차·대 합을 읽어 검증하고 안 맞으면 throw, 맞으면 <code>set_status(closed)</code>를 반환. P1에서 “Gate에 sum이 없어 넘긴” 항목이 여기서 풀린다.</li>
+      <li><strong>액션 3 (L3)</strong> — <code>void_journal_entry</code>의 <strong>역분개 생성</strong> 방식. 기존 <code>posts_to</code> 엣지를 읽어 차·대를 뒤집은 새 전표 + <code>reverses</code> 엣지를 반환. (P1의 <code>set_status</code> 방식은 L2로 이미 됨.)</li>
+      <li>gate=true 승인 태스크 생성 — <code>onPass.effects(spawn_task)</code>의 <strong>포트 역전</strong>(ontology가 포트 정의, agents가 구현). <code>[ARCH-04]</code> allowlist 2건 해소.</li>
+      <li>액션 레지스트리를 카탈로그 행(<code>action_catalog</code>)으로 승격 — P1의 인메모리/코드 레지스트리를 org-scoped 테이블로. <code>create_action_type</code> 에이전트 도구.</li>
+      <li>거부 케이스: 불균형 시산표에서 close가 함수 throw로 거부 · 워커가 <code>writes</code> 선언 밖 catalogKey를 반환하면 거부 · 워커가 GraphEdits 스키마 밖을 반환하면 거부 · 마감 기간에 전기 거부(Gate).</li>
       <li>파생 조회 — <code>account_balances</code> 뷰. 액션이 잔액을 갱신하지 않음을 확인.</li>
-      <li>reconciliation 스켈레톤 — 전 노드 <code>property_schema</code> 재검증 + 집계 대조 리포트.</li>
-      <li>판정 기록 — L2/L3 경계 결과를 ADR에 반영한다. 항목별 판정 없이 슬라이스를 닫지 않는다.</li>
+      <li>reconciliation 스켈레톤 — 전 노드 <code>property_schema</code> 재검증 + 집계 대조 리포트. DB 제약이 없으므로 이것이 정합성 증명 수단이다.</li>
+      <li>판정 기록 — L3 경로의 레이턴시·표현력을 ADR에 반영한다.</li>
     </ol>
     <p><strong>비범위:</strong> sandbox 부팅 최적화, 프로젝트별 함수 버전 관리(카탈로그가 <code>sandbox_sources</code> 버전을 참조하는 설계), <code>[ACTION-04]</code>의 생성 테스트 게이트, 회계 도메인 완성. P0가 닫히기 전에는 <strong>런타임 타입 저작을 사용자에게 개방하지 않는다.</strong></p>
 
     <h2>Risks</h2>
     <ul>
       <li><strong>P0를 건너뛰려는 유혹</strong> — 액션 봉투가 더 눈에 보이는 진전이라 먼저 하고 싶어진다. 그러면 방어선 없는 경로 위에 봉투를 씌우는 것이고, ADR이 하중 구조물이라 부른 것이 비어 있는 상태로 남는다.</li>
-      <li><strong>Gate 문법 확장 압력</strong> — 가장 큰 위험이며 과거 <code>executeAction</code>이 죽은 경로다. 10단계에서 <code>require</code> 문법을 늘리고 싶어지면 그 자체를 신호로 취급하고 L3으로 넘긴다. plpgsql 평가기가 30줄을 넘으면 경고(<code>[ACTION-02]</code>).</li>
+      <li><strong>Gate 문법 확장 압력</strong> — 가장 큰 위험이며 과거 <code>executeAction</code>이 죽은 경로다. <code>require</code> 문법을 늘리고 싶어지면 그 자체를 신호로 취급하고 L3으로 넘긴다 — P1에서 <code>close_fiscal_period</code>의 sum으로 한 번 실행했다. 같은 이유로 DB 불변식 <code>kind</code> 어휘도 만들지 않는다.</li>
       <li><strong><code>property_schema</code> 표현 형식 결정</strong> — 기존 하드코딩 Zod와 DB jsonb 스키마의 상호 변환이 P0의 실질 난점이다. 여기서 형식을 잘못 고르면 출하 타입과 런타임 타입이 두 갈래로 갈린다.</li>
       <li><strong>워커 SDK 전환의 파급</strong> — 기존 워커 스크립트가 <code>graph.write.*</code>를 직접 호출하고 있으면 호환이 깨진다. 전환 범위와 마이그레이션 경로를 12단계에서 먼저 조사한다.</li>
       <li><strong>Aggregate 경계 오판</strong> — 분개행을 노드로 만들면 균형 검증이 aggregate를 벗어나 락 범위가 무너진다. 8단계 시드에서 이 경계를 고정한다.</li>

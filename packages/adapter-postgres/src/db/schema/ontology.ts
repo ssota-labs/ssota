@@ -307,3 +307,36 @@ export const pageViewStates = pgTable(
 );
 
 
+
+/**
+ * Action 감사 기록 — runAction 커밋과 **같은 트랜잭션**에서 INSERT된다 (ADR-runtime-ontology).
+ * "누가·무슨 액션·무슨 파라미터로·무슨 편집을·어떤 결과로" — 원장 자체가 정합성의 정본이고
+ * 이 테이블은 **의도**의 기록이다. 편집과 감사는 둘 다 있거나 둘 다 없다.
+ * (teamspace_id, idempotency_key) unique가 멱등 재호출의 근거다.
+ */
+export const actionAudits = pgTable(
+  "action_audits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    actionKey: text("action_key").notNull(),
+    actorId: uuid("actor_id"),
+    actorKind: text("actor_kind").notNull(),
+    parameters: jsonb("parameters").notNull().default({}).$type<Record<string, unknown>>(),
+    edits: jsonb("edits").notNull().$type<Record<string, unknown>>(),
+    result: jsonb("result").notNull().$type<Record<string, unknown>>(),
+    idempotencyKey: text("idempotency_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    teamspaceCreatedIdx: index("action_audits_teamspace_created_idx").on(
+      table.teamspaceId,
+      table.createdAt,
+    ),
+    idempotencyUnique: uniqueIndex("action_audits_teamspace_idempotency_unique")
+      .on(table.teamspaceId, table.idempotencyKey)
+      .where(sql`idempotency_key is not null`),
+  }),
+);
