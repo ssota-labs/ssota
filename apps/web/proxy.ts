@@ -1,3 +1,4 @@
+import { COMPANY_WORKSPACE_ENABLED } from "@/lib/company-workspace/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/auth/provider";
 
@@ -119,8 +120,15 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
 
   if (parts.length === 1) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${orgSlug}/home`;
-    return NextResponse.redirect(url);
+    if (COMPANY_WORKSPACE_ENABLED) {
+      url.pathname = `/${orgSlug}/home`;
+      return NextResponse.redirect(url);
+    }
+    // 원래 콘솔: /{org} → /{org}/{teamspace}/overview (teamspace는 쿠키, rewrite)
+    const teamspaceSlug =
+      request.cookies.get(TEAMSPACE_COOKIE)?.value ?? DEFAULT_TEAMSPACE_SLUG;
+    url.pathname = `/${orgSlug}/${teamspaceSlug}/overview`;
+    return NextResponse.rewrite(url);
   }
 
   if (!second) {

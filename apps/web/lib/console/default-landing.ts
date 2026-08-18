@@ -1,3 +1,4 @@
+import { DEFAULT_LANDING_SEGMENT } from "@/lib/company-workspace/navigation";
 import { orgPath } from "./paths";
 import { getConsolePort } from "@/lib/ports";
 
@@ -18,5 +19,5 @@ export async function getDefaultProjectPath(userId: string): Promise<string> {
   return orgPath({
     orgSlug: org.slug,
     teamspaceSlug: projects[0]!.slug,
-  }, "home");
+  }, DEFAULT_LANDING_SEGMENT);
 }

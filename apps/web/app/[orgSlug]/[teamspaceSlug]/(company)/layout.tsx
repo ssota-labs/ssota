@@ -1,4 +1,6 @@
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { COMPANY_WORKSPACE_ENABLED } from "@/lib/company-workspace/navigation";
 import { CompanyWorkspaceLayoutView } from "../company-workspace-layout-view";
 import { getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
 import { resolveOrg } from "@/lib/console/resolve-project";
@@ -12,6 +14,8 @@ export default async function CompanyWorkspaceLayout({
   children: React.ReactNode;
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
+  // 플래그 꺼짐 = 숨김. 라우트는 남기되 404 (ADR-keep-tenant-platform "숨긴 뒤 삭제").
+  if (!COMPANY_WORKSPACE_ENABLED) notFound();
   const { orgSlug, teamspaceSlug } = await params;
   const requestHeaders = await headers();
   const headerPath = requestHeaders.get("x-pathname");
