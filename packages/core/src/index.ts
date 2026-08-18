@@ -19,6 +19,8 @@ export * from "./platform/ports/organization-members-port.js";
 export * from "./platform/domain/normalize-email.js";
 export * from "./ontology/domain/graph-types.js";
 export * from "./ontology/use-cases/graph/index.js";
+export * from "./ontology/ports/action-port.js";
+export * from "./ontology/use-cases/action/index.js";
 export * from "./ontology/ports/binding-resolver-port.js";
 export * from "./ontology/ports/catalog-write-port.js";
 export * from "./agents/domain/task-errors.js";
