@@ -67,7 +67,6 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "subagents",
   "design",
   "graph",
-  "work-cycle",
   "n",
   "home",
   "requests",
