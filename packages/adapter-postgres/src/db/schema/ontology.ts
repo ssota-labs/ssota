@@ -41,6 +41,33 @@ export const nodeCatalog = pgTable(
   }),
 );
 
+/**
+ * action_catalog — L2 액션 타입(ActionType) 행. L1 catalog와 같이 **org-scoped**, (organization_id, key) unique.
+ * 정의는 `definition` jsonb에 ActionType 그대로 (contracts actionTypeSchema가 쓰기 경로에서 검증).
+ */
+export const actionCatalog = pgTable(
+  "action_catalog",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    description: text("description").notNull().default(""),
+    definition: jsonb("definition").notNull().$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgKeyUnique: uniqueIndex("action_catalog_organization_key_unique").on(
+      table.organizationId,
+      table.key,
+    ),
+    orgIdx: index("action_catalog_organization_id_idx").on(table.organizationId),
+  }),
+);
+
 export const edgeCatalog = pgTable(
   "edge_catalog",
   {

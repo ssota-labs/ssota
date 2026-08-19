@@ -214,3 +214,5 @@ export function createTaskPort(db: Db, scope: PortScope): TaskPort {
   };
 }
 export { createDbGraphCommitPort } from "./ontology/graph-commit-port.js";
+export { createDbActionCatalogPort } from "./ontology/action-catalog-port.js";
+export type { DbActionCatalogScope } from "./ontology/action-catalog-port.js";

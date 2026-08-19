@@ -103,6 +103,7 @@ export {
   resolveOrganizationIdForTeamspace,
 } from "./teamspace-org-scope.js";
 export { createDbCatalogWritePort } from "./ports/ontology/db-catalog-write-port.js";
+export { createDbActionCatalogPort } from "./ports/ontology/action-catalog-port.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
