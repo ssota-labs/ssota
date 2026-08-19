@@ -42,6 +42,7 @@ export const L0_NAV: NavEntry[] = [
   { type: "link", key: "agents", labelKey: "nav.agents", href: "agents", pattern: "L" },
   { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
   { type: "link", key: "ontology", labelKey: "nav.ontology", href: "ontology", pattern: "L" },
+  { type: "link", key: "data", labelKey: "nav.data", href: "data", pattern: "T" },
 ];
 
 export type L0GroupKey = "executive" | "research" | "manager" | "development" | "design";

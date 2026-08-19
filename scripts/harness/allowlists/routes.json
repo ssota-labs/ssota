@@ -50,6 +50,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/data/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Data 열람 + 액션 폼 — 컬럼·폼이 런타임 타입/액션 스키마에서 나오는 트랜잭션 화면 (ADR-aip-console-concepts D)"
+  },
+  {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/design/preview/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
