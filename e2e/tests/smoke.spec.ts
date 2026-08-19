@@ -39,6 +39,8 @@ test.describe("SSOTA Console", () => {
     await expect(nav.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     // AIP IA — Ontology(정의) · Data(인스턴스) · Workflows(배선)
     await expect(nav.getByRole("link", { name: "Ontology", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Data", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Workflows", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
     // work-cycle은 삭제됨 (ADR-aip-console-concepts) — Workflows가 대체 예정
     await expect(nav.getByRole("link", { name: "Work cycles", exact: true })).toHaveCount(0);
