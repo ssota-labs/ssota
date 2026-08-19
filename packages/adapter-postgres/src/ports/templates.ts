@@ -11,6 +11,9 @@ import { resolveOrganizationIdForTeamspace } from "../teamspace-org-scope.js";
 import { seedAgentDefinitions } from "./agents/agent-definition-port.js";
 import { seedPages } from "./ontology/page-port.js";
 import { seedWorkCycleAndGatePolicies } from "./ontology/seed-work-cycles.js";
+import { createDbCatalogWritePort } from "./ontology/db-catalog-write-port.js";
+import { createDbActionCatalogPort } from "./ontology/action-catalog-port.js";
+import { FINANCE_TEMPLATE } from "./finance-template.js";
 
 export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
   meta: {
@@ -48,7 +51,13 @@ export const EMPTY_TEMPLATE: TemplateBundle = {
 };
 
 /** 첫 항목이 온보딩 기본 선택이다. */
-export const BUILTIN_TEMPLATES: TemplateBundle[] = [EMPTY_TEMPLATE, SOFTWARE_DEV_TEMPLATE];
+export const BUILTIN_TEMPLATES: TemplateBundle[] = [
+  EMPTY_TEMPLATE,
+  FINANCE_TEMPLATE,
+  SOFTWARE_DEV_TEMPLATE,
+];
+
+export { FINANCE_TEMPLATE };
 
 export function getTemplateBundleById(templateId: string): TemplateBundle | null {
   return BUILTIN_TEMPLATES.find((template) => template.meta.id === templateId) ?? null;
@@ -69,6 +78,51 @@ export async function applyTemplate(
     nodeTypeKeys: bundle.catalog.nodeTypeKeys,
     edgeTypeKeys: bundle.catalog.edgeTypeKeys,
   });
+  // 런타임 정의 타입 — 도메인 팩(finance 등)은 출하 키가 없으므로 정의 자체를 upsert한다.
+  const nodeTypes = bundle.catalog.nodeTypes ?? [];
+  const edgeTypes = bundle.catalog.edgeTypes ?? [];
+  if (nodeTypes.length || edgeTypes.length) {
+    const catalogWrite = createDbCatalogWritePort(db, { organizationId });
+    const keyToId = new Map<string, string>();
+    for (const t of nodeTypes) {
+      const row = await catalogWrite.upsertNodeCatalog({
+        key: t.key,
+        label: t.label,
+        description: t.description ?? "",
+        keywords: t.keywords ?? [],
+        propertySchema: t.propertySchema,
+      });
+      keyToId.set(t.key, row.id);
+    }
+    for (const t of edgeTypes) {
+      await catalogWrite.upsertEdgeCatalog({
+        key: t.key,
+        label: t.label,
+        description: t.description ?? "",
+        keywords: t.keywords ?? [],
+        domainCatalogIds: (t.domainKeys ?? []).map((k) => {
+          const id = keyToId.get(k);
+          if (!id) throw new Error(`template ${bundle.meta.id}: edge '${t.key}' domain '${k}' is not defined in this template`);
+          return id;
+        }),
+        rangeCatalogIds: (t.rangeKeys ?? []).map((k) => {
+          const id = keyToId.get(k);
+          if (!id) throw new Error(`template ${bundle.meta.id}: edge '${t.key}' range '${k}' is not defined in this template`);
+          return id;
+        }),
+        propertySchema: t.propertySchema ?? null,
+      });
+    }
+  }
+
+  // L2 액션 — 타입이 먼저 있어야 writes/edits의 catalogKey가 유효하다.
+  if (bundle.actions?.length) {
+    const actionPort = createDbActionCatalogPort(db, { organizationId });
+    for (const action of bundle.actions) {
+      await actionPort.upsertAction(action);
+    }
+  }
+
   const seeds = bundle.agentDefinitions ?? bundle.workflowInstructions ?? [];
   await seedAgentDefinitions(db, teamspaceId, seeds);
   await seedPages(db, teamspaceId, bundle.pages);

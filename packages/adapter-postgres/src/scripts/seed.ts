@@ -20,7 +20,7 @@ import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
 import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
 import { seedSwdlSkillsAndBindings } from "./seed/swdl-skills.js";
-import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
+import { applyTemplate, FINANCE_TEMPLATE, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { SWDL_AGENT_IDS } from "@ssota/contracts/agents";
 
@@ -147,6 +147,10 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   if (teamspaceId) {
     await seedGraphInstances(db, teamspaceId);
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
+    // Finance 도메인 팩 — 런타임 온톨로지(타입+액션)의 검증 도메인. Data 페이지 E2E도 이걸 쓴다.
+    await applyTemplate(db, teamspaceId, FINANCE_TEMPLATE);
+    const { seedFinanceDemo } = await import("../ports/seed-finance-demo.js");
+    await seedFinanceDemo(db, teamspaceId);
     // Platform Console chat (outside Domain Pack): Main config/agent only.
     const { seedTeamspaceMainConfig } = await import(
       "../ports/agents/teamspace-main-config-port.js"

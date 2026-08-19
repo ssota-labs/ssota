@@ -41,7 +41,9 @@ export {
   getTemplateBundleById,
   EMPTY_TEMPLATE,
   SOFTWARE_DEV_TEMPLATE,
+  FINANCE_TEMPLATE,
 } from "./templates.js";
+export { seedFinanceDemo } from "./seed-finance-demo.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {

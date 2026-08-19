@@ -26,6 +26,7 @@ export {
   getTemplateBundleById,
   EMPTY_TEMPLATE,
   SOFTWARE_DEV_TEMPLATE,
+  FINANCE_TEMPLATE,
 } from "./ports/index.js";
 export {
   createAgentRunPort,
