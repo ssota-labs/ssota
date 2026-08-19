@@ -86,6 +86,17 @@
       <li><strong>구현 순서 (PR 단위):</strong> A 이 ADR + work-cycle 삭제 + 빈 템플릿 → B <code>action_catalog</code> + <code>run_action</code> 도구 → C Ontology 페이지(explorer + 4탭 편집) → D Data 페이지 + finance 템플릿 + 액션 폼 렌더러 → E Workflows 캔버스(React Flow, 5종 노드). E는 개념이 굳은 뒤라 마지막.</li>
     </ul>
 
+    <h2>구현 실측 (A–E 완료)</h2>
+    <p>A–E를 한 브랜치에서 순서대로 구현하며 설계가 실제로 바뀐 지점만 기록한다.</p>
+    <ul>
+      <li><strong>액션은 마스터 데이터도 만든다.</strong> finance 팩을 짜다 계정·회계기간을 만들 방법이 없다는 걸 발견했다 — <code>post_journal_entry</code>만으로는 계정이 생기지 않는다. <code>open_account</code>·<code>open_period</code>를 추가했다. "쓰기는 전부 액션" [ACTION-01]은 트랜잭션 데이터에만 적용되는 규칙이 아니다. 시드조차 예외가 아니라, <code>seedFinanceDemo</code>가 고정 <code>idempotencyKey</code>로 액션을 호출한다.</li>
+      <li><strong>optional 파라미터는 치환에서 키를 뺀다.</strong> <code>{$param}</code>이 미입력 파라미터를 만나면 throw했는데, 그러면 적요·사유 같은 선택 필드를 액션 정의가 필수로 만들어 버린다. <em>선언은 됐지만 값이 없는</em> 경우만 키를 빼고, 선언되지 않은 이름은 그대로 에러다(오타 보호). L2의 표현력은 늘지 않았다 — 여전히 치환뿐이다.</li>
+      <li><strong>uuid 파라미터의 타입은 액션이 이미 알고 있다.</strong> 파라미터 스키마는 <code>format: uuid</code>까지만 말하지만, declarative 편집에서 그 파라미터가 엣지 끝점으로 쓰이면 그 링크의 domain/range가 곧 허용 타입이다. <code>inferParamNodeTypes</code>가 이를 유도해 액션 폼이 "계정을 고르세요"를 보여준다. 파라미터 스키마에 타입 참조 어휘를 새로 추가하지 않고 해결했다 [ACTION-02].</li>
+      <li><strong>Workflows는 저장소를 만들지 않았다.</strong> 배선의 정본은 이미 존재한다: 스케줄의 <code>agentDefinitionId</code>, 액션의 <code>workerKey</code>, 액션의 <code>gate</code>, 에이전트의 <code>graph.write</code> 번들. 캔버스는 이것을 읽어 그린다. 별도 workflow 노드 타입·저장 액션을 만들면 같은 사실이 두 곳에 살고 어긋난다. 캔버스에서의 <em>편집</em>(배선을 그려서 저장)은 후속 결정으로 남긴다.</li>
+      <li><strong>템플릿이 정의를 싣는다.</strong> 기존 <code>TemplateBundle.catalog</code>는 출하 타입 <em>키</em> 목록이었다 — 런타임 정의 도메인에는 쓸 수 없다. <code>nodeTypes</code>/<code>edgeTypes</code>(정의 자체)와 <code>actions</code>를 추가했다.</li>
+      <li><strong>Graph 페이지는 남겼다.</strong> Ontology(정의)·Data(인스턴스)가 생겼지만 기존 스키마 다이어그램은 별개 가치가 있어 nav에 유지한다. 통합 여부는 사용 후 판단한다.</li>
+    </ul>
+
     <h2>Alternatives considered</h2>
     <ul>
       <li><strong>Graph 페이지를 확장해 정의 UI를 붙인다</strong> — 정의와 인스턴스가 한 화면에 섞여 Ontology Manager/Object Explorer 분리가 무너진다. 기각.</li>
