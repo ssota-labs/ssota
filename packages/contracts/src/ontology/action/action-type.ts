@@ -104,6 +104,30 @@ export function parseActionType(input: unknown): ActionType {
   return actionTypeSchema.parse(input);
 }
 
+/**
+ * action_catalog 행 — ActionType + 저장 봉투. L1 catalog(node/edge)와 같이 **org-scoped**이며
+ * `(organization_id, key)` unique. 정의 자체는 `ActionType`이고 행은 그 봉투다.
+ */
+export const actionCatalogRowSchema = actionTypeSchema.extend({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+export type ActionCatalogRow = z.infer<typeof actionCatalogRowSchema>;
+
+/** upsert 입력 — key 기준 upsert. `id`가 있으면 그 행을 갱신한다. */
+export const upsertActionInputSchema = actionTypeSchema.extend({
+  id: z.string().uuid().optional(),
+});
+export type UpsertActionInput = z.infer<typeof upsertActionInputSchema>;
+
+/** 행 → 순수 ActionType (runAction 입력용). */
+export function actionTypeFromRow(row: ActionCatalogRow): ActionType {
+  const { id: _id, organizationId: _org, createdAt: _c, updatedAt: _u, ...type } = row;
+  return type;
+}
+
 /** runAction 입력. */
 export const runActionInputSchema = z.object({
   teamspaceId: z.string().uuid(),
