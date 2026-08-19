@@ -41,6 +41,7 @@ export const L0_NAV: NavEntry[] = [
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   { type: "link", key: "agents", labelKey: "nav.agents", href: "agents", pattern: "L" },
   { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
+  { type: "link", key: "ontology", labelKey: "nav.ontology", href: "ontology", pattern: "L" },
 ];
 
 export type L0GroupKey = "executive" | "research" | "manager" | "development" | "design";
@@ -98,6 +99,15 @@ export function buildBreadcrumbSegments(
   }
   if (relative === "graph" || relative.startsWith("graph/")) {
     return [{ labelKey: "nav.graph" }];
+  }
+  if (relative === "ontology" || relative.startsWith("ontology/")) {
+    return [{ labelKey: "nav.ontology" }];
+  }
+  if (relative === "data" || relative.startsWith("data/")) {
+    return [{ labelKey: "nav.data" }];
+  }
+  if (relative === "workflows" || relative.startsWith("workflows/")) {
+    return [{ labelKey: "nav.workflows" }];
   }
   if (isAgentsRoute(relative)) {
     const sectionKey = getAgentsSectionLabelKey(relative);

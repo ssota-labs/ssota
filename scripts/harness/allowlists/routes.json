@@ -1,13 +1,18 @@
 [
   {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/agents/page.tsx",
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/(company)/[...page]/page.tsx",
     "ruleId": "GRAPH-08",
-    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+    "reason": "Company Workspace typed workflow page — 트랜잭션 화면은 React, json-render는 대시보드·리포트"
   },
   {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/agents/[agentId]/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "에이전트 디테일(설정/로그 탭) 운영 콘솔 화면 — agents/page.tsx와 동일 패턴의 인프라 라우트, 도메인 그래프 페이지 아님"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/agents/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
@@ -55,19 +60,14 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/development/[segment]/page.tsx",
-    "ruleId": "GRAPH-08",
-    "reason": "Legacy slug URL redirect to json-render pages (development/*) — same pattern as executive/roadmap"
-  },
-  {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/developer/setup/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/executive/roadmap/page.tsx",
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/development/[segment]/page.tsx",
     "ruleId": "GRAPH-08",
-    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+    "reason": "Legacy slug URL redirect to json-render pages (development/*) — same pattern as executive/roadmap"
   },
   {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/executive/goals/page.tsx",
@@ -75,12 +75,12 @@
     "reason": "Legacy slug URL redirect to json-render page (executive/goals) — same pattern as executive/roadmap"
   },
   {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/graph/page.tsx",
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/executive/roadmap/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/manager/initiatives/page.tsx",
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/graph/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
@@ -88,6 +88,11 @@
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/manager/approvals/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "Legacy slug redirect to json-render page (manager/approvals)"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/manager/initiatives/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/n/[nodeId]/p/[pageId]/page.tsx",
@@ -98,6 +103,11 @@
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/n/[nodeId]/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/ontology/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Ontology 정의 편집 — 런타임 타입/액션 스키마 기반 폼(트랜잭션 화면). json-render spec으로 표현 불가 (ADR-aip-console-concepts C)"
   },
   {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/overview/page.tsx",
@@ -250,6 +260,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/auth/continue/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "인증 인프라 — 로그인 액션 후 목적지 해석·redirect만 하는 서버 컴포넌트 (route handler는 서버 액션 redirect를 headless에서 못 따라감)"
+  },
+  {
     "path": "apps/web/app/editor-lab-blocknote/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
@@ -318,15 +333,5 @@
     "path": "apps/web/app/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
-  },
-  {
-    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/(company)/[...page]/page.tsx",
-    "ruleId": "GRAPH-08",
-    "reason": "Company Workspace typed workflow page — 트랜잭션 화면은 React, json-render는 대시보드·리포트"
-  },
-  {
-    "path": "apps/web/app/auth/continue/page.tsx",
-    "ruleId": "GRAPH-08",
-    "reason": "인증 인프라 — 로그인 액션 후 목적지 해석·redirect만 하는 서버 컴포넌트 (route handler는 서버 액션 redirect를 headless에서 못 따라감)"
   }
 ]
