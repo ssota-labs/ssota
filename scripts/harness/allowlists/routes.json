@@ -225,6 +225,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/workflows/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Workflows 배선 캔버스 — React Flow 인터랙션 화면, json-render spec으로 표현 불가 (ADR-aip-console-concepts E)"
+  },
+  {
     "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
