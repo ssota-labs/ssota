@@ -24,7 +24,9 @@ export {
   applyTemplate,
   BUILTIN_TEMPLATES,
   getTemplateBundleById,
+  EMPTY_TEMPLATE,
   SOFTWARE_DEV_TEMPLATE,
+  FINANCE_TEMPLATE,
 } from "./ports/index.js";
 export {
   createAgentRunPort,
@@ -102,6 +104,7 @@ export {
   resolveOrganizationIdForTeamspace,
 } from "./teamspace-org-scope.js";
 export { createDbCatalogWritePort } from "./ports/ontology/db-catalog-write-port.js";
+export { createDbActionCatalogPort } from "./ports/ontology/action-catalog-port.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,

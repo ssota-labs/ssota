@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko" data-omd-kind="adr" data-omd-id="ADR-aip-console-concepts">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="omd:id" content="ADR-aip-console-concepts" />
+  <meta name="omd:kind" content="adr" />
+  <meta name="omd:stage" content="accepted" />
+  <title>ADR-aip-console-concepts · Console Concepts and IA modeled on Palantir AIP</title>
+  <link rel="stylesheet" href="../../assets/omd-doc.css" />
+</head>
+<body>
+  <nav class="omd-crumb" aria-label="Breadcrumb">
+    <a class="omd-back" href="./index.html"><span class="omd-back-icon" aria-hidden="true">←</span> 목록으로</a>
+    <span aria-hidden="true">·</span>
+    <a href="../index.html">Catalogs</a>
+  </nav>
+  <header class="omd-doc-header">
+    <p class="omd-id" data-omd-field="id">ADR-aip-console-concepts</p>
+    <h1 data-omd-field="title">Console Concepts and IA modeled on Palantir AIP</h1>
+    <dl class="omd-props">
+      <dt>stage</dt>
+      <dd data-omd-field="stage" data-omd-value="accepted">accepted</dd>
+      <dt>summary</dt>
+      <dd data-omd-field="summary">콘솔 개념을 Ontology(정의)·Data(인스턴스)·Pages(조립 화면)·Workflows(배선)·Agents로 정돈하고, App은 페이지 트리의 end-user 배포로 명명한다. Action·Worker·Agent·Workflow의 경계를 고정한다.</dd>
+      <dt>builds on</dt>
+      <dd><a href="./ADR-runtime-ontology-with-closed-edit-vocabulary.html">ADR-runtime-ontology-with-closed-edit-vocabulary</a> · <a href="./ADR-persona-workspaces-with-explicit-workflow-pages.html">ADR-persona-workspaces-with-explicit-workflow-pages</a></dd>
+    </dl>
+  </header>
+  <main class="omd-doc-body">
+    <h2>Context</h2>
+    <p>제품 목표는 회사가 자기 도메인을 런타임에 정의해 에이전트와 운영하는 환경 — Palantir AIP가 지향하는 것과 같다. 온톨로지 3층·단일 커밋 경로는 선행 ADR로 확정했지만, <strong>콘솔의 개념과 화면 구성은 SWDL 시절 그대로</strong>였다. 실측:</p>
+    <ul>
+      <li>L0 nav: Chat · Tasks · Agents · Graph · Work Cycle. <code>Graph</code>는 인스턴스 브라우저가 아니라 카탈로그 ERD 뷰어(<code>GraphSchemaDiagram</code> 한 섹션)다. <strong>타입·엣지·액션을 정의하는 UI가 0</strong> — 정의는 <code>create_node_type</code> 에이전트 도구나 시드로만.</li>
+      <li>SWDL 시드가 <code>pnpm db:seed</code>와 온보딩 template 스텝(<code>BUILTIN_TEMPLATES = [SOFTWARE_DEV_TEMPLATE]</code> 단일)에 박혀 있어 사실상 강제. <code>work-cycle</code> 페이지는 SWDL 전용.</li>
+      <li>"워크플로우 / 에이전트 / 워커"의 경계가 흐리다 — 어느 것이 실행 주체이고 어느 것이 배선인지 정의가 없다.</li>
+      <li><code>pages</code> 테이블은 이미 Workshop 모듈에 가깝다(<code>spec</code>·<code>bindings</code>·<code>actions</code>·<code>subjectNodeId</code>·<code>appliesToNodeType</code>·트리). L2 카탈로그에 <code>Stack</code>·<code>Grid</code>·<code>Tabs</code>·<code>DataTable</code>·<code>RecordView</code>·<code>Chart</code> 등 40여 컴포넌트가 있다. 저작 UI만 없다. end-user 배포(<code>teamspaces.app_enabled</code> + <code>/app/…</code>)도 이미 있다 — 이름이 없어 안 보였다.</li>
+    </ul>
+    <p>Palantir은 이 경계를 <strong>앱 단위</strong>로 갈라놨다: Ontology Manager(정의) · Object Explorer(인스턴스) · Workshop(모듈→앱) · Automate(조건→효과 배선, 승인 게이트) · AIP Logic/Agent Studio(LLM 판단·대화) · Pipeline Builder(외부 데이터 변환). 이 분할을 SSOTA 자산에 대응시키면 개념이 정돈된다.</p>
+
+    <h2>Decision</h2>
+    <h3>1. 실행 개념 4종 — 경계 고정</h3>
+    <table>
+      <thead><tr><th>SSOTA</th><th>Palantir 대응</th><th>정의</th><th>실행 주체</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Action</strong></td><td>Action Type</td><td>온톨로지에 대한 <em>쓰기 하나</em> — 파라미터·권한·criteria·gate·편집(L2 치환 또는 L3 함수). 유일한 커밋 경로 <code>[ACTION-01]</code></td><td>runAction</td></tr>
+        <tr><td><strong>Worker</strong></td><td>Function + Pipeline Builder</td><td><em>결정적 코드</em>. 외부 API 호출·변환·계산. LLM 없음. 커밋하지 않고 GraphEdits를 반환 <code>[ACTION-03]</code></td><td>sandbox</td></tr>
+        <tr><td><strong>Agent</strong></td><td>AIP Logic + Agent Studio</td><td><em>LLM이 판단</em>하는 것. 도구(Action·Worker·읽기)를 골라 쓴다. 대화형이거나 태스크형</td><td>agent-runtime</td></tr>
+        <tr><td><strong>Workflow</strong></td><td>Automate</td><td><em>배선</em>. 트리거 → 단계 → 게이트. <strong>실행자가 아니다</strong> — 각 단계가 Action/Worker/Agent이고 엣지가 순서·조건·승인이다</td><td>스케줄러/이벤트</td></tr>
+      </tbody>
+    </table>
+    <p>판단 기준: <strong>결정적이어야 하면 Worker, 판단이 필요하면 Agent, 온톨로지를 바꾸면 Action, 이들을 순서·조건으로 엮으면 Workflow.</strong> "에이전트에게 툴을 다 붙여 처리"는 워크플로우 노드 하나가 Agent인 경우일 뿐이며, 외부 데이터 fetch·금액 계산처럼 LLM 비결정성이 섞이면 안 되는 단계는 Worker 노드로 분리한다.</p>
+
+    <h3>2. 콘솔 IA — 5 + 앱</h3>
+    <pre>[Builder 콘솔  /{org}]
+  Ontology    정의 — Object types · Link types · Actions · Functions   (Ontology Manager)
+  Data        raw 인스턴스 표 — 타입별 explorer                          (Object Explorer)
+  Pages       위젯을 조립한 운영 화면 트리 — 1차 저작자는 에이전트          (Workshop 모듈)
+  Workflows   배선 — Trigger·Action·Worker·Agent·Gate 노드 캔버스        (Automate)
+  Agents · Chat · Tasks · Settings
+
+[End-user App  /app/{org}/{teamspace}]  ← app_enabled 시 Pages 트리를 배포한 것 (Workshop 앱)</pre>
+    <ul>
+      <li><strong>Ontology</strong>에 Actions·Functions를 포함한다. Palantir은 Function을 Code Repository에 두지만 SSOTA의 Function은 카탈로그 행(<code>workers</code>)이라 온톨로지의 일부로 보는 것이 일관된다.</li>
+      <li><strong>Data</strong>는 Supabase Table Editor식 raw 조회다 — 좌측 explorer(타입별 인스턴스 개수) + 우측 <code>DataTable</code>. 행을 열면 그 타입에 <code>appliesToNodeType</code> 페이지(Object View)가 있으면 그리로, 없으면 <code>RecordView</code> 폴백 + 적용 가능한 Action 버튼.</li>
+      <li><strong>Page</strong> = 위젯을 조립한 운영 화면. Data가 "무엇이 있나"라면 Page는 "이 일을 하기 위해 조립한 것". <strong>App</strong> = teamspace 페이지 트리를 end-user 모드로 배포한 단위 — 새 개념이 아니라 이미 있는 <code>app_enabled</code>/<code>/app</code>의 이름이다. <strong>Object View</strong> = <code>appliesToNodeType</code>가 지정된 페이지.</li>
+      <li><strong>Explorer 패턴</strong> — Ontology·Data 모두 좌측 촘촘한 explorer(Supabase Table Editor 밀도) + 우측 콘텐츠. 정의와 인스턴스가 같은 조작감을 갖는다.</li>
+    </ul>
+
+    <h3>3. 액션 폼은 generic 렌더러를 허용한다</h3>
+    <p><code>ActionType.parameters</code>는 닫힌 JSON Schema 서브셋이므로 폼을 자동 생성할 수 있다(Workshop의 action widget). <code>[GRAPH-08]</code> "트랜잭션 화면은 typed React"에 대한 <strong>명시적 예외</strong>: 액션 파라미터 폼은 generic 렌더러가 그린다. 도메인별 커스텀 UX가 필요할 때만 typed React로 감싼다. 폼 제출은 <code>runAction</code>으로만 간다.</p>
+
+    <h3>4. SWDL은 기본에서 내리되 코드는 유지한다</h3>
+    <p>온보딩 기본 템플릿을 <strong>빈 워크스페이스</strong>(<code>EMPTY_TEMPLATE</code>)로 바꾸고 SWDL은 선택 템플릿으로 남긴다. <code>work-cycle</code> 페이지·nav·컴포넌트·e2e는 삭제한다(SWDL 전용 UI, Workflows가 대체). <code>pnpm db:seed</code>(smoke fixture)·시드 pack·<code>catalog/node-types.ts</code>의 출하 타입·SWDL 스킬/에이전트 코드는 <strong>유지</strong> — 8개 e2e 스펙과 P0의 "출하 타입 Zod 보강 검증"이 의존한다. finance가 실제로 돌아간 뒤 "SWDL을 finance 방식(템플릿 + 카탈로그 행)으로 재작성 가능한가"를 보고 지운다.</p>
+
+    <h3>5. 검증 도메인은 finance</h3>
+    <p>"AIP 같은 대시보드"의 검증 시나리오: (1) Ontology에서 finance 타입 정의 또는 finance 템플릿 적용 → (2) Actions에서 <code>post_journal_entry</code>·<code>close_fiscal_period</code>(L3 워커) 확인 → (3) Chat에서 에이전트에게 "8월 매출 전기해줘" → <code>run_action</code> → 감사 로그 → (4) Workflow "매월 1일 → 시산표 워커 → 불일치면 승인 게이트 → close" → (5) Data에서 전표·잔액 확인. 이 5개가 되면 검증 완료다.</p>
+
+    <h2>Consequences</h2>
+    <ul>
+      <li>정의 표면(Ontology 페이지)이 처음 생긴다 — 지금까지 에이전트·시드로만 가능하던 타입 저작이 UI로 열린다. P0 검증 층이 먼저 닫혀 있어야 했던 이유가 여기다.</li>
+      <li>"워크플로우 vs 에이전트" 혼동이 정의로 해소된다 — 워크플로우는 배선이고 노드가 실행자다.</li>
+      <li>App·Object View가 새 코드 없이 이름을 얻는다. 저작 UI는 에이전트 우선(<code>pages.author</code> 도구)이라 폼 빌더 없이도 진행 가능하다.</li>
+      <li><strong>대가:</strong> 새 사용자는 빈 온톨로지에서 시작한다 — 첫 경험이 "정의부터"가 된다. finance 템플릿과 에이전트 저작이 이를 메워야 한다.</li>
+      <li><strong>대가:</strong> SWDL 코드가 당분간 유령처럼 남는다(선택 템플릿·smoke fixture). 삭제 시점을 finance 검증에 걸어 두었다.</li>
+      <li><strong>구현 순서 (PR 단위):</strong> A 이 ADR + work-cycle 삭제 + 빈 템플릿 → B <code>action_catalog</code> + <code>run_action</code> 도구 → C Ontology 페이지(explorer + 4탭 편집) → D Data 페이지 + finance 템플릿 + 액션 폼 렌더러 → E Workflows 캔버스(React Flow, 5종 노드). E는 개념이 굳은 뒤라 마지막.</li>
+    </ul>
+
+    <h2>구현 실측 (A–E 완료)</h2>
+    <p>A–E를 한 브랜치에서 순서대로 구현하며 설계가 실제로 바뀐 지점만 기록한다.</p>
+    <ul>
+      <li><strong>액션은 마스터 데이터도 만든다.</strong> finance 팩을 짜다 계정·회계기간을 만들 방법이 없다는 걸 발견했다 — <code>post_journal_entry</code>만으로는 계정이 생기지 않는다. <code>open_account</code>·<code>open_period</code>를 추가했다. "쓰기는 전부 액션" [ACTION-01]은 트랜잭션 데이터에만 적용되는 규칙이 아니다. 시드조차 예외가 아니라, <code>seedFinanceDemo</code>가 고정 <code>idempotencyKey</code>로 액션을 호출한다.</li>
+      <li><strong>optional 파라미터는 치환에서 키를 뺀다.</strong> <code>{$param}</code>이 미입력 파라미터를 만나면 throw했는데, 그러면 적요·사유 같은 선택 필드를 액션 정의가 필수로 만들어 버린다. <em>선언은 됐지만 값이 없는</em> 경우만 키를 빼고, 선언되지 않은 이름은 그대로 에러다(오타 보호). L2의 표현력은 늘지 않았다 — 여전히 치환뿐이다.</li>
+      <li><strong>uuid 파라미터의 타입은 액션이 이미 알고 있다.</strong> 파라미터 스키마는 <code>format: uuid</code>까지만 말하지만, declarative 편집에서 그 파라미터가 엣지 끝점으로 쓰이면 그 링크의 domain/range가 곧 허용 타입이다. <code>inferParamNodeTypes</code>가 이를 유도해 액션 폼이 "계정을 고르세요"를 보여준다. 파라미터 스키마에 타입 참조 어휘를 새로 추가하지 않고 해결했다 [ACTION-02].</li>
+      <li><strong>Workflows는 저장소를 만들지 않았다.</strong> 배선의 정본은 이미 존재한다: 스케줄의 <code>agentDefinitionId</code>, 액션의 <code>workerKey</code>, 액션의 <code>gate</code>, 에이전트의 <code>graph.write</code> 번들. 캔버스는 이것을 읽어 그린다. 별도 workflow 노드 타입·저장 액션을 만들면 같은 사실이 두 곳에 살고 어긋난다. 캔버스에서의 <em>편집</em>(배선을 그려서 저장)은 후속 결정으로 남긴다.</li>
+      <li><strong>템플릿이 정의를 싣는다.</strong> 기존 <code>TemplateBundle.catalog</code>는 출하 타입 <em>키</em> 목록이었다 — 런타임 정의 도메인에는 쓸 수 없다. <code>nodeTypes</code>/<code>edgeTypes</code>(정의 자체)와 <code>actions</code>를 추가했다.</li>
+      <li><strong>Graph 페이지는 남겼다.</strong> Ontology(정의)·Data(인스턴스)가 생겼지만 기존 스키마 다이어그램은 별개 가치가 있어 nav에 유지한다. 통합 여부는 사용 후 판단한다.</li>
+    </ul>
+
+    <h2>Alternatives considered</h2>
+    <ul>
+      <li><strong>Graph 페이지를 확장해 정의 UI를 붙인다</strong> — 정의와 인스턴스가 한 화면에 섞여 Ontology Manager/Object Explorer 분리가 무너진다. 기각.</li>
+      <li><strong>워크플로우를 에이전트로 흡수한다</strong>("에이전트에 툴 다 붙이기") — 결정적이어야 하는 단계에 LLM 비결정성이 섞이고, 승인 게이트·스케줄이 에이전트 프롬프트에 묻힌다. 워크플로우 노드 중 하나가 에이전트인 것과 전체가 에이전트인 것은 다르다. 기각.</li>
+      <li><strong>Actions·Functions를 Workflows 아래에 둔다</strong> — Action은 워크플로우 없이도 UI·에이전트가 직접 부르는 1급 개념이고, Function은 카탈로그 행이다. Ontology가 맞다.</li>
+      <li><strong>SWDL 코드를 지금 전부 삭제한다</strong> — 8 e2e 스펙과 출하 타입 검증이 함께 날아간다. finance 검증 후로 미룬다.</li>
+      <li><strong>Data 페이지 없이 Pages만</strong> — raw 조회 없이 조립 화면만 있으면 "무엇이 있나"를 볼 곳이 없다. Object Explorer는 필수다.</li>
+    </ul>
+  </main>
+</body>
+</html>

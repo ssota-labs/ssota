@@ -1,13 +1,13 @@
 /**
- * Auto-layout for FlowCanvas / work-cycle.
+ * Auto-layout for FlowCanvas / ErdDiagram.
  *
  * - `layoutFlow` — ELK layered/mrtree (async), used by FlowCanvas·ERD
- * - `layoutFlowWithDagre` — React Flow 공식 Dagre 예제 패턴 (sync), work-cycle용
+ * - `layoutFlowWithDagre` — React Flow 공식 Dagre 예제 패턴 (sync)
  *   @see https://reactflow.dev/examples/layout/dagre
  *   @see https://reactflow.dev/learn/layouting/layouting
  *
  * ELK is dynamically imported so it never enters the initial FlowCanvas bundle
- * path unless needed; dagre is a light sync dep used by work-cycle.
+ * path unless needed; dagre is a light sync dep.
  */
 
 import dagre from "@dagrejs/dagre";

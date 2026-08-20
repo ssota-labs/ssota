@@ -123,7 +123,11 @@ export async function runAction(
   let edits: GraphEdits;
   if (action.edits.kind === "declarative") {
     try {
-      edits = substituteDeclarativeEdits(action.edits, params);
+      edits = substituteDeclarativeEdits(
+        action.edits,
+        params,
+        Object.keys(action.parameters.properties ?? {}),
+      );
     } catch (err) {
       throw new GraphError(
         "VALIDATION_FAILED",

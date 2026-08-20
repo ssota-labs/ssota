@@ -15,7 +15,8 @@ import type { WorkerExecutionScope } from "./worker-sdk-host.js";
  */
 export interface WorkerEditsPlannerDeps {
   getWorkerByKey(key: string): Promise<Worker | null>;
-  scope: WorkerExecutionScope;
+  /** 없으면 스코프 없이 실행 — 스코프를 요구하는 워커는 executeWorker가 거부한다. */
+  scope?: WorkerExecutionScope;
   timeoutMs?: number;
 }
 

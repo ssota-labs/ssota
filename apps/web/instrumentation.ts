@@ -13,6 +13,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { registerStubGateway } = await import("@ssota/agent-runtime");
     registerStubGateway();
+    const { registerActionWorkerScope } = await import("./lib/actions/register-worker-scope");
+    registerActionWorkerScope();
     if (sentryEnabled) await import("./sentry.server.config");
   }
 

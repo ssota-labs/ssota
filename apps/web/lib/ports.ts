@@ -6,6 +6,7 @@ import {
   createDb,
   createDbAccountReadPort,
   createGraphPorts,
+  createDbCatalogWritePort,
   createOnboardingPort,
   createOrganizationSettingsPort,
   createOrganizationMembersPort,
@@ -88,6 +89,16 @@ export async function getGraphPorts(teamspaceId: string, accountId?: string) {
 
 /** @deprecated Use getGraphPorts — same behavior after async org resolution. */
 export const getGraphPortsForTeamspace = getGraphPorts;
+
+/** Org-scoped L1 catalog write port (node/edge type authoring) — Ontology 페이지·온보딩. */
+export async function getCatalogWritePort(teamspaceId: string) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createDbCatalogWritePort(getDb(), { organizationId });
+}
 
 export function getChatPort(teamspaceId: string, accountId?: string | null) {
   return createChatPort(getDb(), { teamspaceId, accountId });

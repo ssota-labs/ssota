@@ -4,6 +4,13 @@ export type { RunAgentInput, RunAgentResult, ResolvedRunAgent } from "./run.js";
 
 export { executeWorker } from "./workers/execute-worker.js";
 export { createWorkerEditsPlanner, WorkerPlanError } from "./workers/worker-edits-planner.js";
+export {
+  runActionInScope,
+  createRunActionDeps,
+  registerWorkerScopeBuilder,
+} from "./actions/run-action-in-scope.js";
+export type { ActionScope, WorkerScopeBuilder } from "./actions/run-action-in-scope.js";
+export { createActionTools } from "./tools/actions.js";
 export type { ExecuteWorkerOptions, WorkerExecuteTrigger } from "./workers/execute-worker.js";
 export {
   createSsotaTools,

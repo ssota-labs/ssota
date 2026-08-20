@@ -7,6 +7,7 @@ import {
   createInMemoryGraphStore,
   createInMemoryGraphWritePort,
 } from "../testing/in-memory-graph.js";
+import { createInMemoryGraphCommitPort } from "../testing/in-memory-action.js";
 import {
   createInMemoryPorts,
   createInMemoryState,
@@ -203,6 +204,7 @@ describe("gate policies", () => {
   ) {
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const initiative = await graphWrite.createNode({
       teamspaceId: TEAM,
       nodeCatalogId: "cat-initiative",
@@ -220,7 +222,7 @@ describe("gate policies", () => {
       schemaVersion: 1,
     });
     await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: TEAM,
         catalogKey: "for_initiative",
@@ -228,7 +230,7 @@ describe("gate policies", () => {
         targetNodeId: initiative.id,
       },
     );
-    return { graphRead, graphWrite, initiative, prd };
+    return { graphRead, graphWrite, commit, initiative, prd };
   }
 
   async function seedFeatureWithStory(
@@ -237,6 +239,7 @@ describe("gate policies", () => {
   ) {
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const feature = await graphWrite.createNode({
       teamspaceId: TEAM,
       nodeCatalogId: "cat-feature",
@@ -255,7 +258,7 @@ describe("gate policies", () => {
     });
     // 팩이 실제로 만드는 feature→story 엣지 방향과 동일하게 시드한다.
     await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: TEAM,
         catalogKey: "spawns_story",
@@ -263,7 +266,7 @@ describe("gate policies", () => {
         targetNodeId: story.id,
       },
     );
-    return { graphRead, graphWrite, story };
+    return { graphRead, graphWrite, commit, story };
   }
 
   /** 시드 팩 방향 그대로: initiative —paired_with→ release, launch_plan —for_initiative→ initiative. */
@@ -273,6 +276,7 @@ describe("gate policies", () => {
   ) {
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const initiative = await graphWrite.createNode({
       teamspaceId: TEAM,
       nodeCatalogId: "cat-initiative",
@@ -298,7 +302,7 @@ describe("gate policies", () => {
       schemaVersion: 1,
     });
     await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: TEAM,
         catalogKey: "paired_with",
@@ -307,7 +311,7 @@ describe("gate policies", () => {
       },
     );
     await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: TEAM,
         catalogKey: "for_initiative",
@@ -315,12 +319,12 @@ describe("gate policies", () => {
         targetNodeId: initiative.id,
       },
     );
-    return { graphRead, graphWrite, release };
+    return { graphRead, graphWrite, commit, release };
   }
 
   it("rejects create_node(task) when PRD is not approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, initiative } = await seedInitiativeWithPrd(
+    const { graphRead, graphWrite, commit, initiative } = await seedInitiativeWithPrd(
       store,
       "draft",
     );
@@ -330,6 +334,7 @@ describe("gate policies", () => {
           catalog,
           graphRead,
           graphWrite,
+          commit,
           gatePolicies: staticPolicies([prdBeforeTask]),
         },
         {
@@ -345,7 +350,7 @@ describe("gate policies", () => {
 
   it("allows create_node(task) when PRD is approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, initiative } = await seedInitiativeWithPrd(
+    const { graphRead, graphWrite, commit, initiative } = await seedInitiativeWithPrd(
       store,
       "approved",
     );
@@ -354,6 +359,7 @@ describe("gate policies", () => {
         catalog,
         graphRead,
         graphWrite,
+        commit,
         gatePolicies: staticPolicies([prdBeforeTask]),
       },
       {
@@ -394,7 +400,7 @@ describe("gate policies", () => {
 
   it("onPass spawns Delivery idempotently when PRD becomes approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, prd } = await seedInitiativeWithPrd(
+    const { graphRead, graphWrite, commit, prd } = await seedInitiativeWithPrd(
       store,
       "draft",
     );
@@ -405,7 +411,7 @@ describe("gate policies", () => {
     const gatePolicies = staticPolicies([prdOnPassSpawn]);
 
     const updated = await updateNode(
-      { catalog, graphRead, graphWrite, gatePolicies, spawn },
+      { catalog, graphRead, graphWrite, commit, gatePolicies, spawn },
       {
         teamspaceId: TEAM,
         nodeId: prd.id,
@@ -423,7 +429,7 @@ describe("gate policies", () => {
 
     // Second update while already approved should not spawn again
     await updateNode(
-      { catalog, graphRead, graphWrite, gatePolicies, spawn },
+      { catalog, graphRead, graphWrite, commit, gatePolicies, spawn },
       {
         teamspaceId: TEAM,
         nodeId: prd.id,
@@ -436,7 +442,7 @@ describe("gate policies", () => {
 
   it("rejects ready story when its feature is not approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, story } = await seedFeatureWithStory(
+    const { graphRead, graphWrite, commit, story } = await seedFeatureWithStory(
       store,
       "draft",
     );
@@ -447,6 +453,7 @@ describe("gate policies", () => {
           catalog,
           graphRead,
           graphWrite,
+          commit,
           gatePolicies: staticPolicies([featureBeforeStoryReady]),
         },
         {
@@ -460,7 +467,7 @@ describe("gate policies", () => {
 
   it("allows ready story when its feature is approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, story } = await seedFeatureWithStory(
+    const { graphRead, graphWrite, commit, story } = await seedFeatureWithStory(
       store,
       "approved",
     );
@@ -470,6 +477,7 @@ describe("gate policies", () => {
         catalog,
         graphRead,
         graphWrite,
+        commit,
         gatePolicies: staticPolicies([featureBeforeStoryReady]),
       },
       {
@@ -484,7 +492,7 @@ describe("gate policies", () => {
 
   it("blocks release cut (status→shipped) via multi-hop path when launch plan is not approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, release } = await seedReleaseWithLaunchPlan(
+    const { graphRead, graphWrite, commit, release } = await seedReleaseWithLaunchPlan(
       store,
       "draft",
     );
@@ -495,6 +503,7 @@ describe("gate policies", () => {
           catalog,
           graphRead,
           graphWrite,
+          commit,
           gatePolicies: staticPolicies([launchBeforeReleaseCut]),
         },
         {
@@ -508,7 +517,7 @@ describe("gate policies", () => {
 
   it("allows release cut via multi-hop path when launch plan is approved", async () => {
     const store = createInMemoryGraphStore();
-    const { graphRead, graphWrite, release } = await seedReleaseWithLaunchPlan(
+    const { graphRead, graphWrite, commit, release } = await seedReleaseWithLaunchPlan(
       store,
       "approved",
     );
@@ -518,6 +527,7 @@ describe("gate policies", () => {
         catalog,
         graphRead,
         graphWrite,
+        commit,
         gatePolicies: staticPolicies([launchBeforeReleaseCut]),
       },
       {
@@ -534,6 +544,7 @@ describe("gate policies", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
+    const commit = createInMemoryGraphCommitPort(store, { audits: [] });
     const initiative = await graphWrite.createNode({
       teamspaceId: TEAM,
       nodeCatalogId: "cat-initiative",
@@ -551,7 +562,7 @@ describe("gate policies", () => {
       schemaVersion: 1,
     });
     await createEdge(
-      { catalog, graphRead, graphWrite },
+      { catalog, graphRead, graphWrite, commit },
       {
         teamspaceId: TEAM,
         catalogKey: "for_initiative",
@@ -566,7 +577,7 @@ describe("gate policies", () => {
     const gatePolicies = staticPolicies([prOnPassLaunch]);
 
     await updateNode(
-      { catalog, graphRead, graphWrite, gatePolicies, spawn },
+      { catalog, graphRead, graphWrite, commit, gatePolicies, spawn },
       {
         teamspaceId: TEAM,
         nodeId: pr.id,

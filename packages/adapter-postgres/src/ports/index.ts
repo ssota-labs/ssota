@@ -39,8 +39,11 @@ export {
   applyTemplate,
   BUILTIN_TEMPLATES,
   getTemplateBundleById,
+  EMPTY_TEMPLATE,
   SOFTWARE_DEV_TEMPLATE,
+  FINANCE_TEMPLATE,
 } from "./templates.js";
+export { seedFinanceDemo } from "./seed-finance-demo.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {
@@ -213,3 +216,5 @@ export function createTaskPort(db: Db, scope: PortScope): TaskPort {
   };
 }
 export { createDbGraphCommitPort } from "./ontology/graph-commit-port.js";
+export { createDbActionCatalogPort } from "./ontology/action-catalog-port.js";
+export type { DbActionCatalogScope } from "./ontology/action-catalog-port.js";

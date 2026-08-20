@@ -10,6 +10,7 @@ import { createDelegateTools } from "./delegate.js";
 import { createSandboxTools } from "./sandbox.js";
 import { createWorkerTools } from "./worker-tools.js";
 import { createSkillTools } from "./skills.js";
+import { createActionTools } from "./actions.js";
 
 const GRAPH_READ = new Set([
   "list_node_types",
@@ -20,6 +21,8 @@ const GRAPH_READ = new Set([
   "query_nodes",
   "get_node",
   "traverse_edges",
+  "list_actions",
+  "get_action",
 ]);
 
 const GRAPH_WRITE = new Set([
@@ -28,6 +31,8 @@ const GRAPH_WRITE = new Set([
   "create_node",
   "update_node",
   "create_edge",
+  "create_action_type",
+  "run_action",
 ]);
 
 const AGENT_DEF_TOOLS = new Set([
@@ -57,7 +62,7 @@ export function buildAgentTools(definition: {
   isMain: boolean;
 }): ToolSet {
   const bundles = new Set(mergeAgentToolBundles(definition.toolBundles));
-  const graph = createGraphTools();
+  const graph = mergeTools(createGraphTools(), createActionTools());
   const tasks = createTaskTools();
   const pages = createPageTools();
   const agents = createAgentDefinitionTools();
